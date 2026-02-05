@@ -1,0 +1,73 @@
+{
+  "name": "jobby-cli",
+  "version": "1.0.0",
+  "description": "jobby cli app",
+  "license": "MIT",
+  "author": "ckarcz",
+  "type": "module",
+  "bin": {
+    "jobby": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "import": "./dist/main.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "linkedin",
+    "jobs",
+    "cli",
+    "job-search",
+    "command-line"
+  ],
+  "scripts": {
+    "clean": "rimraf dist coverage --glob *.tsbuildinfo",
+    "build": "tsc",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:coverage:ui": "vitest --project unit --ui --coverage.enabled",
+    "start": "tsx src/main.ts",
+    "start:ui": "tsx src/main.ts ui",
+    "start:search": "tsx src/main.ts search \"C#\" --pretty",
+    "start:details": "tsx src/main.ts details 4368607271 --pretty",
+    "start:example": "tsx src/main.ts search --keyword C# --take 1",
+    "watch": "tsx watch src/main.ts",
+    "watch:search": "tsx watch src/main.ts search \"C#\" --pretty",
+    "watch:details": "tsx watch src/main.ts details 4368607271 --pretty",
+    "watch:ui": "nodemon --no-stdin --watch src --watch ../jobby-client/src --ext ts,tsx --exec \"tsx src/main.ts ui\""
+  },
+  "dependencies": {
+    "@inkjs/ui": "^2.0.0",
+    "chalk": "^5.4.1",
+    "cli-highlight": "^2.1.11",
+    "commander": "^14.0.3",
+    "csv-stringify": "^6.6.0",
+    "fast-xml-parser": "^5.3.4",
+    "html-minifier-terser": "^7.2.0",
+    "ink": "^6.6.0",
+    "ink-link": "^5.0.0",
+    "ink-virtual-list": "^0.2.3",
+    "js-beautify": "^1.15.4",
+    "jobby-client": "*",
+    "react": "^19.2.4",
+    "yaml": "^2.8.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@types/html-minifier-terser": "^7.0.2",
+    "@types/js-beautify": "^1.14.3",
+    "@types/react": "^19.2.13",
+    "nodemon": "^3.1.11"
+  }
+}

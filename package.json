@@ -1,0 +1,49 @@
+{
+  "name": "jobby",
+  "private": true,
+  "description": "jobby monorepo - client, cli app, mcp server",
+  "license": "MIT",
+  "author": "ckarcz",
+  "type": "module",
+  "workspaces": [
+    "packages/jobby-client",
+    "packages/jobby-cli",
+    "packages/jobby-mcp"
+  ],
+  "scripts": {
+    "clean": "npm run clean --workspaces",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:coverage:ui": "vitest --ui --project unit --coverage.enabled",
+    "start:cli": "npm run start -w jobby-cli",
+    "start:cli:ui": "npm run start:ui -w jobby-cli",
+    "start:cli:search": "npm run start:search -w jobby-cli",
+    "start:cli:details": "npm run start:details -w jobby-cli",
+    "watch:cli": "npm run watch -w jobby-cli",
+    "watch:cli:search": "npm run watch:search -w jobby-cli",
+    "watch:cli:details": "npm run watch:details -w jobby-cli",
+    "watch:cli:ui": "npm run watch:ui -w jobby-cli"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^22.19.10",
+    "@vitest/coverage-v8": "^3.0.0",
+    "@vitest/ui": "^3.2.4",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.3.0",
+    "rimraf": "^6.1.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

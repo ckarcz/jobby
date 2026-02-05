@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "name": "start client example",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:example"],
+      "cwd": "${workspaceFolder}/packages/jobby-client/",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "name": "start cli example",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:example"],
+      "cwd": "${workspaceFolder}/packages/jobby-cli/",
+      "console": "integratedTerminal"
+    }
+  ]
+}

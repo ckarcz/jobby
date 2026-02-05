@@ -1,0 +1,338 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "clean",
+      "type": "npm",
+      "script": "clean",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "trash",
+        "color": "terminal.ansiRed"
+      }
+    },
+    {
+      "label": "build",
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "build",
+        "color": "terminal.ansiGreen"
+      }
+    },
+    {
+      "label": "lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "lightbulb",
+        "color": "terminal.ansiYellow"
+      }
+    },
+    {
+      "label": "lint fix",
+      "type": "npm",
+      "script": "lint:fix",
+      "problemMatcher": [
+        "$eslint-stylish"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "lightbulb-sparkle",
+        "color": "terminal.ansiYellow"
+      }
+    },
+    {
+      "label": "test",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": {
+        "owner": "vitest",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*FAIL\\s+(?:(\\w+)\\s+)?([^\\s]+\\.(?:ts|js))\\s*(?:>\\s*(.*))?(?:\\s*\\[.*\\])?$",
+            "file": 2,
+            "message": 3,
+            "severity": "error"
+          },
+          {
+            "regexp": "^(AssertionError|Error|TypeError|ReferenceError):\\s*(.*)$",
+            "message": 2,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+(.*)\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "message": 1,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s+(\\d+)\\|(.*)$",
+            "line": 1,
+            "message": 2,
+            "loop": true
+          }
+        ]
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true,
+      },
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiBlue"
+      }
+    },
+    {
+      "label": "test unit",
+      "type": "npm",
+      "script": "test:unit",
+      "problemMatcher": {
+        "owner": "vitest",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*FAIL\\s+(?:(\\w+)\\s+)?([^\\s]+\\.(?:ts|js))\\s*(?:>\\s*(.*))?(?:\\s*\\[.*\\])?$",
+            "file": 2,
+            "message": 3,
+            "severity": "error"
+          },
+          {
+            "regexp": "^(AssertionError|Error|TypeError|ReferenceError):\\s*(.*)$",
+            "message": 2,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+(.*)\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "message": 1,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s+(\\d+)\\|(.*)$",
+            "line": 1,
+            "message": 2,
+            "loop": true
+          }
+        ]
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiBlue"
+      }
+    },
+    {
+      "label": "test integration",
+      "type": "npm",
+      "script": "test:integration",
+      "problemMatcher": {
+        "owner": "vitest",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*FAIL\\s+(?:(\\w+)\\s+)?([^\\s]+\\.(?:ts|js))\\s*(?:>\\s*(.*))?(?:\\s*\\[.*\\])?$",
+            "file": 2,
+            "message": 3,
+            "severity": "error"
+          },
+          {
+            "regexp": "^(AssertionError|Error|TypeError|ReferenceError):\\s*(.*)$",
+            "message": 2,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+(.*)\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "message": 1,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s+(\\d+)\\|(.*)$",
+            "line": 1,
+            "message": 2,
+            "loop": true
+          }
+        ]
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiBlue"
+      }
+    },
+    {
+      "label": "test coverage",
+      "type": "npm",
+      "script": "test:coverage",
+      "problemMatcher": {
+        "owner": "vitest",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^\\s*FAIL\\s+(?:(\\w+)\\s+)?([^\\s]+\\.(?:ts|js))\\s*(?:>\\s*(.*))?(?:\\s*\\[.*\\])?$",
+            "file": 2,
+            "message": 3,
+            "severity": "error"
+          },
+          {
+            "regexp": "^(AssertionError|Error|TypeError|ReferenceError):\\s*(.*)$",
+            "message": 2,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+(.*)\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 2,
+            "line": 3,
+            "column": 4,
+            "message": 1,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s*❯\\s+([^\\s]+\\.(?:ts|js)):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "loop": true
+          },
+          {
+            "regexp": "^\\s+(\\d+)\\|(.*)$",
+            "line": 1,
+            "message": 2,
+            "loop": true
+          }
+        ]
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "search",
+        "color": "terminal.ansiBlue"
+      }
+    },
+    {
+      "label": "test coverage ui",
+      "type": "npm",
+      "script": "test:coverage:ui",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "icon": {
+        "id": "globe",
+        "color": "terminal.ansiBlue"
+      }
+    },
+  ]
+}

@@ -1,0 +1,41 @@
+import { z } from 'zod';
+import {
+  JOB_TYPE_CHOICES,
+  EXPERIENCE_LEVEL_CHOICES,
+  MINIMUM_SALARY_CHOICES,
+  WORKPLACE_TYPE_CHOICES,
+  LISTING_AGE_CHOICES,
+} from 'jobby-client';
+import type { JobType, ExperienceLevel, MinimumSalary, WorkplaceType, ListingAge } from 'jobby-client';
+
+/**
+ * Input schema for the `search_jobs` MCP tool.
+ *
+ * Validates and describes every filter and pagination parameter accepted by
+ * the LinkedIn job search endpoint.
+ */
+export const SearchInputSchema = z.object({
+  keyword: z.string().optional().describe('Job title, skill, or company name to search for'),
+  location: z.string().optional().describe('City, state, or country to search in'),
+  jobType: z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]]).optional().describe('Type of employment'),
+  experienceLevel: z.enum(EXPERIENCE_LEVEL_CHOICES as [ExperienceLevel, ...ExperienceLevel[]]).optional().describe('Required experience level'),
+  minimumSalary: z.enum(MINIMUM_SALARY_CHOICES as [MinimumSalary, ...MinimumSalary[]]).optional().describe('Minimum salary'),
+  workplaceType: z.enum(WORKPLACE_TYPE_CHOICES as [WorkplaceType, ...WorkplaceType[]]).optional().describe('Workplace arrangement'),
+  listingAge: z.enum(LISTING_AGE_CHOICES as [ListingAge, ...ListingAge[]]).optional().describe('How recently the job was posted'),
+  geoId: z.string().optional().describe('LinkedIn geo ID (e.g. 103644278 for US, 101165590 for UK)'),
+  companyId: z.string().optional().describe('LinkedIn company ID (e.g. 1441 for Google, 1035 for Microsoft)'),
+  start: z.number().optional().describe('Starting offset for the query.'),
+  skip: z.number().optional().describe('Number of results to skip from the query response.'),
+  take: z.number().optional().describe('Number of results to take from the query response (after skip).'),
+});
+
+/**
+ * Input schema for the `get_job_details` MCP tool.
+ *
+ * Requires at least one of `jobUrl` or `jobId` to identify the target posting.
+ * When both are supplied the handler prefers `jobUrl`.
+ */
+export const JobDetailsInputSchema = z.object({
+  jobUrl: z.string().optional().describe('The LinkedIn job posting URL'),
+  jobId: z.string().optional().describe('The LinkedIn job ID'),
+});

@@ -1,0 +1,58 @@
+{
+  "name": "jobby-client",
+  "version": "1.0.0",
+  "description": "jobby client for job listings",
+  "license": "MIT",
+  "author": "ckarcz",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "linkedin",
+    "jobs",
+    "api",
+    "scraper",
+    "job-search",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rimraf dist coverage --glob *.tsbuildinfo",
+    "build": "tsc",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:coverage:ui": "vitest --project unit --ui --coverage.enabled",
+    "start:example": "tsx src/example.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "random-useragent": "^0.5.0",
+    "turndown": "^7.2.2",
+    "winston": "^3.19.0",
+    "zod": "^3.25 || ^4.0"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/random-useragent": "^0.3.3",
+    "@types/turndown": "^5.0.6"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

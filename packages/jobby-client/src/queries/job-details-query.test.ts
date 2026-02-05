@@ -1,0 +1,1483 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import axios from 'axios';
+import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById } from './job-details-query.js';
+import { ValidationError, RateLimitError, NetworkError } from '../types/errors.js';
+
+// Mock axios
+vi.mock('axios');
+const mockedAxios = vi.mocked(axios);
+mockedAxios.isAxiosError.mockImplementation(
+  (error): error is import('axios').AxiosError =>
+    typeof error === 'object' && error !== null && (error as Record<string, unknown>)['isAxiosError'] === true,
+);
+
+// Mock random-useragent
+vi.mock('random-useragent', () => ({
+  default: {
+    getRandom: () => 'Test User Agent',
+  },
+}));
+
+// Mock logging to keep tests silent
+vi.mock('../logging.js', () => {
+  const noopLog = (): void => {};
+  return {
+    createLogger: () => ({
+      error: noopLog,
+      warn: noopLog,
+      info: noopLog,
+      http: noopLog,
+      verbose: noopLog,
+      debug: noopLog,
+      silly: noopLog,
+      level: 'silent',
+      silent: true,
+      transports: [],
+    }),
+  };
+});
+
+/**
+ * Tests for the executeJobDetailsQueryByUrl function that fetches individual job
+ * posting pages, extracts structured data from JSON-LD and DOM elements,
+ * and returns detailed job information including salary and requirements.
+ */
+
+describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockJobDetailsHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <link rel="canonical" href="https://www.linkedin.com/jobs/view/senior-software-engineer-at-test-company-123">
+      <meta property="og:url" content="https://www.linkedin.com/jobs/view/senior-software-engineer-at-test-company-123">
+      <meta property="og:title" content="Test Company hiring Senior Software Engineer in San Francisco, CA | LinkedIn">
+      <meta property="og:description" content="Test Company is hiring a Senior Software Engineer in San Francisco, CA.">
+      <meta property="og:image" content="https://media.licdn.com/sharing-image.jpg">
+      <script type="application/ld+json">
+      {
+        "@type": "JobPosting",
+        "title": "Senior Software Engineer",
+        "description": "We are looking for a <strong>talented</strong> engineer.",
+        "datePosted": "2024-01-15",
+        "validThrough": "2024-03-15",
+        "employmentType": "FULL_TIME",
+        "jobLocationType": "TELECOMMUTE",
+        "industry": "Technology",
+        "hiringOrganization": {
+          "name": "Test Company",
+          "sameAs": "https://linkedin.com/company/test-company?trk=tracking",
+          "logo": "https://media.licdn.com/jsonld-logo.png"
+        },
+        "identifier": {
+          "name": "Test Company",
+          "value": "123"
+        },
+        "jobLocation": {
+          "address": {
+            "addressLocality": "San Francisco",
+            "addressRegion": "CA",
+            "addressCountry": "US"
+          }
+        },
+        "baseSalary": {
+          "currency": "USD",
+          "value": {
+            "minValue": 150000,
+            "maxValue": 200000,
+            "unitText": "YEAR"
+          }
+        },
+        "experienceRequirements": {
+          "monthsOfExperience": 60
+        },
+        "educationRequirements": {
+          "credentialCategory": "bachelor degree"
+        }
+      }
+      </script>
+    </head>
+    <body>
+      <section>
+        <div class="top-card-layout__entity-info-container">
+          <img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/logo.png" alt="Test Company">
+        </div>
+      </section>
+      <h1 class="top-card-layout__title">Senior Software Engineer</h1>
+      <a class="topcard__org-name-link" href="https://linkedin.com/company/test?trk=tracking">Test Company</a>
+      <span class="topcard__flavor--bullet">San Francisco, CA</span>
+      <span class="posted-time-ago__text">2 weeks ago</span>
+      <span class="num-applicants__caption">50 applicants</span>
+      <a class="apply-button" href="https://linkedin.com/jobs/view/123/apply">Easy Apply</a>
+      <div class="show-more-less-html__markup">
+        <p>Job description here</p>
+      </div>
+      <div class="description__job-criteria-item">
+        <h3 class="description__job-criteria-subheader">Seniority level</h3>
+        <span class="description__job-criteria-text">Mid-Senior level</span>
+      </div>
+      <div class="description__job-criteria-item">
+        <h3 class="description__job-criteria-subheader">Employment type</h3>
+        <span class="description__job-criteria-text">Full-time</span>
+      </div>
+      <div class="description__job-criteria-item">
+        <h3 class="description__job-criteria-subheader">Job function</h3>
+        <span class="description__job-criteria-text">Engineering</span>
+      </div>
+      <div class="description__job-criteria-item">
+        <h3 class="description__job-criteria-subheader">Industries</h3>
+        <span class="description__job-criteria-text">Software Development</span>
+      </div>
+    </body>
+    </html>
+  `;
+
+  describe('JSON-LD structured data extraction', () => {
+    it('should fetch and parse job details', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.summary.position).toBe('Senior Software Engineer');
+    expect(result.summary.company.name).toBe('Test Company');
+    expect(result.summary.location).toBe('San Francisco, CA');
+    expect(result.details.workplaceType).toBe('Remote');
+    expect(result.details.employmentType).toBe('Full-time');
+    expect(result.posted.date).toBe('2024-01-15');
+    expect(result.posted.expirationDate).toBe('2024-03-15');
+    expect(result.id).toBe('123');
+    expect(result.url).toBe('https://www.linkedin.com/jobs/view/123');
+    expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/jsonld-logo.png');
+    expect(result.summary.company.slug).toBe('test-company');
+  });
+
+  it('should extract salary information', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.details.salary).toEqual({
+      min: 150000,
+      max: 200000,
+      currency: 'USD',
+      period: 'YEAR',
+    });
+    expect(result.summary.salary).toBe('$150,000 - $200,000/yr');
+  });
+
+  it('should extract experience and education requirements', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.details.experienceRequired).toBe('5 years');
+    expect(result.details.educationRequired).toBe('bachelor degree');
+  });
+
+  it('should extract job criteria from DOM', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.details.seniorityLevel).toBe('Mid-Senior level');
+    expect(result.details.jobFunction).toBe('Engineering');
+  });
+
+  it('should remove query params from company URL', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.summary.company.pageUrl).toBe('https://linkedin.com/company/test-company');
+  });
+
+  it('should convert HTML description to markdown', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: mockJobDetailsHtml });
+
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result.details.description).not.toContain('<strong>');
+    expect(result.details.description).toContain('**talented**');
+    });
+  });
+
+  describe('validation', () => {
+    it('should throw ValidationError for empty URL', async () => {
+      await expect(executeJobDetailsQueryByUrl('')).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for whitespace-only URL', async () => {
+      await expect(executeJobDetailsQueryByUrl('   ')).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for non-URL string', async () => {
+      await expect(executeJobDetailsQueryByUrl('not-a-url')).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('not-a-url')).rejects.toThrow('Job URL must be a valid URL');
+    });
+
+    it('should throw ValidationError for plain text', async () => {
+      await expect(executeJobDetailsQueryByUrl('just some text')).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for a numeric ID', async () => {
+      await expect(executeJobDetailsQueryByUrl('123456')).rejects.toThrow(ValidationError);
+    });
+
+    it('should accept a valid HTTP URL', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123')).resolves.toBeDefined();
+    });
+  });
+
+  describe('error handling', () => {
+    it('should throw RateLimitError on 429 response', async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 429,
+          headers: { 'retry-after': '60' },
+        },
+        message: 'Rate limited',
+      };
+      mockedAxios.get.mockRejectedValueOnce(axiosError);
+
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123'))
+        .rejects.toThrow(RateLimitError);
+    });
+
+    it('should throw NetworkError on other HTTP errors', async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: { status: 404 },
+        message: 'Not found',
+      };
+      mockedAxios.get.mockRejectedValueOnce(axiosError);
+
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123'))
+        .rejects.toThrow(NetworkError);
+    });
+
+    it('should throw NetworkError on unknown errors', async () => {
+      mockedAxios.get.mockRejectedValueOnce(new Error('Network failure'));
+
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123'))
+        .rejects.toThrow(NetworkError);
+    });
+  });
+
+  describe('fallback parsing when JSON-LD is missing', () => {
+    it('should fallback to DOM parsing for all fields when JSON-LD is absent', async () => {
+      const htmlWithoutJsonLd = `
+        <html>
+        <head>
+          <link rel="canonical" href="https://www.linkedin.com/jobs/view/fallback-title-at-fallback-company-456">
+          <meta property="og:title" content="Fallback Company hiring Fallback Title in Boston, MA (Remote) | LinkedIn">
+        </head>
+        <body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/fallback-logo.png" alt="Fallback Company">
+            </div>
+          </section>
+          <h1 class="top-card-layout__title">Fallback Title</h1>
+          <a class="topcard__org-name-link" href="https://linkedin.com/company/fallback?trk=x">Fallback Company</a>
+          <span class="topcard__flavor--bullet">Boston, MA</span>
+          <span class="posted-time-ago__text">3 days ago</span>
+          <span class="num-applicants__caption">25 applicants</span>
+          <div class="show-more-less-html__markup"><p>Description text</p></div>
+          <div class="description__job-criteria-item">
+            <h3 class="description__job-criteria-subheader">Seniority level</h3>
+            <span class="description__job-criteria-text">Senior</span>
+          </div>
+          <div class="description__job-criteria-item">
+            <h3 class="description__job-criteria-subheader">Employment type</h3>
+            <span class="description__job-criteria-text">Full-time</span>
+          </div>
+          <div class="description__job-criteria-item">
+            <h3 class="description__job-criteria-subheader">Job function</h3>
+            <span class="description__job-criteria-text">Engineering</span>
+          </div>
+          <div class="description__job-criteria-item">
+            <h3 class="description__job-criteria-subheader">Industries</h3>
+            <span class="description__job-criteria-text">Technology</span>
+          </div>
+        </body>
+        </html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: htmlWithoutJsonLd });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/456');
+
+      expect(result.id).toBe('456');
+      expect(result.url).toBe('https://www.linkedin.com/jobs/view/456');
+      expect(result.summary.position).toBe('Fallback Title');
+      expect(result.summary.company.name).toBe('Fallback Company');
+      expect(result.summary.company.pageUrl).toBe('https://linkedin.com/company/fallback');
+      expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/fallback-logo.png');
+      expect(result.summary.location).toBe('Boston, MA');
+      expect(result.details.workplaceType).toBe('Remote');
+      expect(result.details.employmentType).toBe('Full-time');
+      expect(result.details.seniorityLevel).toBe('Senior');
+      expect(result.details.jobFunction).toBe('Engineering');
+      expect(result.details.industry).toBe('Technology');
+      expect(result.details.description).toBe('Description text');
+      expect(result.posted.ago).toBe('3 days ago');
+      expect(result.details.applicants).toBe('25 applicants');
+    });
+
+    it('should handle pages with invalid JSON-LD gracefully', async () => {
+      const htmlWithInvalidJsonLd = `
+        <html>
+        <head>
+          <script type="application/ld+json">{ invalid json }</script>
+        </head>
+        <body>
+          <h1 class="top-card-layout__title">DOM Title</h1>
+        </body>
+        </html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: htmlWithInvalidJsonLd });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.summary.position).toBe('DOM Title');
+    });
+
+    it('should use provided URL as fallback when page has no canonical link', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/789?trk=tracking');
+
+      expect(result.id).toBe('789');
+      expect(result.url).toBe('https://linkedin.com/jobs/view/789');
+    });
+  });
+
+  describe('workplace type scraping from meta tags', () => {
+    it('should detect Remote from og:title', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:title" content="Company hiring Engineer (Remote) | LinkedIn">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.workplaceType).toBe('Remote');
+    });
+
+    it('should detect Hybrid from og:title', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:title" content="Company hiring Engineer (Hybrid) | LinkedIn">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.workplaceType).toBe('Hybrid');
+    });
+
+    it('should detect On-site from og:title', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:title" content="Company hiring Engineer (On-Site) | LinkedIn">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.workplaceType).toBe('On-site');
+    });
+  });
+
+  describe('company logo scraping', () => {
+    it('should extract company logo from data-delayed-url attribute', async () => {
+      const html = `
+        <html><body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/company-logo.png">
+            </div>
+          </section>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/company-logo.png');
+    });
+
+    it('should return undefined when no logo image is present', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.summary.company.logoUrl).toBeUndefined();
+    });
+  });
+
+  describe('job URL resolution', () => {
+    it('should prefer canonical link over og:url', async () => {
+      const html = `
+        <html><head>
+          <link rel="canonical" href="https://www.linkedin.com/jobs/view/software-engineer-at-company-555">
+          <meta property="og:url" content="https://www.linkedin.com/jobs/view/software-engineer-at-company-999">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.id).toBe('555');
+      expect(result.url).toBe('https://www.linkedin.com/jobs/view/555');
+    });
+
+    it('should fallback to og:url when no canonical link exists', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:url" content="https://www.linkedin.com/jobs/view/software-engineer-at-company-777">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.id).toBe('777');
+      expect(result.url).toBe('https://www.linkedin.com/jobs/view/777');
+    });
+  });
+
+  describe('non-US country in location', () => {
+    it('should include non-US country in location string', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "title": "Engineer",
+            "jobLocation": {
+              "address": {
+                "addressLocality": "London",
+                "addressRegion": "England",
+                "addressCountry": "GB"
+              }
+            }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.summary.location).toBe('London, England, GB');
+    });
+
+    it('should omit US country from location string', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "title": "Engineer",
+            "jobLocation": {
+              "address": {
+                "addressLocality": "Austin",
+                "addressRegion": "TX",
+                "addressCountry": "US"
+              }
+            }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.summary.location).toBe('Austin, TX');
+    });
+  });
+
+  describe('salary text parsing from DOM', () => {
+    it('should parse salary range with USD from DOM', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">$115,000.00 - $145,000.00/yr</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 115000,
+        max: 145000,
+        currency: 'USD',
+        period: 'YEAR',
+      });
+    });
+
+    it('should parse hourly salary with EUR from DOM', async () => {
+      const html = `
+        <html><body>
+          <div class="compensation__salary">€25.00 - €35.00/hr</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 25,
+        max: 35,
+        currency: 'EUR',
+        period: 'HOUR',
+      });
+    });
+
+    it('should parse salary with GBP from DOM', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">£60,000 per year</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 60000,
+        max: 60000,
+        currency: 'GBP',
+        period: 'YEAR',
+      });
+    });
+
+    it('should return undefined salary when no salary text in DOM', async () => {
+      const html = '<html><body></body></html>';
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toBeUndefined();
+    });
+
+    it('should return undefined salary when salary text contains no numbers', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">Competitive salary</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toBeUndefined();
+    });
+
+    it('should parse single salary value (no range)', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">$100,000/yr</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 100000,
+        max: 100000,
+        currency: 'USD',
+        period: 'YEAR',
+      });
+    });
+
+    it('should parse monthly salary', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">$5,000 - $8,000/mo</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 5000,
+        max: 8000,
+        currency: 'USD',
+        period: 'MONTH',
+      });
+    });
+
+    it('should parse salary with "per hour" text', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">$25.00 per hour</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 25,
+        max: 25,
+        currency: 'USD',
+        period: 'HOUR',
+      });
+    });
+
+    it('should parse salary with "per month" text', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">€3,000 - €4,500 per month</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+      expect(result.details.salary).toEqual({
+        min: 3000,
+        max: 4500,
+        currency: 'EUR',
+        period: 'MONTH',
+      });
+    });
+  });
+
+  describe('employment type mapping', () => {
+    const testEmploymentTypes = [
+      ['FULL_TIME', 'Full-time'],
+      ['PART_TIME', 'Part-time'],
+      ['CONTRACT', 'Contract'],
+      ['TEMPORARY', 'Temporary'],
+      ['INTERNSHIP', 'Internship'],
+      ['VOLUNTEER', 'Volunteer'],
+    ];
+
+    testEmploymentTypes.forEach(([input, expected]) => {
+      it(`should map ${input} to ${expected}`, async () => {
+        const html = `
+          <html>
+          <head>
+            <script type="application/ld+json">
+            { "@type": "JobPosting", "employmentType": "${input}" }
+            </script>
+          </head>
+          <body></body>
+          </html>
+        `;
+        mockedAxios.get.mockResolvedValueOnce({ data: html });
+
+        const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+
+        expect(result.details.employmentType).toBe(expected);
+      });
+    });
+  });
+
+  describe('config options', () => {
+    it('should use custom timeout from config', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', { timeout: 30000 });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ timeout: 30000 })
+      );
+    });
+
+    it('should use abort signal from config', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      const controller = new AbortController();
+
+      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', { signal: controller.signal });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal })
+      );
+    });
+  });
+});
+
+/**
+ * Tests for the executeJobDetailsQueryRawHtmlByUrl function that returns the raw HTML
+ * response from a job posting page without parsing it into structured data.
+ */
+
+describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return raw HTML string without parsing', async () => {
+    const rawHtml = '<html><body><h1>Job Title</h1></body></html>';
+    mockedAxios.get.mockResolvedValueOnce({ data: rawHtml });
+
+    const result = await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123');
+
+    expect(result).toBe(rawHtml);
+  });
+
+  it('should fetch the provided URL', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/456');
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://linkedin.com/jobs/view/456',
+      expect.any(Object)
+    );
+  });
+
+  it('should throw ValidationError for empty URL', async () => {
+    await expect(executeJobDetailsQueryRawHtmlByUrl('')).rejects.toThrow(ValidationError);
+  });
+
+  it('should throw ValidationError for non-URL string', async () => {
+    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url')).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url')).rejects.toThrow('Job URL must be a valid URL');
+  });
+
+  it('should throw RateLimitError on 429 response', async () => {
+    const axiosError = {
+      isAxiosError: true,
+      response: {
+        status: 429,
+        headers: { 'retry-after': '60' },
+      },
+      message: 'Rate limited',
+    };
+    mockedAxios.get.mockRejectedValueOnce(axiosError);
+
+    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123'))
+      .rejects.toThrow(RateLimitError);
+  });
+
+  it('should throw NetworkError on HTTP errors', async () => {
+    const axiosError = {
+      isAxiosError: true,
+      response: { status: 500 },
+      message: 'Server error',
+    };
+    mockedAxios.get.mockRejectedValueOnce(axiosError);
+
+    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123'))
+      .rejects.toThrow(NetworkError);
+  });
+
+  it('should use custom timeout from config', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', { timeout: 30000 });
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: 30000 })
+    );
+  });
+});
+
+/**
+ * Tests for the executeJobDetailsQueryById function that builds a URL
+ * from a job ID and delegates to the URL-based query.
+ */
+
+describe('executeJobDetailsQueryById - ID-based job detail fetching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should build URL from job ID and fetch details', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+
+    await executeJobDetailsQueryById('123456');
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://www.linkedin.com/jobs/view/123456',
+      expect.any(Object)
+    );
+  });
+
+  it('should use custom baseUrl from config', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+
+    await executeJobDetailsQueryById('789', { baseUrl: 'custom.linkedin.com' });
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://custom.linkedin.com/jobs/view/789',
+      expect.any(Object)
+    );
+  });
+
+  it('should throw ValidationError for empty ID (empty URL)', async () => {
+    await expect(executeJobDetailsQueryById('')).rejects.toThrow(ValidationError);
+  });
+});
+
+/**
+ * Tests for the executeJobDetailsQueryRawHtmlById function that builds a URL
+ * from a job ID and returns the raw HTML response.
+ */
+
+describe('executeJobDetailsQueryRawHtmlById - ID-based raw HTML fetching', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should build URL from job ID and return raw HTML', async () => {
+    const rawHtml = '<html><body><h1>Job</h1></body></html>';
+    mockedAxios.get.mockResolvedValueOnce({ data: rawHtml });
+
+    const result = await executeJobDetailsQueryRawHtmlById('123456');
+
+    expect(result).toBe(rawHtml);
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://www.linkedin.com/jobs/view/123456',
+      expect.any(Object)
+    );
+  });
+
+  it('should use custom baseUrl from config', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobDetailsQueryRawHtmlById('789', { baseUrl: 'custom.linkedin.com' });
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://custom.linkedin.com/jobs/view/789',
+      expect.any(Object)
+    );
+  });
+
+  it('should throw ValidationError for empty ID', async () => {
+    await expect(executeJobDetailsQueryRawHtmlById('')).rejects.toThrow(ValidationError);
+  });
+
+  it('should throw ValidationError for whitespace-only ID', async () => {
+    await expect(executeJobDetailsQueryRawHtmlById('   ')).rejects.toThrow(ValidationError);
+  });
+});
+
+describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('unknown employment type mapping', () => {
+    it('should pass through unknown employment type as-is', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "employmentType": "FREELANCE" }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.employmentType).toBe('FREELANCE');
+    });
+  });
+
+  describe('salary display formatting edge cases', () => {
+    it('should display single value when min equals max', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "currency": "USD", "value": { "minValue": 100000, "maxValue": 100000, "unitText": "YEAR" } }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.salary).toBe('$100,000/yr');
+    });
+
+    it('should use currency code with space for unknown currency', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "currency": "CAD", "value": { "minValue": 80000, "maxValue": 120000, "unitText": "YEAR" } }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.salary).toBe('CAD 80,000 - CAD 120,000/yr');
+    });
+
+    it('should display salary without period suffix when period is unknown', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "currency": "USD", "value": { "minValue": 50000, "maxValue": 70000, "unitText": "WEEK" } }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.salary).toBe('$50,000 - $70,000');
+    });
+
+    it('should display salary without currency when currency is missing', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "value": { "minValue": 50000, "maxValue": 70000, "unitText": "YEAR" } }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.salary).toBe('50,000 - 70,000/yr');
+    });
+
+    it('should show ? for undefined min/max values in salary display', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "currency": "USD", "value": {} }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.salary).toBe('$?');
+    });
+  });
+
+  describe('experience requirement formatting', () => {
+    it('should format 0 months as 0 years', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "experienceRequirements": { "monthsOfExperience": 0 } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.experienceRequired).toBe('0 years');
+    });
+
+    it('should round 6 months to 1 years', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "experienceRequirements": { "monthsOfExperience": 6 } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.experienceRequired).toBe('1 years');
+    });
+
+    it('should format 120 months as 10 years', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "experienceRequirements": { "monthsOfExperience": 120 } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.experienceRequired).toBe('10 years');
+    });
+  });
+
+  describe('JSON-LD extraction edge cases', () => {
+    it('should ignore JSON-LD with wrong @type', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "Organization", "name": "Some Org" }
+          </script>
+        </head><body>
+          <h1 class="top-card-layout__title">DOM Title</h1>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.position).toBe('DOM Title');
+    });
+
+    it('should use last valid JSON-LD when multiple scripts are present', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "title": "First Title" }
+          </script>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "title": "Second Title" }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.position).toBe('Second Title');
+    });
+
+    it('should skip invalid JSON-LD and use valid ones', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">{ invalid }</script>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "title": "Valid Title" }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.position).toBe('Valid Title');
+    });
+  });
+
+  describe('location edge cases from JSON-LD', () => {
+    it('should return undefined location when address object is empty', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "jobLocation": { "address": {} } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.location).toBeUndefined();
+    });
+
+    it('should include only non-US country in location', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "jobLocation": { "address": { "addressCountry": "DE" } } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.location).toBe('DE');
+    });
+
+    it('should exclude US-only country from location resulting in undefined', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "jobLocation": { "address": { "addressCountry": "US" } } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.location).toBeUndefined();
+    });
+  });
+
+  describe('company logo src fallback', () => {
+    it('should fall back to src attribute when data-delayed-url is missing', async () => {
+      const html = `
+        <html><body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" src="https://media.licdn.com/fallback.png">
+            </div>
+          </section>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/fallback.png');
+    });
+
+    it('should prefer data-delayed-url over src attribute', async () => {
+      const html = `
+        <html><body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" data-delayed-url="https://media.licdn.com/primary.png" src="https://media.licdn.com/fallback.png">
+            </div>
+          </section>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/primary.png');
+    });
+  });
+
+  describe('lnkd:url meta tag fallback', () => {
+    it('should fall back to lnkd:url when canonical and og:url are missing', async () => {
+      const html = `
+        <html><head>
+          <meta property="lnkd:url" content="https://www.linkedin.com/jobs/view/engineer-at-corp-888">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.id).toBe('888');
+    });
+  });
+
+  describe('salary text parsing edge cases', () => {
+    it('should parse salary without currency symbol', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">100,000 - 150,000/yr</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.salary).toBeDefined();
+      expect(result.details.salary?.min).toBe(100000);
+      expect(result.details.salary?.max).toBe(150000);
+      expect(result.details.salary?.currency).toBeUndefined();
+      expect(result.details.salary?.period).toBe('YEAR');
+    });
+
+    it('should parse salary without period', async () => {
+      const html = `
+        <html><body>
+          <div class="salary-main-rail__compensation-value">$80,000 - $120,000</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.salary?.period).toBeUndefined();
+    });
+
+    it('should use compensation__salary as fallback when salary-main-rail is missing', async () => {
+      const html = `
+        <html><body>
+          <div class="compensation__salary">$90,000/yr</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.salary?.min).toBe(90000);
+    });
+  });
+
+  describe('extractSalary from JSON-LD edge cases', () => {
+    it('should return undefined when baseSalary has no value object', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "baseSalary": { "currency": "USD" } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.salary).toBeUndefined();
+    });
+
+    it('should handle baseSalary.value with only minValue', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "baseSalary": { "currency": "USD", "value": { "minValue": 75000, "unitText": "YEAR" } }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.salary?.min).toBe(75000);
+      expect(result.details.salary?.max).toBeUndefined();
+    });
+  });
+
+  describe('description scraping edge cases', () => {
+    it('should return undefined description when show-more-less-html__markup is empty', async () => {
+      const html = `
+        <html><body>
+          <div class="show-more-less-html__markup">   </div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.description).toBeUndefined();
+    });
+  });
+});
+
+describe('executeJobDetailsQueryById - additional edge cases', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should throw ValidationError for whitespace-only ID', async () => {
+    await expect(executeJobDetailsQueryById('   ')).rejects.toThrow(ValidationError);
+  });
+
+  it('should pass ID with surrounding whitespace to URL builder', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+    await executeJobDetailsQueryById('  123456  ');
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://www.linkedin.com/jobs/view/  123456',
+      expect.any(Object)
+    );
+  });
+});
+
+describe('executeJobDetailsQueryRawHtmlById - additional edge cases', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should throw ValidationError for whitespace-only ID', async () => {
+    await expect(executeJobDetailsQueryRawHtmlById('   ')).rejects.toThrow(ValidationError);
+  });
+
+  it('should return raw HTML for valid ID', async () => {
+    const rawHtml = '<html><body><h1>Details</h1></body></html>';
+    mockedAxios.get.mockResolvedValueOnce({ data: rawHtml });
+    const result = await executeJobDetailsQueryRawHtmlById('999');
+    expect(result).toBe(rawHtml);
+  });
+});
+
+describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('company logo JSON-LD priority', () => {
+    it('should prefer JSON-LD logo over DOM data-delayed-url', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "title": "Engineer",
+            "hiringOrganization": { "name": "Co", "logo": "https://jsonld-logo.png" }
+          }
+          </script>
+        </head><body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" data-delayed-url="https://dom-logo.png">
+            </div>
+          </section>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.logoUrl).toBe('https://jsonld-logo.png');
+    });
+
+    it('should fall back to DOM logo when JSON-LD logo absent', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "title": "Engineer", "hiringOrganization": { "name": "Co" } }
+          </script>
+        </head><body>
+          <section>
+            <div class="top-card-layout__entity-info-container">
+              <img class="artdeco-entity-image" data-delayed-url="https://dom-logo.png">
+            </div>
+          </section>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.logoUrl).toBe('https://dom-logo.png');
+    });
+  });
+
+  describe('company slug extraction', () => {
+    it('should extract slug from JSON-LD hiringOrganization.sameAs', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          {
+            "@type": "JobPosting",
+            "hiringOrganization": { "name": "Co", "sameAs": "https://linkedin.com/company/my-company?trk=x" }
+          }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.slug).toBe('my-company');
+    });
+
+    it('should fall back to DOM company page URL for slug', async () => {
+      const html = `
+        <html><body>
+          <a class="topcard__org-name-link" href="https://linkedin.com/company/dom-company?trk=x">Co</a>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.slug).toBe('dom-company');
+    });
+
+    it('should return undefined slug when no company URL available', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.slug).toBeUndefined();
+    });
+  });
+
+  describe('apply button extraction', () => {
+    it('should extract apply URL and text from .apply-button', async () => {
+      const html = `
+        <html><body>
+          <a class="apply-button" href="https://linkedin.com/jobs/view/123/apply">Easy Apply</a>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.applyUrl).toBe('https://linkedin.com/jobs/view/123/apply');
+      expect(result.details.applyText).toBe('Easy Apply');
+    });
+
+    it('should return undefined apply fields when no button present', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.applyUrl).toBeUndefined();
+      expect(result.details.applyText).toBeUndefined();
+    });
+  });
+
+  describe('og meta tag extraction', () => {
+    it('should extract shortDescription from og:description', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:description" content="A great job opportunity at Test Corp.">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.shortDescription).toBe('A great job opportunity at Test Corp.');
+    });
+
+    it('should extract sharingImageUrl from og:image', async () => {
+      const html = `
+        <html><head>
+          <meta property="og:image" content="https://media.licdn.com/sharing.jpg">
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.sharingImageUrl).toBe('https://media.licdn.com/sharing.jpg');
+    });
+
+    it('should return undefined for og fields when meta tags absent', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.shortDescription).toBeUndefined();
+      expect(result.details.sharingImageUrl).toBeUndefined();
+    });
+  });
+
+  describe('benefits info extraction', () => {
+    it('should extract from .job-details-benefits__text', async () => {
+      const html = `
+        <html><body>
+          <div class="job-details-benefits__text">Benefits Eligible: Yes</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.benefitsInfo).toBe('Benefits Eligible: Yes');
+    });
+
+    it('should return undefined when no elements present', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.benefitsInfo).toBeUndefined();
+    });
+
+    it('should normalize whitespace', async () => {
+      const html = `
+        <html><body>
+          <div class="job-details-benefits__text">Benefits   Eligible:
+          Yes</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.benefitsInfo).toBe('Benefits Eligible: Yes');
+    });
+  });
+
+  describe('incentive info extraction', () => {
+    it('should extract from .compensation__incentive-value', async () => {
+      const html = `
+        <html><body>
+          <div class="compensation__incentive-value">Bonus Eligible: Yes</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.incentiveInfo).toBe('Bonus Eligible: Yes');
+    });
+
+    it('should return undefined when no elements present', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.incentiveInfo).toBeUndefined();
+    });
+
+    it('should normalize whitespace', async () => {
+      const html = `
+        <html><body>
+          <div class="compensation__incentive-value">Bonus   Eligible:
+          Yes</div>
+        </body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.incentiveInfo).toBe('Bonus Eligible: Yes');
+    });
+  });
+
+  describe('all new fields return undefined when absent', () => {
+    it('should have all new fields as undefined for minimal HTML', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.summary.company.slug).toBeUndefined();
+      expect(result.details.applyUrl).toBeUndefined();
+      expect(result.details.applyText).toBeUndefined();
+      expect(result.details.shortDescription).toBeUndefined();
+      expect(result.details.sharingImageUrl).toBeUndefined();
+      expect(result.details.benefitsInfo).toBeUndefined();
+      expect(result.details.incentiveInfo).toBeUndefined();
+    });
+  });
+});

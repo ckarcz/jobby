@@ -1,0 +1,51 @@
+{
+  "name": "jobby-mcp",
+  "version": "1.0.0",
+  "description": "jobby mcp server",
+  "license": "MIT",
+  "author": "ckarcz",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "jobby-mcp": "./dist/server.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "linkedin",
+    "jobs",
+    "mcp",
+    "claude",
+    "model-context-protocol",
+    "ai"
+  ],
+  "scripts": {
+    "clean": "rimraf dist coverage --glob *.tsbuildinfo",
+    "build": "tsc",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --project unit --coverage",
+    "test:coverage:ui": "vitest --project unit --ui --coverage.enabled",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "jobby-client": "*",
+    "zod": "^3.25 || ^4.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
