@@ -12,7 +12,7 @@ export function createUiCommand(): Command {
       const { waitUntilExit, cleanup } = render(
         React.createElement(App),
         {
-          patchConsole: false, // Changed: avoid console interference
+          patchConsole: true,
           exitOnCtrlC: true,
         }
       );
