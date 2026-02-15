@@ -74,8 +74,4 @@ export async function main(): Promise<void> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-const isMainModule = process.argv[1]?.endsWith('main.js') || process.argv[1]?.endsWith('main.ts');
-if (isMainModule) {
-  void main();
-}
+void main();
