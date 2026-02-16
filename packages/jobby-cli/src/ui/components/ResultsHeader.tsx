@@ -23,7 +23,7 @@ export function ResultsHeader({ viewport, totalCount, showLoadDuration, loadDura
       {showLoadDuration && loadDurationSec !== null && (
         <Box position="absolute" width="100%" justifyContent="flex-end">
           <Text dimColor>
-            {icons.lightning}Fetched {fetchedCount} jobs in {loadDurationSec}s
+            {icons.lightning} Fetched {fetchedCount} jobs in {loadDurationSec}s
           </Text>
         </Box>
       )}

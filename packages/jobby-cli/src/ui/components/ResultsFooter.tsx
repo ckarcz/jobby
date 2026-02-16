@@ -17,7 +17,7 @@ export function ResultsFooter({ isOnLastItem, loadMoreStatus, hasResults }: Resu
 
   let text = '';
   if (loadMoreStatus === 'loading') {
-    text = `${icons.lightning}Fetching more jobs...`;
+    text = `${icons.lightning} Fetching more jobs...`;
   } else if (loadMoreStatus === 'exhausted') {
     text = 'No more jobs ლ(ಠ益ಠლ)';
   } else {

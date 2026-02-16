@@ -8,24 +8,15 @@ import { FilterSection } from './FilterSection.js';
 import { FocusableBox } from './FocusableBox.js';
 import { icons } from '../theme.js';
 
-interface FilterDrawerProps {
-  width: number;
-}
-
 /** Animated filter drawer panel. */
-export function FilterDrawer({ width }: FilterDrawerProps): React.ReactElement {
+export function FilterDrawer(): React.ReactElement {
   const focused = usePanelFocus('filters');
   const [draft, draftDispatch] = useFilterDraft();
   useFilterKeyboard(draft, draftDispatch);
 
-  if (width <= 0) {
-    return <Box />;
-  }
-
   return (
     <FocusableBox
       panel="filters"
-      width={width}
       flexDirection="column"
       borderStyle="single"
       paddingX={1}
