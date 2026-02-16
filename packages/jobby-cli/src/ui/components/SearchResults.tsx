@@ -39,8 +39,8 @@ export function SearchResults(): React.ReactElement {
         ref={listRef}
         items={totalResults}
         selectedIndex={selectedJobIndex}
-        keyExtractor={(job, i) => `job-${String(i)}`}
-        height='auto'
+        keyExtractor={(_, i) => `job-${String(i)}`}
+        height='auto' 
         reservedLines={VIRTUAL_LIST_RESERVED_LINES}
         itemHeight={JOBCARD_HEIGHT}
         onViewportChange={setViewport}

@@ -1,20 +1,79 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": true
-  }
+    // ============================================
+    // LANGUAGE & ENVIRONMENT
+    // ============================================
+    "target": "ES2022",                           // JavaScript version to compile to
+    "module": "NodeNext",                         // Module system (NodeNext = ESM + CJS hybrid)
+    "moduleResolution": "NodeNext",               // How TypeScript resolves module imports
+    "lib": ["ES2022", "DOM"],                            // Built-in type definitions (remove DOM if not needed)
+
+    // ============================================
+    // STRICT TYPE CHECKING
+    // ============================================
+    "strict": true,                               // Enable all strict type-checking options
+    "noImplicitAny": true,                        // Error on variables without explicit types (redundant with strict)
+    "strictNullChecks": true,                     // null and undefined must be explicitly handled (redundant with strict)
+    "strictFunctionTypes": true,                  // Function parameter types checked contravariantly (redundant with strict)
+    "strictBindCallApply": true,                  // Strict checking for bind, call, and apply (redundant with strict)
+    "strictPropertyInitialization": true,         // Class properties must be initialized (redundant with strict)
+    "noImplicitThis": true,                       // Error when 'this' has implicit 'any' type (redundant with strict)
+    "alwaysStrict": true,                         // Parse in strict mode and emit "use strict" (redundant with strict)
+    "useUnknownInCatchVariables": true,           // Catch variables are 'unknown' instead of 'any'
+
+    // ============================================
+    // ADDITIONAL TYPE SAFETY
+    // ============================================
+    "noImplicitReturns": true,                    // All code paths in function must return a value
+    "noFallthroughCasesInSwitch": true,           // Switch cases must have break/return
+    "noUncheckedIndexedAccess": true,             // Index signatures return 'T | undefined'
+    "exactOptionalPropertyTypes": true,           // undefined ≠ missing property (exact optionals)
+    "noPropertyAccessFromIndexSignature": true,   // Use bracket notation for index signature access
+    "noImplicitOverride": true,                   // Derived class methods must use 'override' keyword
+
+    // ============================================
+    // CODE QUALITY & UNUSED CODE
+    // ============================================
+    "noUnusedLocals": true,                       // Error on unused local variables
+    "noUnusedParameters": true,                   // Error on unused function parameters
+    "allowUnusedLabels": false,                   // Error on unused labels
+    "allowUnreachableCode": false,                // Error on unreachable code
+
+    // ============================================
+    // MODULE & IMPORT RESOLUTION
+    // ============================================
+    "esModuleInterop": true,                      // Enable CommonJS/ESM interop
+    "forceConsistentCasingInFileNames": true,     // Ensure import paths match file casing
+    "isolatedModules": true,                      // Each file must be independently compilable
+    "verbatimModuleSyntax": true,                 // Require explicit 'type' keyword for type imports
+    "resolveJsonModule": true,                    // Allow importing .json files
+
+    // ============================================
+    // EMIT & OUTPUT
+    // ============================================
+    "outDir": "./dist",                           // Output directory for compiled files
+    "rootDir": "./src",                           // Root directory of source files
+    "declaration": true,                          // Generate .d.ts declaration files
+    "declarationMap": true,                       // Generate source maps for .d.ts files
+    "sourceMap": true,                            // Generate .js.map source map files
+    "removeComments": false,                      // Keep comments in output (optional)
+
+    // ============================================
+    // PERFORMANCE & OPTIMIZATION
+    // ============================================
+    "skipLibCheck": true                          // Skip type checking of .d.ts files (faster builds)
+  },
+
+  // ============================================
+  // PROJECT FILES
+  // ============================================
+  "include": [
+    "src/**/*"                                    // Include all files in src directory
+  ],
+  "exclude": [
+    "node_modules",                               // Exclude dependencies
+    "dist",                                       // Exclude build output
+    "**/*.spec.ts",                               // Exclude test files
+    "**/*.test.ts"                                // Exclude test files (additional pattern)
+  ]
 }

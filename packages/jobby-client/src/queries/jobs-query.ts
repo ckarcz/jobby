@@ -73,7 +73,7 @@ async function fetchJobsHtml(
   const headers = createRequestHeaders(config.userAgent);
 
   try {
-    const queryUrl = buildQueryUrl(start, normalizedJobSearchParams, normalizedPaginationParams, config.baseUrl);
+    const queryUrl = buildQueryUrl(config.baseUrl, normalizedJobSearchParams, start);
 
     logger.verbose(`Executing query ${queryUrl}...`);
 
@@ -258,13 +258,12 @@ function appendStringParam(params: URLSearchParams, key: string, value: string |
  * Constructs a full URL with query string by delegating each parameter type
  * to a dedicated append helper.
  *
- * @param start - The pagination start offset
- * @param searchParams - Normalized job search filter parameters
- * @param paginationParams - Normalized pagination parameters
  * @param baseUrl - The base LinkedIn hostname
+ * @param searchParams - Normalized job search filter parameters
+ * @param start - The pagination start offset
  * @returns The fully constructed query URL string
  */
-function buildQueryUrl(start: number, searchParams: JobSearchParams, paginationParams: PaginationParams, baseUrl: string): string {
+function buildQueryUrl(baseUrl: string, searchParams: JobSearchParams, start: number): string {
   const url = `https://${baseUrl}/jobs-guest/jobs/api/seeMoreJobPostings/search?`;
   const urlParams = new URLSearchParams();
 

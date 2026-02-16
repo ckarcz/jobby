@@ -1,3 +1,4 @@
+import type { Help} from 'commander';
 import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import { createRequire } from 'node:module';
@@ -26,7 +27,7 @@ export const activeCliArgs: { current: JobSearchQueryCliArgs | JobDetailsQueryCl
 };
 
 /** Help formatting configuration for Commander.js with colored output. */
-export const helpConfig = {
+export const helpConfig: Partial<Help> = {
   optionDescription(option: Option): string {
     const parts: string[] = [option.description];
     if (option.argChoices) {

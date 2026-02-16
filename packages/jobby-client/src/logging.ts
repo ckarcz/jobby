@@ -85,7 +85,7 @@ export function createLogger(config?: LoggingConfig): Logger {
   if (config?.onLog) {
     const onLog = config.onLog;
     const callbackTransport = new class extends Transport {
-      log(info: { level: string; message: string }, callback: () => void): void {
+      override log(info: { level: string; message: string }, callback: () => void): void {
         onLog({ level: info.level, message: info.message, timestamp: new Date() });
         callback();
       }
