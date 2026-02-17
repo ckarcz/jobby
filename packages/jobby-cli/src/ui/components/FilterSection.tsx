@@ -58,11 +58,11 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
 }
 
 /** Renders a text input field. */
-function TextFilterInput({ textValue, title, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
+function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
   return (
     <Box paddingLeft={1}>
       {focused ? (
-        <TextInput defaultValue={textValue} placeholder={`Enter ${title.toLowerCase()}...`} onChange={onTextChange} />
+        <TextInput defaultValue={textValue} onChange={onTextChange} />
       ) : (
         <Text dimColor>{textValue || '(none)'}</Text>
       )}

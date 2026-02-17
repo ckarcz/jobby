@@ -16,9 +16,9 @@ export function StatusBar(): React.ReactElement {
   } else if (focusedPanel === 'filters') {
     leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Apply  [\\]:Close  [Esc]:Results';
   } else if (focusedPanel === 'results') {
-    leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [↑↓]:Navigate  [Esc]:Clear  [Q]:Quit`;
+    leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [↑↓]:Navigate  [Esc]:Clear`;
   } else {
-    leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [Q]:Quit`;
+    leftHints = `[/]:Search  [\\]:Filters${filterBadge}`;
   }
 
   const rightInfo = `[${String(terminalWidth)}x${String(terminalHeight)}]`;
