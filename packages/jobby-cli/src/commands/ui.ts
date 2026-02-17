@@ -14,6 +14,7 @@ export function createUiCommand(): Command {
         {
           patchConsole: true,
           exitOnCtrlC: true,
+          incrementalRendering: true,
         }
       );
 
