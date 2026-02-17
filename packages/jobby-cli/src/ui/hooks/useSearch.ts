@@ -23,7 +23,7 @@ export function useSearch(): UseSearchResult {
 
       dispatch({ type: 'SEARCH_START' });
 
-      const client = new JobbyClient({ signal: controller.signal });
+      const client = new JobbyClient({ signal: controller.signal, logging: { level: 'silent' } });
       const params = buildSearchParams(keyword, filters);
 
       void client.jobs.queryForJobs(params)
@@ -62,7 +62,7 @@ export function useSearch(): UseSearchResult {
     const nextStart = searchPagination.start + searchPagination.responseCount;
     dispatch({ type: 'LOAD_MORE_START' });
 
-    const client = new JobbyClient({ signal: controller.signal });
+    const client = new JobbyClient({ signal: controller.signal, logging: { level: 'silent' } });
 
     void client.jobs.queryForJobs(searchQuery, { start: nextStart })
       .then((response) => {

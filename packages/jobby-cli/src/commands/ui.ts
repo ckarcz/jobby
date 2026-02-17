@@ -18,8 +18,12 @@ export function createUiCommand(): Command {
   const command = new Command('ui')
     .configureHelp(helpConfig)
     .description('launch interactive terminal UI for searching jobs')
-    .action(async () => {
-      swapScreenBuffer();
+    .option('--no-swap', 'skip terminal screen buffer swapping')
+    .action(async (_opts, cmd: Command) => {
+      const swap = cmd.opts<{ swap: boolean }>().swap;
+      if (swap) {
+        swapScreenBuffer();
+      }
       const { waitUntilExit, cleanup } = render(
         React.createElement(App),
         {
@@ -32,7 +36,9 @@ export function createUiCommand(): Command {
         await waitUntilExit();
       } finally {
         cleanup();
-        restoreScreenBuffer();
+        if (swap) {
+          restoreScreenBuffer();
+        }
       }
     });
   return command;
