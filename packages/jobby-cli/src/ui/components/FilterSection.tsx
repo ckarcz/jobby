@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, Text } from 'ink';
-import { TextInput } from '@inkjs/ui';
+import { Box, Text, useInput } from 'ink';
 import { glyphs, colors } from '../theme.js';
 
 interface BaseProps {
@@ -26,6 +25,7 @@ interface TextFilterSectionProps extends BaseProps {
   type: 'text';
   textValue: string;
   onTextChange: (value: string) => void;
+  maxLength?: number | undefined;
 }
 
 type FilterSectionProps = CheckboxFilterSectionProps | RadioFilterSectionProps | TextFilterSectionProps;
@@ -46,9 +46,9 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
         }
 
         return (
-          <Box key={option} paddingLeft={1}>
+          <Box key={option}>
             <Text {...(isCursor ? { color: colors.focus } : {})}>
-              {isCursor ? glyphs.cursor : ' '} {marker} {option}
+              {isCursor ? glyphs.arrowRight : ' '}{marker} {option}
             </Text>
           </Box>
         );
@@ -57,12 +57,31 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
   );
 }
 
-/** Renders a text input field. */
-function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
+/** Renders a controlled text input field with optional maxLength. */
+function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFilterSectionProps): React.ReactElement {
+  useInput((input, key) => {
+    if (!focused) {
+      return;
+    }
+
+    if (key.backspace || key.delete) {
+      onTextChange(textValue.slice(0, -1));
+      return;
+    }
+
+    if (input && !key.ctrl && !key.meta) {
+      if (maxLength !== undefined && textValue.length >= maxLength) {
+        return;
+      }
+      const next = textValue + input;
+      onTextChange(maxLength !== undefined ? next.slice(0, maxLength) : next);
+    }
+  });
+
   return (
     <Box paddingLeft={1}>
       {focused ? (
-        <TextInput defaultValue={textValue} onChange={onTextChange} />
+        <Text>{textValue}<Text inverse> </Text></Text>
       ) : (
         <Text dimColor>{textValue || '(none)'}</Text>
       )}

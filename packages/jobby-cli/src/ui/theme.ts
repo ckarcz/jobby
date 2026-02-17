@@ -14,9 +14,9 @@ export const glyphs = {
   tee: '├',
   ellipsis: '…',
   checkboxOff: '[ ]',
-  checkboxOn: '[x]',
-  radioOff: '○',
-  radioOn: '●',
+  checkboxOn: '[✓]',
+  radioOff: '( )',
+  radioOn: '(◉)',
   cursor: '▸',
 };
 

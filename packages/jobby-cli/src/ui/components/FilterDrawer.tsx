@@ -39,6 +39,7 @@ export function FilterDrawer(): React.ReactElement {
                   textValue={getTextValue(draft.selections, section.key)}
                   focused={isFocused}
                   onTextChange={(value) => { draftDispatch({ type: 'SET_TEXT', key: section.key, value }); }}
+                  maxLength={section.maxLength}
                 />
               </Box>
             );

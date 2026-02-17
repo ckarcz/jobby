@@ -57,6 +57,7 @@ export interface TextFilterSectionDef {
   title: string;
   type: 'text';
   options: [];
+  maxLength?: number;
 }
 
 /** Discriminated union of all filter section definitions. */
@@ -69,8 +70,8 @@ export const filterSections: FilterSectionDef[] = [
   { key: 'workplaceType', title: 'Workplace Type', type: 'checkbox', options: WORKPLACE_TYPE_CHOICES as string[] },
   { key: 'minimumSalary', title: 'Minimum Salary', type: 'radio', options: MINIMUM_SALARY_CHOICES as string[] },
   { key: 'listingAge', title: 'Listing Age', type: 'radio', options: LISTING_AGE_CHOICES as string[] },
-  { key: 'geoId', title: 'Geo ID', type: 'text', options: [] },
-  { key: 'companyId', title: 'Company ID', type: 'text', options: [] },
+  { key: 'geoId', title: 'Geo ID', type: 'text', options: [], maxLength: 16 },
+  { key: 'companyId', title: 'Company ID', type: 'text', options: [], maxLength: 16 },
 ];
 
 /** Count how many filters are actively set. */
