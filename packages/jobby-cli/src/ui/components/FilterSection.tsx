@@ -64,6 +64,10 @@ function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFi
       return;
     }
 
+    if (key.return) {
+      return;
+    }
+
     if (key.backspace || key.delete) {
       onTextChange(textValue.slice(0, -1));
       return;
@@ -79,11 +83,25 @@ function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFi
   });
 
   return (
-    <Box paddingLeft={1}>
+    <Box>
       {focused ? (
-        <Text color={colors.focus}>{glyphs.arrowRight}{textValue}</Text>
+        <>
+          {textValue ? (
+            <>
+              <Text color={colors.focus}>{glyphs.arrowRight}</Text>
+              <Text>{textValue}</Text>
+            </>
+          ) : (
+            <>
+              <Text color={colors.focus}>{glyphs.arrowRight}</Text>
+              <Text dimColor>{textValue || '(none)'}</Text>
+            </>
+          )}
+        </>
       ) : (
-        <Text dimColor>{textValue || '(none)'}</Text>
+        <Box paddingLeft={1}>
+          <Text dimColor>{textValue || '(none)'}</Text>
+        </Box>
       )}
     </Box>
   );
