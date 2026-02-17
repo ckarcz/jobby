@@ -62,20 +62,72 @@ export function filterDrawerReducer(state: FilterDrawerState, action: FilterDraw
     }
     case 'MOVE_UP': {
       const section = getSection(state.sections, state.activeSectionIndex);
+
+      // Text sections have no options — move to previous section
       if (section.type === 'text') {
+        if (state.activeSectionIndex > 0) {
+          const prevIdx = state.activeSectionIndex - 1;
+          const prevSection = getSection(state.sections, prevIdx);
+          const cursors = [...state.cursorIndexes];
+          if (prevSection.type !== 'text') {
+            cursors[prevIdx] = prevSection.options.length - 1;
+          }
+          return { ...state, activeSectionIndex: prevIdx, cursorIndexes: cursors };
+        }
         return state;
       }
+
+      const cursor = getCursorIndex(state.cursorIndexes, state.activeSectionIndex);
+
+      // At top of section — move to previous section
+      if (cursor <= 0 && state.activeSectionIndex > 0) {
+        const prevIdx = state.activeSectionIndex - 1;
+        const prevSection = getSection(state.sections, prevIdx);
+        const cursors = [...state.cursorIndexes];
+        if (prevSection.type !== 'text') {
+          cursors[prevIdx] = prevSection.options.length - 1;
+        }
+        return { ...state, activeSectionIndex: prevIdx, cursorIndexes: cursors };
+      }
+
+      // Normal movement within section
       const cursors = [...state.cursorIndexes];
-      cursors[state.activeSectionIndex] = Math.max(0, getCursorIndex(cursors, state.activeSectionIndex) - 1);
+      cursors[state.activeSectionIndex] = Math.max(0, cursor - 1);
       return { ...state, cursorIndexes: cursors };
     }
     case 'MOVE_DOWN': {
       const section = getSection(state.sections, state.activeSectionIndex);
+
+      // Text sections have no options — move to next section
       if (section.type === 'text') {
+        if (state.activeSectionIndex < state.sections.length - 1) {
+          const nextIdx = state.activeSectionIndex + 1;
+          const nextSection = getSection(state.sections, nextIdx);
+          const cursors = [...state.cursorIndexes];
+          if (nextSection.type !== 'text') {
+            cursors[nextIdx] = 0;
+          }
+          return { ...state, activeSectionIndex: nextIdx, cursorIndexes: cursors };
+        }
         return state;
       }
+
+      const cursor = getCursorIndex(state.cursorIndexes, state.activeSectionIndex);
+
+      // At bottom of section — move to next section
+      if (cursor >= section.options.length - 1 && state.activeSectionIndex < state.sections.length - 1) {
+        const nextIdx = state.activeSectionIndex + 1;
+        const nextSection = getSection(state.sections, nextIdx);
+        const cursors = [...state.cursorIndexes];
+        if (nextSection.type !== 'text') {
+          cursors[nextIdx] = 0;
+        }
+        return { ...state, activeSectionIndex: nextIdx, cursorIndexes: cursors };
+      }
+
+      // Normal movement within section
       const cursors = [...state.cursorIndexes];
-      cursors[state.activeSectionIndex] = Math.min(section.options.length - 1, getCursorIndex(cursors, state.activeSectionIndex) + 1);
+      cursors[state.activeSectionIndex] = Math.min(section.options.length - 1, cursor + 1);
       return { ...state, cursorIndexes: cursors };
     }
     case 'TOGGLE_OPTION': {
