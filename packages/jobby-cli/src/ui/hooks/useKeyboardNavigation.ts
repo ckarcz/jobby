@@ -1,10 +1,10 @@
-import { useApp, useInput } from 'ink';
+import { useInput } from 'ink';
 import { useAppState, useAppDispatch } from '../state/context.js';
 
 /**
  * Global keyboard handler — routes shortcuts based on current panel focus.
  *
- * Printable character shortcuts (`\`, `/`, `q`) are only handled when no
+ * Printable character shortcuts (`\`, `/`) are only handled when no
  * text input is active (i.e. not in search or filters panel). This prevents
  * shortcut characters from leaking into TextInput components, since Ink
  * fires all useInput handlers with no stopPropagation mechanism.
@@ -13,7 +13,6 @@ import { useAppState, useAppDispatch } from '../state/context.js';
  * where they only fire when the active section is not a text input.
  */
 export function useKeyboardNavigation(): void {
-  const { exit } = useApp();
   const state = useAppState();
   const dispatch = useAppDispatch();
 
@@ -37,11 +36,6 @@ export function useKeyboardNavigation(): void {
 
     if (key.escape && state.focusedPanel === 'filters') {
       dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
-      return;
-    }
-
-    if (input === 'q' && !inTextInput) {
-      exit();
       return;
     }
   });
