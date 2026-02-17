@@ -24,20 +24,20 @@
     // ============================================
     // ADDITIONAL TYPE SAFETY
     // ============================================
-    "noImplicitReturns": true,                    // All code paths in function must return a value
-    "noFallthroughCasesInSwitch": true,           // Switch cases must have break/return
+    "noImplicitReturns": true,                    // All code paths in function must return a value (no ESLint equivalent)
     "noUncheckedIndexedAccess": true,             // Index signatures return 'T | undefined'
     "exactOptionalPropertyTypes": true,           // undefined ≠ missing property (exact optionals)
     "noPropertyAccessFromIndexSignature": true,   // Use bracket notation for index signature access
     "noImplicitOverride": true,                   // Derived class methods must use 'override' keyword
 
     // ============================================
-    // CODE QUALITY & UNUSED CODE
+    // LINTING (disabled — handled by ESLint)
     // ============================================
-    "noUnusedLocals": true,                       // Error on unused local variables
-    "noUnusedParameters": true,                   // Error on unused function parameters
-    "allowUnusedLabels": false,                   // Error on unused labels
-    "allowUnreachableCode": false,                // Error on unreachable code
+    "noUnusedLocals": false,                      // → @typescript-eslint/no-unused-vars
+    "noUnusedParameters": false,                  // → @typescript-eslint/no-unused-vars
+    "allowUnusedLabels": true,                    // → no-unused-labels (eslint/recommended)
+    "allowUnreachableCode": false,                // → no-unreachable (eslint/recommended)
+    "noFallthroughCasesInSwitch": false,          // → no-fallthrough (eslint/recommended)
 
     // ============================================
     // MODULE & IMPORT RESOLUTION
