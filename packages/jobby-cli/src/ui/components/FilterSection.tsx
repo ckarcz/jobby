@@ -81,7 +81,7 @@ function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFi
   return (
     <Box paddingLeft={1}>
       {focused ? (
-        <Text>{textValue + '▏'}</Text>
+        <Text color={colors.focus}>{glyphs.arrowRight}{textValue}</Text>
       ) : (
         <Text dimColor>{textValue || '(none)'}</Text>
       )}
