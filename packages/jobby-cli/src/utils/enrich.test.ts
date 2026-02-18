@@ -124,8 +124,8 @@ describe('fetchDetailsInBatches', () => {
     expect(result[1]!.details).toBeNull();
   });
 
-  it('should yield null details when job has no id or url', async () => {
-    const jobs = [makeJob({ id: undefined, url: undefined })];
+  it('should yield null details when job has no id', async () => {
+    const jobs = [makeJob({ id: undefined })];
     const fetchFn = vi.fn();
 
     const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
@@ -134,7 +134,7 @@ describe('fetchDetailsInBatches', () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
-  it('should prefer id over url', async () => {
+  it('should use job id when fetching details', async () => {
     const jobs = [makeJob({ id: '42', url: 'https://linkedin.com/jobs/view/42' })];
     const fetchFn = vi.fn().mockResolvedValue(mockDetails);
 
@@ -143,19 +143,8 @@ describe('fetchDetailsInBatches', () => {
     expect(fetchFn).toHaveBeenCalledWith('42');
   });
 
-  it('should fall back to url when id is missing', async () => {
+  it('should yield null details when id is missing regardless of url', async () => {
     const jobs = [makeJob({ id: undefined, url: 'https://linkedin.com/jobs/view/99' })];
-    const fetchFn = vi.fn().mockResolvedValue(mockDetails);
-
-    await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
-
-    expect(fetchFn).toHaveBeenCalledWith('https://linkedin.com/jobs/view/99');
-  });
-
-  it('should yield null details when id is empty string (falsy) even if url is set', async () => {
-    // ?? only catches null/undefined, not empty string, so id='' is used as-is
-    // then !id is true for empty string, so it rejects
-    const jobs = [makeJob({ id: '', url: 'https://linkedin.com/jobs/view/99' })];
     const fetchFn = vi.fn();
 
     const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
@@ -164,8 +153,8 @@ describe('fetchDetailsInBatches', () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
-  it('should reject when both id and url are empty strings', async () => {
-    const jobs = [makeJob({ id: '', url: '' })];
+  it('should yield null details when id is empty string', async () => {
+    const jobs = [makeJob({ id: '' })];
     const fetchFn = vi.fn();
 
     const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });

@@ -56,11 +56,10 @@ export async function fetchDetailsInBatches(
     const batch = jobs.slice(i, i + batchSize);
     const settled = await Promise.allSettled(
       batch.map((job) => {
-        const id = job.id ?? job.url;
-        if (!id) {
-          return Promise.reject(new Error('Job has no id or url'));
+        if (!job.id) {
+          return Promise.reject(new Error('Job has no id'));
         }
-        return fetchFn(id);
+        return fetchFn(job.id);
       }),
     );
 
