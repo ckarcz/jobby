@@ -74,7 +74,7 @@ async function fetchJobDetailsHtml(
 
     return { html: response.data, config, startTime };
   } catch (error: unknown) {
-    handleHttpError(error, logger);
+    return handleHttpError(error, logger);
   }
 }
 

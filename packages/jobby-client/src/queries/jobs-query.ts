@@ -90,7 +90,7 @@ async function fetchJobsHtml(
 
     return { html: response.data, queryUrl, config, normalizedJobSearchParams, normalizedPaginationParams, start, startTime };
   } catch (error: unknown) {
-    handleHttpError(error, logger);
+    return handleHttpError(error, logger);
   }
 }
 
