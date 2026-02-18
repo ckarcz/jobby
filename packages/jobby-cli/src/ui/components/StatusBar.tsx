@@ -12,7 +12,7 @@ export function StatusBar(): React.ReactElement {
 
   let leftHints: string;
   if (focusedPanel === 'search') {
-    leftHints = '[Enter]:Search  [Esc]:Cancel  [Type]:Keyword';
+    leftHints = '[Type]:Keyword  [Enter]:Search  [Esc]:Cancel';
   } else if (focusedPanel === 'filters') {
     leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Apply  [Esc]:Results';
   } else if (focusedPanel === 'results') {
