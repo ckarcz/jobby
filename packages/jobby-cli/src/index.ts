@@ -11,6 +11,7 @@ export type { OutputFormatter, OutputFormatterOptions } from './formatters/index
 export { registerFormatter, getFormatter, registerDefaultFormatters, jsonFormatter, xmlFormatter, yamlFormatter, csvFormatter, htmlFormatter } from './formatters/index.js';
 export { logLevelChoices, formatChoices } from './constants.js';
 export { outputResult } from './utils/output.js';
+export type { OutputOptions } from './utils/output.js';
 export { readFromStream } from './utils/stream.js';
 export { parseNumber } from './utils/parse.js';
 export { formatErrorMessage } from './utils/errors.js';

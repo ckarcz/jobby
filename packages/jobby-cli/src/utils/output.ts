@@ -1,7 +1,15 @@
 import { writeFileSync } from 'node:fs';
 import { highlight } from 'cli-highlight';
-import type { JobbyCliArgs, OutputFormat } from '../types.js';
+import type { OutputFormat } from '../types.js';
 import { getFormatter } from '../formatters/index.js';
+
+/** The subset of CLI args consumed by {@link outputResult}. */
+export interface OutputOptions {
+  format?: OutputFormat | undefined;
+  pretty?: boolean | undefined;
+  file?: string | undefined;
+  noColor?: boolean | undefined;
+}
 
 const highlightLanguageMap: Partial<Record<OutputFormat, string>> = {
   json: 'json',
@@ -22,7 +30,7 @@ const highlightLanguageMap: Partial<Record<OutputFormat, string>> = {
  * @param opts - CLI arguments controlling format, file output, color, and pretty printing.
  * @returns Resolves when the output has been written.
  */
-export async function outputResult(data: unknown, opts: JobbyCliArgs): Promise<void> {
+export async function outputResult(data: unknown, opts: OutputOptions): Promise<void> {
   const format = opts.format ?? 'json';
   const formatter = getFormatter(format);
   const output = await formatter.format(data, { pretty: opts.pretty });
