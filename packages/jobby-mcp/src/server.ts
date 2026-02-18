@@ -65,6 +65,9 @@ export async function main(): Promise<void> {
   console.error('Jobby MCP server started.');
 }
 
+// Guard against running main() when this file is imported as a module (e.g.
+// in tests). Unlike main.ts, server.ts is designed to be importable, so we
+// check whether this file is the Node.js entry point before auto-invoking.
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
   void main();
 }
