@@ -57,6 +57,4 @@ export {
   type SearchMetadata,
   type SearchResponse,
   type ProgressInfo,
-  JsonLdJobPostingSchema,
-  type JsonLdJobPosting,
 } from './responses.js';

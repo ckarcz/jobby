@@ -2,13 +2,12 @@ import * as cheerio from 'cheerio';
 import axios, { type AxiosRequestConfig } from 'axios';
 import { type ClientConfig, resolveConfig, type ResolvedClientConfig } from '../config.js';
 import {
-  type JsonLdJobPosting,
-  JsonLdJobPostingSchema,
   type JobDetails,
   type JobDetailsInfo,
   ParsingError,
   ValidationError,
 } from '../types/index.js';
+import { type JsonLdJobPosting, JsonLdJobPostingSchema } from '../types/responses.js';
 import { handleHttpError, createDetailsRequestHeaders } from '../utils/http.js';
 import { urlWithNoQueryParams, extractJobIdFromUrl, buildCanonicalJobUrl, extractCompanySlug } from '../utils/url.js';
 import { htmlToMarkdown } from '../utils/html.js';
