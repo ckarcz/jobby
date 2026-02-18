@@ -376,7 +376,7 @@ describe('main - MCP server startup', () => {
   it('should create server, connect transport, and log startup message', async () => {
     vi.resetModules();
 
-    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { main } = await import('./server.js');
     await main();
@@ -389,8 +389,8 @@ describe('main - MCP server startup', () => {
 
     const serverInstance = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
     expect(serverInstance.connect).toHaveBeenCalled();
-    expect(infoSpy).toHaveBeenCalledWith('Jobby MCP server started.');
+    expect(errorSpy).toHaveBeenCalledWith('Jobby MCP server started.');
 
-    infoSpy.mockRestore();
+    errorSpy.mockRestore();
   });
 });
