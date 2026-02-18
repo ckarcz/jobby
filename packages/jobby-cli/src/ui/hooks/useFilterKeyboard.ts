@@ -17,7 +17,7 @@ export function useFilterKeyboard(
 
   // Use ref-based handler pattern to prevent useInput from re-subscribing on every render.
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const handlerRef = useRef((_input: string, _key: { escape: boolean; return: boolean; tab: boolean; shift: boolean; upArrow: boolean; downArrow: boolean }): void => {});
+  const handlerRef = useRef((_input: string, _key: { escape: boolean; return: boolean; tab: boolean; shift: boolean; upArrow: boolean; downArrow: boolean }): void => { });
   handlerRef.current = (_input, key): void => {
     const activeSection = draft.sections[draft.activeSectionIndex];
     const isTextSection = activeSection?.type === 'text';
@@ -29,12 +29,14 @@ export function useFilterKeyboard(
     }
 
     if (_input === '/' && !isTextSection) {
+      appDispatch({ type: 'CLOSE_FILTER_DRAWER' });
       appDispatch({ type: 'FOCUS_PANEL', panel: 'search' });
       return;
     }
 
     if (key.return) {
       appDispatch({ type: 'APPLY_FILTERS', filters: draft.selections });
+      appDispatch({ type: 'CLOSE_FILTER_DRAWER' });
       search(appState.searchKeyword, draft.selections);
       return;
     }

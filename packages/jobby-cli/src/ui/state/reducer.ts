@@ -76,7 +76,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'OPEN_FILTER_DRAWER':
       return { ...state, filterDrawerOpen: true };
     case 'CLOSE_FILTER_DRAWER':
-      return state.filterDrawerOpen ? { ...state, filterDrawerOpen: false } : state;
+      return { ...state, filterDrawerOpen: false };
     case 'APPLY_FILTERS':
       return { ...state, searchFilters: action.filters };
   }
