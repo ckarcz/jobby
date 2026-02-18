@@ -84,6 +84,9 @@ export function createLogger(config?: LoggingConfig): Logger {
 
   if (config?.onLog) {
     const onLog = config.onLog;
+    // Anonymous class expression is the idiomatic way to create a one-off
+    // Winston transport inline without polluting the module scope with a
+    // named class that is only used in this single branch.
     const callbackTransport = new class extends Transport {
       override log(info: { level: string; message: string }, callback: () => void): void {
         onLog({ level: info.level, message: info.message, timestamp: new Date() });
