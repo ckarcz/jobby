@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Box, Text, type DOMElement } from 'ink';
+import { Box, type DOMElement } from 'ink';
 import { VirtualList, type VirtualListRef, type ViewportState } from 'ink-virtual-list';
 import { useAppState } from '../state/context.js';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
@@ -10,7 +10,6 @@ import { JOBCARD_HEIGHT, JobCard } from './JobCard.js';
 import { ResultsHeader } from './ResultsHeader.js';
 import { ResultsFooter } from './ResultsFooter.js';
 import { VIRTUAL_LIST_RESERVED_LINES, LOAD_DURATION_DISPLAY_MS } from '../constants.js';
-import { Modal } from './Modal.js';
 
 /** Scrollable list of job search results. */
 export function SearchResults(): React.ReactElement {
@@ -54,9 +53,6 @@ export function SearchResults(): React.ReactElement {
         loadMoreStatus={loadMoreStatus}
         hasResults={totalResults.length > 0}
       />
-      <Modal title="Confirmation" isOpen={true}>
-        <Text>Are you sure?</Text>
-      </Modal>
     </Box>
   );
 }
