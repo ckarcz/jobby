@@ -62,7 +62,7 @@ export async function main(): Promise<void> {
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.info('Jobby MCP server started.');
+  console.error('Jobby MCP server started.');
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
