@@ -90,9 +90,14 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
   const envTimeout = process.env['LINKEDIN_JOBS_TIMEOUT'];
   const envBaseUrl = process.env['LINKEDIN_JOBS_BASE_URL'];
 
+  const parsedEnvTimeout = envTimeout ? Number(envTimeout) : undefined;
+  const resolvedEnvTimeout = parsedEnvTimeout !== undefined && Number.isFinite(parsedEnvTimeout)
+    ? parsedEnvTimeout
+    : undefined;
+
   return {
     baseUrl: config?.baseUrl ?? envBaseUrl ?? DEFAULT_CLIENT_CONFIG.baseUrl,
-    timeout: config?.timeout ?? (envTimeout ? Number(envTimeout) : DEFAULT_CLIENT_CONFIG.timeout),
+    timeout: config?.timeout ?? resolvedEnvTimeout ?? DEFAULT_CLIENT_CONFIG.timeout,
     userAgent: config?.userAgent,
     requestDelay: {
       baseMs: config?.requestDelay?.baseMs ?? DEFAULT_CLIENT_CONFIG.requestDelay.baseMs,

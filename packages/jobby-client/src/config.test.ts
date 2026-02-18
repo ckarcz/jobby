@@ -115,10 +115,10 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
         expect(resolved.timeout).toBe(10_000);
       });
 
-      it('should handle non-numeric LINKEDIN_JOBS_TIMEOUT gracefully', () => {
+      it('should fall back to default when LINKEDIN_JOBS_TIMEOUT is non-numeric', () => {
         vi.stubEnv('LINKEDIN_JOBS_TIMEOUT', 'not-a-number');
         const resolved = resolveConfig();
-        expect(resolved.timeout).toBeNaN();
+        expect(resolved.timeout).toBe(DEFAULT_CLIENT_CONFIG.timeout);
       });
     });
 
