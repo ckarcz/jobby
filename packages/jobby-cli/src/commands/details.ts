@@ -8,9 +8,14 @@ import { outputResult } from '../utils/output.js';
 import { readFromStream } from '../utils/stream.js';
 import { activeCliArgs, helpConfig } from '../program.js';
 
-/** Checks whether a string looks like a URL rather than a plain job ID. */
+/** Returns true when value is a valid absolute URL, false otherwise. */
 function isUrl(value: string): boolean {
-  return value.includes('://') || value.startsWith('http');
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Fetches and outputs job details for a given ID or URL. */
