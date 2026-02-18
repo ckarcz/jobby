@@ -40,10 +40,10 @@
     "start:search": "tsx src/main.ts search \"C#\" --pretty",
     "start:details": "tsx src/main.ts details 4368607271 --pretty",
     "start:example": "tsx src/main.ts search --keyword C# --take 1",
-    "watch": "tsx watch src/main.ts",
-    "watch:search": "tsx watch src/main.ts search \"C#\" --pretty",
-    "watch:details": "tsx watch src/main.ts details 4368607271 --pretty",
-    "watch:ui": "nodemon --no-stdin --watch src --watch ../jobby-client/src --ext ts,tsx --exec \"tsx src/main.ts ui\""
+    "watch": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts\"",
+    "watch:search": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts search C# --pretty\"",
+    "watch:details": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts details 4368607271 --pretty\"",
+    "watch:ui": "nodemon --no-stdin --watch src --watch ../ --ext ts,tsx --exec \"tsx src/main.ts ui\""
   },
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
