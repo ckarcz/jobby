@@ -22,7 +22,9 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       const resolved = resolveConfig();
       expect(resolved.baseUrl).toBe('www.linkedin.com');
       expect(resolved.timeout).toBe(10_000);
-      expect(resolved.userAgent).toBeUndefined();
+      // userAgent is always resolved to a string (random UA when none supplied)
+      expect(typeof resolved.userAgent).toBe('string');
+      expect(resolved.userAgent.length).toBeGreaterThan(0);
       expect(resolved.signal).toBeUndefined();
       expect(resolved.logger).toBeDefined();
     });

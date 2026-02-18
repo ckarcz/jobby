@@ -3,7 +3,9 @@
  * error and signal handlers access to the active command's parsed options
  * (e.g. debug mode) without a module-level global.
  */
-export type ActiveCliArgsRef = { current: JobbyCliArgs };
+export interface ActiveCliArgsRef {
+  current: JobbyCliArgs;
+}
 
 /** Supported output format identifiers for CLI commands. */
 export type OutputFormat = 'json' | 'xml' | 'yaml' | 'csv' | 'rawHtml';
