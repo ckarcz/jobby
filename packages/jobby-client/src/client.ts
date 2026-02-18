@@ -17,12 +17,12 @@ class JobsResource {
    *
    * @example
    * ```typescript
-   * const response = await client.jobs.search({
+   * const response = await client.jobs.queryForJobs({
    *   keyword: 'TypeScript',
    *   location: 'San Francisco',
-   *   jobType: JobType.FullTime,
-   * }, { pageSize: 10 });
-   * console.log(response.data); // Array of Job objects
+   *   jobType: 'full-time',
+   * }, { take: 10 });
+   * console.log(response.results); // Array of Job objects
    * ```
    */
   async queryForJobs(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<SearchResponse<Job>> {
@@ -102,18 +102,18 @@ class JobsResource {
  *
  * @example
  * ```typescript
- * import { JobbyClient, JobType, ExperienceLevel } from 'jobby-client';
+ * import { JobbyClient } from 'jobby-client';
  *
  * const client = new JobbyClient({
  *   timeout: 15_000,
  * });
  *
  * // Simple search
- * const response = await client.jobs.search({
+ * const response = await client.jobs.queryForJobs({
  *   keyword: 'TypeScript',
  *   location: 'San Francisco',
- *   jobType: JobType.FullTime,
- * }, { pageSize: 10 });
+ *   jobType: 'full-time',
+ * }, { take: 10 });
  *
  * // Fluent builder
  * const response2 = await client.jobs
@@ -125,7 +125,7 @@ class JobsResource {
  *   .execute();
  *
  * // Get job details
- * const details = await client.jobs.getDetails(response.data[0].jobUrl!);
+ * const details = await client.jobs.queryForJobDetailsByUrl(response.results[0]!.url);
  * ```
  */
 export class JobbyClient {
