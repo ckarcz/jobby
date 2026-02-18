@@ -54,6 +54,10 @@ export function normalizeJobSearchParams(params: JobSearchParams): JobSearchPara
   if (!result.success) {
     throw toValidationError(result.error);
   }
+  // Cast required because Zod's inferred type for keyword/location diverges
+  // from JobSearchParams after the .transform() calls (Zod widens the output
+  // type to string rather than keeping the original literal union). The schema
+  // is structurally identical to JobSearchParams so the cast is safe.
   return result.data as JobSearchParams;
 }
 
