@@ -10,8 +10,8 @@ export function useFilterKeyboard(
   draft: FilterDrawerState,
   draftDispatch: React.Dispatch<FilterDrawerAction>,
 ): void {
-  const appState = useAppState();
-  const appDispatch = useAppDispatch();
+  const state = useAppState();
+  const dispatch = useAppDispatch();
   const { search } = useSearch();
   const focused = usePanelFocus('filters');
 
@@ -23,21 +23,21 @@ export function useFilterKeyboard(
     const isTextSection = activeSection?.type === 'text';
 
     if (_input === '\\' && !isTextSection) {
-      appDispatch({ type: 'CLOSE_FILTER_DRAWER' });
-      appDispatch({ type: 'FOCUS_PANEL', panel: 'results' });
+      dispatch({ type: 'CLOSE_FILTER_DRAWER' });
+      dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
       return;
     }
 
     if (_input === '/' && !isTextSection) {
-      appDispatch({ type: 'CLOSE_FILTER_DRAWER' });
-      appDispatch({ type: 'FOCUS_PANEL', panel: 'search' });
+      dispatch({ type: 'CLOSE_FILTER_DRAWER' });
+      dispatch({ type: 'FOCUS_PANEL', panel: 'search' });
       return;
     }
 
     if (key.return) {
-      appDispatch({ type: 'APPLY_FILTERS', filters: draft.selections });
-      appDispatch({ type: 'CLOSE_FILTER_DRAWER' });
-      search(appState.searchKeyword, draft.selections);
+      dispatch({ type: 'APPLY_FILTERS', filters: draft.selections });
+      dispatch({ type: 'CLOSE_FILTER_DRAWER' });
+      search(state.searchKeyword, draft.selections);
       return;
     }
 
