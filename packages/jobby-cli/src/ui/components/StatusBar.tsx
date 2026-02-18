@@ -14,7 +14,7 @@ export function StatusBar(): React.ReactElement {
   if (focusedPanel === 'search') {
     leftHints = '[Type]:Keyword  [Enter]:Search  [Esc]:Cancel';
   } else if (focusedPanel === 'filters') {
-    leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Apply  [Esc]:Results';
+    leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Apply  [Esc]:Cancel';
   } else if (focusedPanel === 'results') {
     leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [↑↓]:Navigate  [Esc]:Clear`;
   } else {
