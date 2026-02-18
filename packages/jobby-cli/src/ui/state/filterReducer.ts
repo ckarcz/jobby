@@ -54,11 +54,15 @@ export function filterDrawerReducer(state: FilterDrawerState, action: FilterDraw
   switch (action.type) {
     case 'NEXT_SECTION': {
       const next = Math.min(state.activeSectionIndex + 1, state.sections.length - 1);
-      return { ...state, activeSectionIndex: next };
+      const cursors = [...state.cursorIndexes];
+      cursors[next] = 0;
+      return { ...state, activeSectionIndex: next, cursorIndexes: cursors };
     }
     case 'PREV_SECTION': {
       const prev = Math.max(state.activeSectionIndex - 1, 0);
-      return { ...state, activeSectionIndex: prev };
+      const cursors = [...state.cursorIndexes];
+      cursors[prev] = 0;
+      return { ...state, activeSectionIndex: prev, cursorIndexes: cursors };
     }
     case 'MOVE_UP': {
       const section = getSection(state.sections, state.activeSectionIndex);
