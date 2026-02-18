@@ -49,16 +49,15 @@
       "Bash(git tag *)",
       "Bash(git show *)",
       "Bash(git blame *)",
-      "Bash(git -C *)"
-    ],
-    "ask": [
-      "Bash(git config *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git push *)",
+      "Bash(git remote *)"
+    ],
+    "ask": [
+      "Bash(git config *)",
       "Bash(git reset *)",
       "Bash(git revert *)",
-      "Bash(git remote *)",
       "Bash(git merge *)",
       "Bash(git rebase *)",
       "Bash(git clean *)"
