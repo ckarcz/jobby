@@ -57,16 +57,16 @@ describe('parseNumber - numeric string parsing for CLI options', () => {
       expect(() => parseNumber('')).toThrow('Invalid number: ');
     });
 
-    it('should truncate floating point numbers via parseInt', () => {
-      expect(parseNumber('3.14')).toBe(3);
+    it('should throw for floating point numbers', () => {
+      expect(() => parseNumber('3.14')).toThrow('Invalid number: 3.14');
+    });
+
+    it('should throw for strings with trailing non-numeric characters', () => {
+      expect(() => parseNumber('12abc')).toThrow('Invalid number: 12abc');
     });
   });
 
-  describe('parseInt edge cases', () => {
-    it('should parse leading digits and ignore trailing non-numeric characters', () => {
-      expect(parseNumber('12abc')).toBe(12);
-    });
-
+  describe('edge cases', () => {
     it('should parse large numbers', () => {
       expect(parseNumber('999999')).toBe(999999);
     });

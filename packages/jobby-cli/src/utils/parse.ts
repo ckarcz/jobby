@@ -1,12 +1,16 @@
 /**
- * Parses a string into an integer, throwing if the value is not a valid number.
+ * Parses a string into an integer, throwing if the value is not a valid integer.
  * @param value - The string to parse.
  * @returns The parsed integer.
- * @throws Error if the value cannot be parsed as a number.
+ * @throws Error if the value is empty, non-numeric, or not a whole number.
  */
 export function parseNumber(value: string): number {
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed)) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`Invalid number: ${value}`);
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed)) {
     throw new Error(`Invalid number: ${value}`);
   }
   return parsed;
