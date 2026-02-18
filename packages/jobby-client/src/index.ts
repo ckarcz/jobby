@@ -58,3 +58,6 @@ export {
 
 // Builders
 export { JobSearchBuilder } from './builders/index.js';
+
+// Utilities
+export { delay } from './utils/index.js';

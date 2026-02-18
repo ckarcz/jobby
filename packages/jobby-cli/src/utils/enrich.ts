@@ -1,4 +1,5 @@
 import type { Job, JobDetails, JobDetailsInfo } from 'jobby-client';
+import { delay } from 'jobby-client';
 
 /**
  * A job search result enriched with its full details.
@@ -14,15 +15,6 @@ interface FetchDetailsOptions {
   batchSize?: number | undefined;
   /** Delay in milliseconds between batches. @default 2500 */
   delayMs?: number | undefined;
-}
-
-/**
- * Creates a promise that resolves after the specified delay.
- *
- * @param ms - Delay duration in milliseconds
- */
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
