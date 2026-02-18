@@ -53,7 +53,6 @@ export {
   type PaginationInfo,
   type SearchMetadata,
   type SearchResponse,
-  type ProgressInfo,
 } from './types/index.js';
 
 // Builders

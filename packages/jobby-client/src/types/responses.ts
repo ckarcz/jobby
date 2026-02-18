@@ -153,13 +153,6 @@ export interface SearchResponse<T> {
   metadata: SearchMetadata;
 }
 
-/** Progress information for long-running operations. */
-export interface ProgressInfo {
-  type: 'querying' | 'parsing' | 'completed';
-  current?: number;
-  total?: number | undefined;
-  message: string;
-}
 
 /** Zod schema for JSON-LD JobPosting structured data from LinkedIn pages. */
 export const JsonLdJobPostingSchema = z.object({

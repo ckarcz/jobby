@@ -56,5 +56,4 @@ export {
   type PaginationInfo,
   type SearchMetadata,
   type SearchResponse,
-  type ProgressInfo,
 } from './responses.js';
