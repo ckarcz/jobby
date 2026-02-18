@@ -1,4 +1,5 @@
 import { type LoggingConfig, type Logger, createLogger } from './logging.js';
+import { resolveUserAgent } from './utils/http.js';
 
 /** Request delay configuration. */
 export interface RequestDelay {
@@ -62,7 +63,8 @@ export interface ResolvedRequestDelay {
 export interface ResolvedClientConfig {
   baseUrl: string;
   timeout: number;
-  userAgent: string | (() => string) | undefined;
+  /** Always a resolved string — factory functions are evaluated in {@link resolveConfig}. */
+  userAgent: string;
   requestDelay: ResolvedRequestDelay;
   signal: AbortSignal | undefined;
   logger: Logger;
@@ -98,7 +100,7 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
   return {
     baseUrl: config?.baseUrl ?? envBaseUrl ?? DEFAULT_CLIENT_CONFIG.baseUrl,
     timeout: config?.timeout ?? resolvedEnvTimeout ?? DEFAULT_CLIENT_CONFIG.timeout,
-    userAgent: config?.userAgent,
+    userAgent: resolveUserAgent(config?.userAgent),
     requestDelay: {
       baseMs: config?.requestDelay?.baseMs ?? DEFAULT_CLIENT_CONFIG.requestDelay.baseMs,
       jitterMs: config?.requestDelay?.jitterMs ?? DEFAULT_CLIENT_CONFIG.requestDelay.jitterMs,

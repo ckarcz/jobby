@@ -53,19 +53,19 @@ export function getRandomUserAgent(): string {
  * @param userAgent - Optional static string or factory function
  * @returns The resolved User-Agent string
  */
-function resolveUserAgent(userAgent?: string | (() => string)): string {
+export function resolveUserAgent(userAgent?: string | (() => string)): string {
   return typeof userAgent === 'function' ? userAgent() : (userAgent ?? getRandomUserAgent());
 }
 
 /**
  * Creates HTTP headers for LinkedIn job search API requests.
  *
- * @param userAgent - Optional custom User-Agent string or factory function
+ * @param userAgent - Resolved User-Agent string
  * @returns Headers object suitable for job search API requests
  */
-export function createRequestHeaders(userAgent?: string | (() => string)): Record<string, string> {
+export function createRequestHeaders(userAgent: string): Record<string, string> {
   return {
-    'User-Agent': resolveUserAgent(userAgent),
+    'User-Agent': userAgent,
     'Accept': 'application/json, text/javascript, */*; q=0.01',
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -83,12 +83,12 @@ export function createRequestHeaders(userAgent?: string | (() => string)): Recor
 /**
  * Creates HTTP headers for fetching LinkedIn job details pages.
  *
- * @param userAgent - Optional custom User-Agent string or factory function
+ * @param userAgent - Resolved User-Agent string
  * @returns Headers object suitable for job details page requests
  */
-export function createDetailsRequestHeaders(userAgent?: string | (() => string)): Record<string, string> {
+export function createDetailsRequestHeaders(userAgent: string): Record<string, string> {
   return {
-    'User-Agent': resolveUserAgent(userAgent),
+    'User-Agent': userAgent,
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br',

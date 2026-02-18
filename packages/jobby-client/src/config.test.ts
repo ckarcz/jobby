@@ -48,10 +48,10 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       expect(resolved.userAgent).toBe('Custom UA');
     });
 
-    it('should set userAgent function', () => {
+    it('should resolve userAgent factory function to a string', () => {
       const uaFn = () => 'Dynamic UA';
       const resolved = resolveConfig({ userAgent: uaFn });
-      expect(resolved.userAgent).toBe(uaFn);
+      expect(resolved.userAgent).toBe('Dynamic UA');
     });
 
     it('should set signal', () => {

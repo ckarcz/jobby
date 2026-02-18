@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AxiosError, type AxiosResponse } from 'axios';
-import { isAxiosError, handleHttpError, getRandomUserAgent, createRequestHeaders, createDetailsRequestHeaders } from './http.js';
+import { isAxiosError, handleHttpError, getRandomUserAgent, resolveUserAgent, createRequestHeaders, createDetailsRequestHeaders } from './http.js';
 import { RateLimitError, NetworkError } from '../types/errors.js';
 import type { Logger } from '../logging.js';
 
@@ -71,30 +71,35 @@ describe('HTTP utilities - request headers and user agent management', () => {
     });
   });
 
+  describe('resolveUserAgent', () => {
+    it('should return the string directly', () => {
+      expect(resolveUserAgent('Custom UA')).toBe('Custom UA');
+    });
+
+    it('should call factory function and return its result', () => {
+      const uaFn = vi.fn(() => 'Function UA');
+      expect(resolveUserAgent(uaFn)).toBe('Function UA');
+      expect(uaFn).toHaveBeenCalled();
+    });
+
+    it('should return a random UA when called with no argument', () => {
+      const ua = resolveUserAgent();
+      expect(typeof ua).toBe('string');
+      expect(ua.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('createRequestHeaders', () => {
-    it('should create headers with default random user agent', () => {
-      const headers = createRequestHeaders();
-      expect(headers['User-Agent']).toBeDefined();
+    it('should set the provided User-Agent string', () => {
+      const headers = createRequestHeaders('Custom UA');
+      expect(headers['User-Agent']).toBe('Custom UA');
       expect(headers['Accept']).toBe('application/json, text/javascript, */*; q=0.01');
       expect(headers['Accept-Language']).toBe('en-US,en;q=0.9');
       expect(headers['Referer']).toBe('https://www.linkedin.com/jobs');
     });
 
-    it('should use provided string user agent', () => {
-      const customUA = 'Custom User Agent';
-      const headers = createRequestHeaders(customUA);
-      expect(headers['User-Agent']).toBe(customUA);
-    });
-
-    it('should call function to get user agent', () => {
-      const uaFn = vi.fn(() => 'Function UA');
-      const headers = createRequestHeaders(uaFn);
-      expect(uaFn).toHaveBeenCalled();
-      expect(headers['User-Agent']).toBe('Function UA');
-    });
-
     it('should include all required headers', () => {
-      const headers = createRequestHeaders();
+      const headers = createRequestHeaders('Test UA');
       expect(headers).toHaveProperty('User-Agent');
       expect(headers).toHaveProperty('Accept');
       expect(headers).toHaveProperty('Accept-Language');
@@ -191,27 +196,14 @@ describe('HTTP utilities - request headers and user agent management', () => {
   });
 
   describe('createDetailsRequestHeaders', () => {
-    it('should create headers with default random user agent', () => {
-      const headers = createDetailsRequestHeaders();
-      expect(headers['User-Agent']).toBeDefined();
+    it('should set the provided User-Agent string', () => {
+      const headers = createDetailsRequestHeaders('Custom UA');
+      expect(headers['User-Agent']).toBe('Custom UA');
       expect(headers['Accept']).toBe('text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
     });
 
-    it('should use provided string user agent', () => {
-      const customUA = 'Custom User Agent';
-      const headers = createDetailsRequestHeaders(customUA);
-      expect(headers['User-Agent']).toBe(customUA);
-    });
-
-    it('should call function to get user agent', () => {
-      const uaFn = vi.fn(() => 'Function UA');
-      const headers = createDetailsRequestHeaders(uaFn);
-      expect(uaFn).toHaveBeenCalled();
-      expect(headers['User-Agent']).toBe('Function UA');
-    });
-
     it('should include all required headers', () => {
-      const headers = createDetailsRequestHeaders();
+      const headers = createDetailsRequestHeaders('Test UA');
       expect(headers).toHaveProperty('User-Agent');
       expect(headers).toHaveProperty('Accept');
       expect(headers).toHaveProperty('Accept-Language');
