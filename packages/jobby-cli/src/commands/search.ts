@@ -16,13 +16,13 @@ import {
   WORKPLACE_TYPE_CHOICES,
   LISTING_AGE_CHOICES,
 } from 'jobby-client';
-import type { JobSearchQueryCliArgs } from '../types.js';
+import type { JobSearchQueryCliArgs, ActiveCliArgsRef } from '../types.js';
 import { fetchDetailsInBatches } from '../utils/enrich.js';
 import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
 import { readFromStream } from '../utils/stream.js';
 import { parseNumber } from '../utils/parse.js';
-import { activeCliArgs, helpConfig } from '../program.js';
+import { helpConfig } from '../program.js';
 
 /** Executes a job search using the provided CLI arguments and outputs the results. */
 export async function queryForJobs(args: JobSearchQueryCliArgs): Promise<void> {
@@ -75,7 +75,7 @@ export async function queryForJobs(args: JobSearchQueryCliArgs): Promise<void> {
 }
 
 /** Creates the `search` subcommand with all options and argument parsing. */
-export function createSearchCommand(): Command {
+export function createSearchCommand(activeCliArgsRef: ActiveCliArgsRef = { current: {} }): Command {
   const command = new Command('search')
     .configureHelp(helpConfig)
     .description('search for jobs with filters')
@@ -124,7 +124,7 @@ export function createSearchCommand(): Command {
         .default('silent')
     )
     .action(async (positionalKeyword: string | undefined, opts: JobSearchQueryCliArgs) => {
-      activeCliArgs.current = opts;
+      activeCliArgsRef.current = opts;
       const keyword = opts.keyword ?? positionalKeyword ?? await readFromStream(process.stdin, process.stdin.isTTY);
       await queryForJobs({ ...opts, keyword });
     });

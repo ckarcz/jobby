@@ -9,7 +9,6 @@ vi.mock('jobby-client', () => createJobbyMock());
 
 import { JobbyClient } from 'jobby-client';
 import { main } from './main.js';
-import { activeCliArgs } from './program.js';
 
 const MockedJobbyClient = vi.mocked(JobbyClient);
 
@@ -27,7 +26,6 @@ describe('main - CLI entrypoint error handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     originalArgv = process.argv;
-    activeCliArgs.current = {};
     mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => { });
   });
@@ -36,7 +34,6 @@ describe('main - CLI entrypoint error handling', () => {
     mockProcessExit.mockRestore();
     mockConsoleError.mockRestore();
     process.argv = originalArgv;
-    activeCliArgs.current = {};
   });
 
   describe('LinkedIn API error handling', () => {

@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { createSearchCommand } from './commands/search.js';
 import { createDetailsCommand } from './commands/details.js';
 import { createUiCommand } from './commands/ui.js';
-import type { JobSearchQueryCliArgs, JobDetailsQueryCliArgs } from './types.js';
+import type { ActiveCliArgsRef } from './types.js';
 import {
   styleTitle,
   styleCommandText,
@@ -17,14 +17,6 @@ import {
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version: string };
-
-/**
- * Holds the active CLI args set by action handlers before execution.
- * Allows error handlers to access parsed options like debug mode.
- */
-export const activeCliArgs: { current: JobSearchQueryCliArgs | JobDetailsQueryCliArgs } = {
-  current: {},
-};
 
 /** Help formatting configuration for Commander.js with colored output. */
 export const helpConfig: Partial<Help> = {
@@ -49,7 +41,7 @@ export const helpConfig: Partial<Help> = {
 };
 
 /** Creates the root Commander.js program with all subcommands registered. */
-export function createProgram(): Command {
+export function createProgram(activeCliArgsRef: ActiveCliArgsRef = { current: {} }): Command {
   const program = new Command();
 
   program
@@ -68,8 +60,8 @@ export function createProgram(): Command {
     program.commands.forEach(cmd => cmd.configureOutput(noColorOutput));
   });
 
-  program.addCommand(createSearchCommand());
-  program.addCommand(createDetailsCommand());
+  program.addCommand(createSearchCommand(activeCliArgsRef));
+  program.addCommand(createDetailsCommand(activeCliArgsRef));
   program.addCommand(createUiCommand());
 
   program.addHelpText('after',`

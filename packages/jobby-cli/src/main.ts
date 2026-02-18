@@ -2,7 +2,8 @@
 
 import process from 'node:process';
 import { JobbyError } from 'jobby-client';
-import { createProgram, activeCliArgs } from './program.js';
+import { createProgram } from './program.js';
+import type { ActiveCliArgsRef } from './types.js';
 import { registerDefaultFormatters } from './formatters/index.js';
 import { formatErrorMessage } from './utils/errors.js';
 
@@ -11,6 +12,8 @@ import { formatErrorMessage } from './utils/errors.js';
  * creates the program, and parses command-line arguments.
  */
 export async function main(): Promise<void> {
+  const activeCliArgs: ActiveCliArgsRef = { current: {} };
+
   process.on('SIGINT', () => {
     if (activeCliArgs.current.debug || activeCliArgs.current.logLevel === 'debug') {
       console.debug('Received SIGINT signal. Terminating.');
@@ -33,7 +36,7 @@ export async function main(): Promise<void> {
   });
 
   registerDefaultFormatters();
-  const program = createProgram();
+  const program = createProgram(activeCliArgs);
 
   program.exitOverride();
   program.configureOutput({

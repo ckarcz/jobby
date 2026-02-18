@@ -2,11 +2,11 @@ import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import process from 'node:process';
 import { JobbyClient, type LogLevel } from 'jobby-client';
-import type { JobDetailsQueryCliArgs } from '../types.js';
+import type { JobDetailsQueryCliArgs, ActiveCliArgsRef } from '../types.js';
 import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
 import { readFromStream } from '../utils/stream.js';
-import { activeCliArgs, helpConfig } from '../program.js';
+import { helpConfig } from '../program.js';
 
 /** Returns true when value is a valid absolute URL, false otherwise. */
 function isUrl(value: string): boolean {
@@ -44,7 +44,7 @@ export async function queryForJobDetails(idOrUrl: string, args: JobDetailsQueryC
 }
 
 /** Creates the `details` subcommand with all options and argument parsing. */
-export function createDetailsCommand(): Command {
+export function createDetailsCommand(activeCliArgsRef: ActiveCliArgsRef = { current: {} }): Command {
   const command = new Command('details')
     .configureHelp(helpConfig)
     .description('get detailed information for a specific job posting')
@@ -66,7 +66,7 @@ export function createDetailsCommand(): Command {
         .default('silent')
     )
     .action(async (idOrUrl: string | undefined, opts: JobDetailsQueryCliArgs) => {
-      activeCliArgs.current = opts;
+      activeCliArgsRef.current = opts;
       const value = opts.url ?? opts.id ?? idOrUrl ?? await readFromStream(process.stdin, process.stdin.isTTY);
       if (!value) {
         console.error('Error: Missing required argument. Provide a job ID or URL as an argument, via --url/--id, or pipe via stdin');
