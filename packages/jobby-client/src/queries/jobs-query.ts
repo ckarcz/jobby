@@ -135,7 +135,7 @@ export async function executeJobsQuery(
     query: normalizedJobSearchParams,
     metadata: {
       timestamp: new Date(),
-      durationMs: Date.now() - startTime,
+      durationMs,
       searchUrl: queryUrl,
     },
   };
