@@ -12,7 +12,7 @@
 - See docs\architecture.md for more information on architecture
 
 ## Conventions
-- Follow existing project conventions and standards. This project tires to follow common place NodeJS project configuration, convention, and standards and practices.
+- Follow existing project conventions and standards. This project tries to follow common place NodeJS project configuration, convention, and standards and practices.
 - ESM only (`"type": "module"`)
 - You must follow the configured eslint and tsconfig rules.
 - Unit tests `*.test.ts` are located next to source files. Unit tests have their own vitest project named `unit`. 
