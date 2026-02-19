@@ -37,7 +37,7 @@ export function FilterDrawer(): React.ReactElement {
       <Box marginBottom={1}>
         <Text bold>{icons.cog} Filters</Text>
       </Box>
-      <ScrollList ref={scrollRef} selectedIndex={draft.activeSectionIndex} flexGrow={1} overflow="hidden">
+      <ScrollList ref={scrollRef} selectedIndex={draft.activeSectionIndex} flexGrow={1} paddingBottom={1} overflow="hidden">
         {draft.sections.map((section, i) => {
           const isFocused = focused && i === draft.activeSectionIndex;
           const marginBottom = i < draft.sections.length - 1 ? 1 : 0;
