@@ -1,5 +1,5 @@
 /** Width (in columns) of the filter drawer panel. */
-export const FILTER_DRAWER_WIDTH = 30;
+export const FILTER_DRAWER_WIDTH = 22;
 
 /** Lines reserved below the VirtualList to prevent clipping in various terminal sizes. */
 export const VIRTUAL_LIST_RESERVED_LINES = 5;
