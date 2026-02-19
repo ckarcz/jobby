@@ -44,28 +44,30 @@ function toValidationError(error: z.ZodError): ValidationError {
   return new ValidationError(messages.join('; '));
 }
 
+/** Zod-inferred output type for normalized search params. */
+type NormalizedJobSearchParams = z.output<typeof JobSearchParamsSchema>;
+
+/** Zod-inferred output type for normalized pagination params. */
+type NormalizedPaginationParams = z.output<typeof PaginationParamsSchema>;
+
 /**
  * Normalizes job search parameters for query building.
- * Handles keyword/location URL encoding and validates enum values.
+ * Trims keyword/location whitespace and validates enum values.
  * @throws {ValidationError} If any enum value is invalid.
  */
-export function normalizeJobSearchParams(params: JobSearchParams): JobSearchParams {
+export function normalizeJobSearchParams(params: JobSearchParams): NormalizedJobSearchParams {
   const result = JobSearchParamsSchema.safeParse(params);
   if (!result.success) {
     throw toValidationError(result.error);
   }
-  // Cast required because Zod's inferred type for keyword/location diverges
-  // from JobSearchParams after the .transform() calls (Zod widens the output
-  // type to string rather than keeping the original literal union). The schema
-  // is structurally identical to JobSearchParams so the cast is safe.
-  return result.data as JobSearchParams;
+  return result.data;
 }
 
 /** Normalizes pagination parameters for query building. */
-export function normalizePaginationParams(params: PaginationParams): PaginationParams {
+export function normalizePaginationParams(params: PaginationParams): NormalizedPaginationParams {
   const result = PaginationParamsSchema.safeParse(params);
   if (!result.success) {
     throw toValidationError(result.error);
   }
-  return result.data as PaginationParams;
+  return result.data;
 }
