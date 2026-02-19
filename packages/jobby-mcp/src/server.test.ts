@@ -29,9 +29,11 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
 
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
-const mockSearch = vi.fn();
-const mockGetDetailsByUrl = vi.fn();
-const mockGetDetailsById = vi.fn();
+const { mockSearch, mockGetDetailsByUrl, mockGetDetailsById } = vi.hoisted(() => ({
+  mockSearch: vi.fn(),
+  mockGetDetailsByUrl: vi.fn(),
+  mockGetDetailsById: vi.fn(),
+}));
 
 vi.mock('jobby-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('jobby-client')>();
@@ -54,6 +56,11 @@ vi.mock('jobby-client', async (importOriginal) => {
   };
 });
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { JobbyError } from 'jobby-client';
+import { createServer, main } from './server.js';
+
 /**
  * Tests for the MCP server that exposes Jobby job search and detail
  * retrieval as callable tools, verifying tool registration, parameter passing,
@@ -65,18 +72,14 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
   let getJobDetailsHandler: ToolHandler;
   let registerToolCalls: RegisterToolCall[];
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     mockSearch.mockReset();
     mockGetDetailsByUrl.mockReset();
     mockGetDetailsById.mockReset();
 
-    vi.resetModules();
-
-    const { createServer } = await import('./server.js');
     createServer();
 
-    const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
     const serverInstance = (McpServer as unknown as Mock).mock.results[0]?.value as { registerTool: Mock };
     registerToolCalls = serverInstance.registerTool.mock.calls as RegisterToolCall[];
 
@@ -94,14 +97,12 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       expect(registerToolCalls.length).toBe(2);
     });
 
-    it('should create server with name "jobby-mcp"', async () => {
-      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+    it('should create server with name "jobby-mcp"', () => {
       const constructorCall = (McpServer as unknown as Mock).mock.calls[0] as [Record<string, unknown>];
       expect(constructorCall[0].name).toBe('jobby-mcp');
     });
 
-    it('should create server with version from package.json', async () => {
-      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+    it('should create server with version from package.json', () => {
       const constructorCall = (McpServer as unknown as Mock).mock.calls[0] as [Record<string, unknown>];
       expect(constructorCall[0].version).toBe('1.0.0');
     });
@@ -269,7 +270,6 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
   describe('search_jobs error handling', () => {
     it('should handle JobbyError', async () => {
-      const { JobbyError } = await import('jobby-client');
       const error = new JobbyError('Rate limited', 'E_RATE_LIMIT');
       mockSearch.mockRejectedValueOnce(error);
 
@@ -307,7 +307,6 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
   describe('get_job_details error handling', () => {
     it('should handle JobbyError in get_job_details', async () => {
-      const { JobbyError } = await import('jobby-client');
       const error = new JobbyError('Rate limited', 'E_RATE_LIMIT');
       mockGetDetailsByUrl.mockRejectedValueOnce(error);
 
@@ -392,15 +391,11 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
 describe('main - MCP server startup', () => {
   it('should create server, connect transport, and log startup message', async () => {
-    vi.resetModules();
+    vi.clearAllMocks();
 
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const { main } = await import('./server.js');
     await main();
-
-    const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-    const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
 
     expect(McpServer).toHaveBeenCalled();
     expect(StdioServerTransport).toHaveBeenCalled();

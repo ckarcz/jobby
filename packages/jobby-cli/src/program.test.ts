@@ -437,10 +437,11 @@ describe('search command option parsing', () => {
       expect(cmd.opts().start).toBe(0);
     });
 
-    it('should parse negative values for pagination', () => {
+    it('should reject negative values for pagination', () => {
       const cmd = getSearchCommand();
-      cmd.parse(['node', 'search', '--start', '-1'], { from: 'node' });
-      expect(cmd.opts().start).toBe(-1);
+      expect(() => cmd.parse(['node', 'search', '--start', '-1'], { from: 'node' })).toThrow(
+        'Invalid number (must be non-negative): -1',
+      );
     });
 
     it('should throw for non-numeric --start value', () => {

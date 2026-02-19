@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockSearch = vi.fn();
-const mockGetDetailsByUrl = vi.fn();
-const mockGetDetailsById = vi.fn();
+const { mockSearch, mockGetDetailsByUrl, mockGetDetailsById } = vi.hoisted(() => ({
+  mockSearch: vi.fn(),
+  mockGetDetailsByUrl: vi.fn(),
+  mockGetDetailsById: vi.fn(),
+}));
 
 vi.mock('jobby-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('jobby-client')>();
@@ -18,40 +20,31 @@ vi.mock('jobby-client', async (importOriginal) => {
   };
 });
 
+import { handleError, handleSearchJobs, handleGetJobDetails } from './handlers.js';
+import { JobbyError, ErrorCode, NetworkError, ValidationError, ParsingError } from 'jobby-client';
+
 /**
  * Direct unit tests for MCP tool handler functions including error formatting,
  * search parameter forwarding, and job detail resolution logic.
  */
 
 describe('handleError - error message formatting', () => {
-  let handleError: typeof import('./handlers.js').handleError;
-
-  beforeEach(async () => {
-    vi.resetModules();
-    const mod = await import('./handlers.js');
-    handleError = mod.handleError;
-  });
-
-  it('should format JobbyError with code prefix', async () => {
-    const { JobbyError, ErrorCode } = await import('jobby-client');
+  it('should format JobbyError with code prefix', () => {
     const error = new JobbyError(ErrorCode.RATE_LIMIT, 'Too many requests');
     expect(handleError(error)).toBe('[E_RATE_LIMIT] Too many requests');
   });
 
-  it('should format NetworkError with code prefix', async () => {
-    const { NetworkError } = await import('jobby-client');
+  it('should format NetworkError with code prefix', () => {
     const error = new NetworkError('Connection refused');
     expect(handleError(error)).toBe('[E_NETWORK] Connection refused');
   });
 
-  it('should format ValidationError with code prefix', async () => {
-    const { ValidationError } = await import('jobby-client');
+  it('should format ValidationError with code prefix', () => {
     const error = new ValidationError('Invalid parameter');
     expect(handleError(error)).toBe('[E_VALIDATION] Invalid parameter');
   });
 
-  it('should format ParsingError with code prefix', async () => {
-    const { ParsingError } = await import('jobby-client');
+  it('should format ParsingError with code prefix', () => {
     const error = new ParsingError('Failed to parse');
     expect(handleError(error)).toBe('[E_PARSE] Failed to parse');
   });
@@ -90,15 +83,10 @@ describe('handleError - error message formatting', () => {
 });
 
 describe('handleSearchJobs - search parameter forwarding', () => {
-  let handleSearchJobs: typeof import('./handlers.js').handleSearchJobs;
-
-  beforeEach(async () => {
-    vi.resetModules();
+  beforeEach(() => {
     mockSearch.mockReset();
     mockGetDetailsByUrl.mockReset();
     mockGetDetailsById.mockReset();
-    const mod = await import('./handlers.js');
-    handleSearchJobs = mod.handleSearchJobs;
   });
 
   it('should pass all filter params to client', async () => {
@@ -239,15 +227,10 @@ describe('handleSearchJobs - search parameter forwarding', () => {
 });
 
 describe('handleGetJobDetails - job detail resolution', () => {
-  let handleGetJobDetails: typeof import('./handlers.js').handleGetJobDetails;
-
-  beforeEach(async () => {
-    vi.resetModules();
+  beforeEach(() => {
     mockSearch.mockReset();
     mockGetDetailsByUrl.mockReset();
     mockGetDetailsById.mockReset();
-    const mod = await import('./handlers.js');
-    handleGetJobDetails = mod.handleGetJobDetails;
   });
 
   it('should call queryForJobDetailsByUrl when jobUrl provided', async () => {
@@ -342,7 +325,6 @@ describe('handleGetJobDetails - job detail resolution', () => {
   });
 
   it('should handle JobbyError thrown from queryForJobDetailsByUrl', async () => {
-    const { JobbyError, ErrorCode } = await import('jobby-client');
     mockGetDetailsByUrl.mockRejectedValueOnce(new JobbyError(ErrorCode.NETWORK, 'Network failure'));
     const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
     expect(result.isError).toBe(true);
