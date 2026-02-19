@@ -15,6 +15,8 @@ interface FetchDetailsOptions {
   batchSize?: number | undefined;
   /** Delay in milliseconds between batches. @default 2500 */
   delayMs?: number | undefined;
+  /** Callback invoked with a warning message when a detail fetch fails. @default console.warn */
+  onWarn?: ((message: string) => void) | undefined;
 }
 
 /**
@@ -32,7 +34,7 @@ export async function fetchDetailsInBatches(
   fetchFn: (jobId: string) => Promise<JobDetails>,
   options: FetchDetailsOptions = {},
 ): Promise<EnrichedJob[]> {
-  const { batchSize = 3, delayMs = 2500 } = options;
+  const { batchSize = 3, delayMs = 2500, onWarn = console.warn } = options;
 
   if (jobs.length === 0) {
     return [];
@@ -57,10 +59,13 @@ export async function fetchDetailsInBatches(
 
     for (const [j, job] of batch.entries()) {
       const result = settled[j];
-      results.push({
-        ...job,
-        details: result?.status === 'fulfilled' ? result.value.details : null,
-      });
+      if (result?.status === 'fulfilled') {
+        results.push({ ...job, details: result.value.details });
+      } else {
+        const reason = result?.status === 'rejected' ? String(result.reason) : 'unknown error';
+        onWarn(`Warning: failed to fetch details for job ${job.id ?? '(no id)'}: ${reason}`);
+        results.push({ ...job, details: null });
+      }
     }
   }
 

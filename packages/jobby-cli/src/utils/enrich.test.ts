@@ -117,8 +117,9 @@ describe('fetchDetailsInBatches', () => {
     const fetchFn = vi.fn()
       .mockResolvedValueOnce(mockDetails)
       .mockRejectedValueOnce(new Error('rate limited'));
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
 
     expect(result[0]!.details).toEqual(mockDetails.details);
     expect(result[1]!.details).toBeNull();
@@ -127,8 +128,9 @@ describe('fetchDetailsInBatches', () => {
   it('should yield null details when job has no id', async () => {
     const jobs = [makeJob({ id: undefined })];
     const fetchFn = vi.fn();
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
 
     expect(result[0]!.details).toBeNull();
     expect(fetchFn).not.toHaveBeenCalled();
@@ -146,8 +148,9 @@ describe('fetchDetailsInBatches', () => {
   it('should yield null details when id is missing regardless of url', async () => {
     const jobs = [makeJob({ id: undefined, url: 'https://linkedin.com/jobs/view/99' })];
     const fetchFn = vi.fn();
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
 
     expect(result[0]!.details).toBeNull();
     expect(fetchFn).not.toHaveBeenCalled();
@@ -156,8 +159,9 @@ describe('fetchDetailsInBatches', () => {
   it('should yield null details when id is empty string', async () => {
     const jobs = [makeJob({ id: '' })];
     const fetchFn = vi.fn();
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
 
     expect(result[0]!.details).toBeNull();
     expect(fetchFn).not.toHaveBeenCalled();
@@ -192,8 +196,9 @@ describe('fetchDetailsInBatches', () => {
       .mockResolvedValueOnce(mockDetails)
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValueOnce(mockDetails);
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 3, delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 3, delayMs: 0, onWarn });
 
     expect(result).toHaveLength(3);
     expect(result[0]!.details).toEqual(mockDetails.details);
@@ -204,11 +209,57 @@ describe('fetchDetailsInBatches', () => {
   it('should handle all fetches failing', async () => {
     const jobs = [makeJob({ id: '1' }), makeJob({ id: '2' })];
     const fetchFn = vi.fn().mockRejectedValue(new Error('failed'));
+    const onWarn = vi.fn();
 
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
+    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
 
     expect(result).toHaveLength(2);
     expect(result[0]!.details).toBeNull();
     expect(result[1]!.details).toBeNull();
+  });
+
+  it('should call onWarn for each failed detail fetch', async () => {
+    const jobs = [makeJob({ id: '1' }), makeJob({ id: '2' })];
+    const fetchFn = vi.fn()
+      .mockResolvedValueOnce(mockDetails)
+      .mockRejectedValueOnce(new Error('rate limited'));
+    const onWarn = vi.fn();
+
+    await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
+
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('job 2'));
+    expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('rate limited'));
+  });
+
+  it('should call onWarn when job has no id', async () => {
+    const jobs = [makeJob({ id: undefined })];
+    const fetchFn = vi.fn();
+    const onWarn = vi.fn();
+
+    await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
+
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('(no id)'));
+  });
+
+  it('should call onWarn for every failed fetch in a batch', async () => {
+    const jobs = [makeJob({ id: '1' }), makeJob({ id: '2' }), makeJob({ id: '3' })];
+    const fetchFn = vi.fn().mockRejectedValue(new Error('failed'));
+    const onWarn = vi.fn();
+
+    await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 3, delayMs: 0, onWarn });
+
+    expect(onWarn).toHaveBeenCalledTimes(3);
+  });
+
+  it('should not call onWarn for successful fetches', async () => {
+    const jobs = [makeJob({ id: '1' }), makeJob({ id: '2' })];
+    const fetchFn = vi.fn().mockResolvedValue(mockDetails);
+    const onWarn = vi.fn();
+
+    await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
+
+    expect(onWarn).not.toHaveBeenCalled();
   });
 });
