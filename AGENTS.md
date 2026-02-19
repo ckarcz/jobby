@@ -21,7 +21,7 @@
 - Check for obvious typos in strings, variables, and type and method names. If you find words that are clearly typos alert the user and ask if you should fix them. Suggest using a local dictionary file of allowed words if seemingly typos are confirmed not typos by the user.
 
 ## Development
-- Always install packages and libraries that are compatible with each other. Never directly edit the lock files. Never force install packages, libraries, or dependencies. Packages that are only needed for development shoudl be installed as development only packages. Always make sure packages installed work with the environment we are developing in (Node version, Typescript version, etc).
+- Always install packages and libraries that are compatible with each other. Never directly edit the lock files. Never force install packages, libraries, or dependencies. Packages that are only needed for development should be installed as development only packages. Always make sure packages installed work with the environment we are developing in (Node version, Typescript version, etc).
 - If there are package vulnerability warnings. Try to see if updating packages is possible and if so, do it. Otherwise alert the user about the vulnerable package issue.
 - Asynchronously check if installed packages are needed and being used. If not alert the user of the unncessary package and recommended removing it.
 - Asynchronously check if installed packages are outdated. If so updated them if the updates are compatible, safe, and are LTS. Alert the user if you are unsure.

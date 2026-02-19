@@ -56,7 +56,7 @@
     "ink": "^6.6.0",
     "ink-link": "^5.0.0",
     "ink-virtual-list": "^0.2.3",
-    "jobby-client": "*",
+    "jobby-client": "^1.0.0",
     "js-beautify": "^1.15.4",
     "react": "^19.2.4",
     "yaml": "^2.8.2"
