@@ -20,6 +20,9 @@ export function createUiCommand(): Command {
     .description('launch interactive terminal UI for searching jobs')
     .option('--no-swap', 'skip terminal screen buffer swapping')
     .action(async (_opts, cmd: Command) => {
+      if (!process.stdout.isTTY) {
+        cmd.error('The ui command requires an interactive terminal (TTY).');
+      }
       const swap = cmd.opts<{ swap: boolean }>().swap;
       if (swap) {
         swapScreenBuffer();
