@@ -342,14 +342,15 @@ function parseJsonLdToJobDetailsData($: ReturnType<typeof cheerio.load>, config:
 
 /** Scrapes all available job detail fields from the HTML DOM. */
 function scrapeJobDetailsDataFromDom($: ReturnType<typeof cheerio.load>): ParsedJobDetailsData {
+  const companyPage = scrapeCompanyPage($);
   return {
     jobUrl: scrapeJobUrl($),
     title: scrapeTitle($),
     location: scrapeLocation($),
     company: scrapeCompany($),
-    companyPage: scrapeCompanyPage($),
+    companyPage,
     companyLogo: scrapeCompanyLogo($),
-    companySlug: extractCompanySlug(scrapeCompanyPage($)),
+    companySlug: extractCompanySlug(companyPage),
     salary: scrapeSalary($),
     postedDate: scrapePostedDate($),
     postedTimeAgo: scrapePostedTimeAgo($),
