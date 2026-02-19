@@ -48,7 +48,6 @@
     "zod": "^3.25 || ^4.0"
   },
   "devDependencies": {
-    "@types/cheerio": "^0.22.35",
     "@types/random-useragent": "^0.3.3",
     "@types/turndown": "^5.0.6"
   },

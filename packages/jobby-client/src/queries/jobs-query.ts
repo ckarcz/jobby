@@ -292,7 +292,9 @@ function parseJobs(jobData: string, config: ResolvedClientConfig): Job[] {
 
     config.logger.verbose(`Parsing ${jobs.length} job element(s).`);
 
-    return jobs
+    // cheerio's .map() + .get() types don't reflect nullable callback returns,
+    // but the callback can return null for incomplete or unparseable elements.
+    const parsed = jobs
       .map(function parseJobElement(_index, element): Job | null {
         try {
           const job = $(element);
@@ -349,10 +351,9 @@ function parseJobs(jobData: string, config: ResolvedClientConfig): Job[] {
           return null;
         }
       })
-      .get()
-      .filter(function isValidJob(job): job is Job {
-        return job !== null;
-      });
+      .get() as (Job | null)[];
+
+    return parsed.filter((job): job is Job => job !== null);
   } catch (error: unknown) {
     throw new ParsingError('Failed to parse job list', error);
   }
