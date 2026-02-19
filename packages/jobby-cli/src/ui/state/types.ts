@@ -21,7 +21,9 @@ export interface AppState {
   focusedPanel: PanelId | null;
   searchKeyword: string;
   searchStatus: SearchStatus;
+  /** Accumulated jobs across all fetched pages, used for rendering the full list. */
   totalResults: Job[];
+  /** Jobs returned by the most recent search or load-more request. */
   searchResults: Job[];
   searchPagination: PaginationInfo | undefined;
   searchMetadata: SearchMetadata | undefined;
