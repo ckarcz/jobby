@@ -575,12 +575,14 @@ function formatExperienceRequirement(months: number | undefined): string | undef
 
 /** Extracts salary information from JSON-LD. */
 function extractSalary(jsonLd: JsonLdJobPosting | undefined): JobDetailsInfo['salary'] {
-  if (jsonLd?.baseSalary?.value) {
+  const baseSalary = jsonLd?.baseSalary;
+  const value = baseSalary?.value;
+  if (value && (value.minValue !== undefined || value.maxValue !== undefined)) {
     return {
-      min: jsonLd.baseSalary.value.minValue,
-      max: jsonLd.baseSalary.value.maxValue,
-      currency: jsonLd.baseSalary.currency,
-      period: jsonLd.baseSalary.value.unitText,
+      min: value.minValue,
+      max: value.maxValue,
+      currency: baseSalary.currency,
+      period: value.unitText,
     };
   }
   return undefined;

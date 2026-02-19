@@ -957,7 +957,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       expect(result.summary.salary).toBe('50,000 - 70,000/yr');
     });
 
-    it('should show ? for undefined min/max values in salary display', async () => {
+    it('should return undefined salary when baseSalary.value has no min/max', async () => {
       const html = `
         <html><head>
           <script type="application/ld+json">
@@ -970,7 +970,8 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedAxios.get.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
-      expect(result.summary.salary).toBe('$?');
+      expect(result.summary.salary).toBeUndefined();
+      expect(result.details.salary).toBeUndefined();
     });
   });
 
