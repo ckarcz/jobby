@@ -25,7 +25,7 @@ export const initialState: AppState = {
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_TERMINAL_SIZE':
-      return { ...state, terminalWidth: action.width, terminalHeight: action.height, maxWidth: action.width - 1, maxHeight: action.height - 1 };
+      return { ...state, terminalWidth: action.width, terminalHeight: action.height, maxWidth: action.width, maxHeight: action.height };
     case 'FOCUS_PANEL':
       return { ...state, focusedPanel: action.panel };
     case 'BLUR_ALL':
