@@ -988,7 +988,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       expect(result.details.experienceRequired).toBe('0 years');
     });
 
-    it('should round 6 months to 1 years', async () => {
+    it('should round 6 months to 1 year (singular)', async () => {
       const html = `
         <html><head>
           <script type="application/ld+json">
@@ -998,7 +998,33 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedAxios.get.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
-      expect(result.details.experienceRequired).toBe('1 years');
+      expect(result.details.experienceRequired).toBe('1 year');
+    });
+
+    it('should format 12 months as 1 year (singular)', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "experienceRequirements": { "monthsOfExperience": 12 } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.experienceRequired).toBe('1 year');
+    });
+
+    it('should format 24 months as 2 years (plural)', async () => {
+      const html = `
+        <html><head>
+          <script type="application/ld+json">
+          { "@type": "JobPosting", "experienceRequirements": { "monthsOfExperience": 24 } }
+          </script>
+        </head><body></body></html>
+      `;
+      mockedAxios.get.mockResolvedValueOnce({ data: html });
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123');
+      expect(result.details.experienceRequired).toBe('2 years');
     });
 
     it('should format 120 months as 10 years', async () => {
@@ -1242,11 +1268,11 @@ describe('executeJobDetailsQueryById - additional edge cases', () => {
     await expect(executeJobDetailsQueryById('   ')).rejects.toThrow(ValidationError);
   });
 
-  it('should pass ID with surrounding whitespace to URL builder', async () => {
+  it('should trim whitespace from job ID before building URL', async () => {
     mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
     await executeJobDetailsQueryById('  123456  ');
     expect(mockedAxios.get).toHaveBeenCalledWith(
-      'https://www.linkedin.com/jobs/view/  123456',
+      'https://www.linkedin.com/jobs/view/123456',
       expect.any(Object)
     );
   });
@@ -1266,6 +1292,15 @@ describe('executeJobDetailsQueryRawHtmlById - additional edge cases', () => {
     mockedAxios.get.mockResolvedValueOnce({ data: rawHtml });
     const result = await executeJobDetailsQueryRawHtmlById('999');
     expect(result).toBe(rawHtml);
+  });
+
+  it('should trim whitespace from job ID before building URL', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html><body></body></html>' });
+    await executeJobDetailsQueryRawHtmlById('  789  ');
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      'https://www.linkedin.com/jobs/view/789',
+      expect.any(Object)
+    );
   });
 });
 

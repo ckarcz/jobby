@@ -1,8 +1,8 @@
 /**
- * Parses a string into an integer, throwing if the value is not a valid integer.
+ * Parses a string into a non-negative integer, throwing if the value is not valid.
  * @param value - The string to parse.
- * @returns The parsed integer.
- * @throws Error if the value is empty, non-numeric, or not a whole number.
+ * @returns The parsed non-negative integer.
+ * @throws Error if the value is empty, non-numeric, not a whole number, or negative.
  */
 export function parseNumber(value: string): number {
   const trimmed = value.trim();
@@ -12,6 +12,9 @@ export function parseNumber(value: string): number {
   const parsed = Number(trimmed);
   if (!Number.isInteger(parsed)) {
     throw new Error(`Invalid number: ${value}`);
+  }
+  if (parsed < 0) {
+    throw new Error(`Invalid number (must be non-negative): ${value}`);
   }
   return parsed;
 }

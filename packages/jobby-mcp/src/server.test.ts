@@ -87,10 +87,10 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       expect(constructorCall[0].name).toBe('jobby-mcp');
     });
 
-    it('should create server with version "2.0.0"', async () => {
+    it('should create server with version from package.json', async () => {
       const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
       const constructorCall = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(constructorCall[0].version).toBe('2.0.0');
+      expect(constructorCall[0].version).toBe('1.0.0');
     });
 
     it('should register search_jobs tool with correct config', () => {
@@ -247,11 +247,10 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       expect(parsed.details.incentiveInfo).toBe('Bonus Eligible: Yes');
     });
 
-    it('should return error when neither jobUrl nor jobId provided', async () => {
-      const result = await getJobDetailsHandler({}, {});
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either jobUrl or jobId is required');
+    it('should throw ZodError when neither jobUrl nor jobId provided (refine rejects at schema level)', async () => {
+      await expect(async () => {
+        await getJobDetailsHandler({}, {});
+      }).rejects.toThrow();
     });
   });
 
@@ -367,6 +366,12 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
     it('should reject non-string jobId', async () => {
       await expect(async () => {
         await getJobDetailsHandler({ jobId: true }, {});
+      }).rejects.toThrow();
+    });
+
+    it('should reject empty string jobId (min length 1)', async () => {
+      await expect(async () => {
+        await getJobDetailsHandler({ jobId: '' }, {});
       }).rejects.toThrow();
     });
   });

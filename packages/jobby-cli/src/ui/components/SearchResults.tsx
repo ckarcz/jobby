@@ -13,7 +13,7 @@ import { VIRTUAL_LIST_RESERVED_LINES, LOAD_DURATION_DISPLAY_MS } from '../consta
 
 /** Scrollable list of job search results. */
 export function SearchResults(): React.ReactElement {
-  const { totalResults, searchResults, searchMetadata, selectedJobIndex, loadMoreStatus } = useAppState();
+  const { totalResults, searchResults, searchMetadata, selectedJobIndex, loadMoreStatus, loadMoreError } = useAppState();
   const panelFocused = usePanelFocus('results');
   const containerRef = useRef<DOMElement>(null);
   const listRef = useRef<VirtualListRef>(null);
@@ -51,6 +51,7 @@ export function SearchResults(): React.ReactElement {
       <ResultsFooter
         isOnLastItem={isOnLastItem}
         loadMoreStatus={loadMoreStatus}
+        loadMoreError={loadMoreError}
         hasResults={totalResults.length > 0}
       />
     </Box>

@@ -4,7 +4,7 @@ import { resolveConfig, DEFAULT_CLIENT_CONFIG } from './config.js';
 /**
  * Tests for configuration resolution including DEFAULT_CLIENT_CONFIG values
  * and the resolveConfig function that merges user-provided options
- * with defaults for timeout, request delay, and logging.
+ * with defaults for timeout and logging.
  */
 
 describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
@@ -12,8 +12,6 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
     it('should have expected default values', () => {
       expect(DEFAULT_CLIENT_CONFIG.baseUrl).toBe('www.linkedin.com');
       expect(DEFAULT_CLIENT_CONFIG.timeout).toBe(10_000);
-      expect(DEFAULT_CLIENT_CONFIG.requestDelay.baseMs).toBe(2_000);
-      expect(DEFAULT_CLIENT_CONFIG.requestDelay.jitterMs).toBe(1_000);
     });
   });
 
@@ -124,36 +122,6 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       });
     });
 
-    describe('requestDelay', () => {
-      it('should use defaults when requestDelay not provided', () => {
-        const resolved = resolveConfig({});
-        expect(resolved.requestDelay.baseMs).toBe(2_000);
-        expect(resolved.requestDelay.jitterMs).toBe(1_000);
-      });
-
-      it('should override baseMs', () => {
-        const resolved = resolveConfig({ requestDelay: { baseMs: 5000 } });
-        expect(resolved.requestDelay.baseMs).toBe(5000);
-        expect(resolved.requestDelay.jitterMs).toBe(1_000);
-      });
-
-      it('should override jitterMs', () => {
-        const resolved = resolveConfig({ requestDelay: { jitterMs: 500 } });
-        expect(resolved.requestDelay.jitterMs).toBe(500);
-      });
-
-      it('should override all request delay values', () => {
-        const resolved = resolveConfig({
-          requestDelay: {
-            baseMs: 3000,
-            jitterMs: 200,
-          },
-        });
-        expect(resolved.requestDelay.baseMs).toBe(3000);
-        expect(resolved.requestDelay.jitterMs).toBe(200);
-      });
-    });
-
     describe('environment variable edge cases', () => {
       afterEach(() => {
         vi.unstubAllEnvs();
@@ -172,16 +140,5 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       });
     });
 
-    describe('requestDelay edge cases', () => {
-      it('should allow zero baseMs', () => {
-        const resolved = resolveConfig({ requestDelay: { baseMs: 0 } });
-        expect(resolved.requestDelay.baseMs).toBe(0);
-      });
-
-      it('should allow zero jitterMs', () => {
-        const resolved = resolveConfig({ requestDelay: { jitterMs: 0 } });
-        expect(resolved.requestDelay.jitterMs).toBe(0);
-      });
-    });
   });
 });

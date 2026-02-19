@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { SearchInputSchema, JobDetailsInputSchema } from './schemas.js';
+import { SearchInputSchema, JobDetailsBaseSchema, JobDetailsInputSchema } from './schemas.js';
 import { handleSearchJobs, handleGetJobDetails } from './handlers.js';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
 
 /**
  * Create and configure the Jobby MCP server.
@@ -16,7 +20,7 @@ export function createServer(): McpServer {
   const server = new McpServer(
     {
       name: 'jobby-mcp',
-      version: '2.0.0',
+      version: packageJson.version,
     },
     {
       capabilities: {
@@ -41,7 +45,7 @@ export function createServer(): McpServer {
     'get_job_details',
     {
       description: 'Get detailed information about a specific job posting by URL or job ID.',
-      inputSchema: JobDetailsInputSchema.shape,
+      inputSchema: JobDetailsBaseSchema.shape,
     },
     async (rawArgs) => {
       const args = JobDetailsInputSchema.parse(rawArgs);

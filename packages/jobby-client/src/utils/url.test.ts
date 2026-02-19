@@ -47,6 +47,20 @@ describe('urlWithNoQueryParams - query parameter removal from URLs', () => {
       expect(urlWithNoQueryParams('')).toBeUndefined();
     });
   });
+
+  describe('relative and invalid URL inputs', () => {
+    it('should resolve relative LinkedIn URL with base URL', () => {
+      expect(urlWithNoQueryParams('/jobs/view/123?trk=x')).toBe('https://www.linkedin.com/jobs/view/123');
+    });
+
+    it('should resolve relative company URL with base URL', () => {
+      expect(urlWithNoQueryParams('/company/test-co?trk=tracking')).toBe('https://www.linkedin.com/company/test-co');
+    });
+
+    it('should return undefined for completely invalid URL', () => {
+      expect(urlWithNoQueryParams('http://[invalid')).toBeUndefined();
+    });
+  });
 });
 
 describe('extractJobIdFromUrl - extract numeric job ID from LinkedIn URLs', () => {

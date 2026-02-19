@@ -1,21 +1,6 @@
 import { type LoggingConfig, type Logger, createLogger } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
 
-/** Request delay configuration. */
-export interface RequestDelay {
-  /**
-   * Base delay in milliseconds between requests.
-   * @default 2000
-   */
-  baseMs?: number | undefined;
-
-  /**
-   * Random jitter in milliseconds to add to base delay.
-   * @default 1000
-   */
-  jitterMs?: number | undefined;
-}
-
 /** Configuration options for the LinkedIn Jobs client. */
 export interface ClientConfig {
   /**
@@ -37,11 +22,6 @@ export interface ClientConfig {
   userAgent?: string | (() => string) | undefined;
 
   /**
-   * Request delay configuration.
-   */
-  requestDelay?: RequestDelay | undefined;
-
-  /**
    * AbortSignal for cancelling operations.
    */
   signal?: AbortSignal | undefined;
@@ -53,19 +33,12 @@ export interface ClientConfig {
   logging?: LoggingConfig | undefined;
 }
 
-/** Resolved request delay with all values defined. */
-export interface ResolvedRequestDelay {
-  baseMs: number;
-  jitterMs: number;
-}
-
 /** Resolved configuration with all required values defined. */
 export interface ResolvedClientConfig {
   baseUrl: string;
   timeout: number;
   /** Always a resolved string — factory functions are evaluated in {@link resolveConfig}. */
   userAgent: string;
-  requestDelay: ResolvedRequestDelay;
   signal: AbortSignal | undefined;
   logger: Logger;
 }
@@ -74,10 +47,6 @@ export interface ResolvedClientConfig {
 export const DEFAULT_CLIENT_CONFIG = {
   baseUrl: 'www.linkedin.com',
   timeout: 10_000,
-  requestDelay: {
-    baseMs: 2_000,
-    jitterMs: 1_000,
-  },
 } as const;
 
 /**
@@ -101,10 +70,6 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
     baseUrl: config?.baseUrl ?? envBaseUrl ?? DEFAULT_CLIENT_CONFIG.baseUrl,
     timeout: config?.timeout ?? resolvedEnvTimeout ?? DEFAULT_CLIENT_CONFIG.timeout,
     userAgent: resolveUserAgent(config?.userAgent),
-    requestDelay: {
-      baseMs: config?.requestDelay?.baseMs ?? DEFAULT_CLIENT_CONFIG.requestDelay.baseMs,
-      jitterMs: config?.requestDelay?.jitterMs ?? DEFAULT_CLIENT_CONFIG.requestDelay.jitterMs,
-    },
     signal: config?.signal,
     logger: createLogger(config?.logging),
   };

@@ -18,9 +18,9 @@ describe('parseNumber - numeric string parsing for CLI options', () => {
       expect(parseNumber('0')).toBe(0);
     });
 
-    it('should parse negative integers', () => {
-      expect(parseNumber('-5')).toBe(-5);
-      expect(parseNumber('-100')).toBe(-100);
+    it('should reject negative integers', () => {
+      expect(() => parseNumber('-5')).toThrow('Invalid number (must be non-negative): -5');
+      expect(() => parseNumber('-100')).toThrow('Invalid number (must be non-negative): -100');
     });
   });
 
@@ -43,8 +43,8 @@ describe('parseNumber - numeric string parsing for CLI options', () => {
       expect(parseNumber('0')).toBe(0);
     });
 
-    it('should parse negative numbers like "-5"', () => {
-      expect(parseNumber('-5')).toBe(-5);
+    it('should reject negative numbers like "-5"', () => {
+      expect(() => parseNumber('-5')).toThrow('Invalid number (must be non-negative): -5');
     });
 
     it('should parse numbers with leading zeros', () => {

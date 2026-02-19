@@ -82,16 +82,17 @@ export async function handleGetJobDetails(
   args: z.infer<typeof JobDetailsInputSchema>,
 ): Promise<ToolResponse> {
   try {
-    if (!args.jobUrl && !args.jobId) {
+    let details;
+    if (args.jobUrl !== undefined) {
+      details = await client.jobs.queryForJobDetailsByUrl(args.jobUrl);
+    } else if (args.jobId !== undefined) {
+      details = await client.jobs.queryForJobDetailsById(args.jobId);
+    } else {
       return {
         content: [{ type: 'text' as const, text: 'Error: Either jobUrl or jobId is required' }],
         isError: true,
       };
     }
-
-    const details = args.jobUrl
-      ? await client.jobs.queryForJobDetailsByUrl(args.jobUrl)
-      : await client.jobs.queryForJobDetailsById(args.jobId ?? '');
 
     return {
       content: [{ type: 'text' as const, text: JSON.stringify(details, null, 2) }],

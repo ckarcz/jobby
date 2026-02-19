@@ -1,15 +1,26 @@
 /**
  * Removes query parameters from a URL.
  * @param urlString - The URL string to strip query parameters from.
- * @returns The URL without query parameters, or undefined if the input is nullish.
+ * @returns The URL without query parameters, or undefined if the input is nullish or invalid.
  */
 export function urlWithNoQueryParams(urlString: string | null | undefined): string | undefined {
   if (!urlString) {
     return undefined;
   }
-  const url = new URL(urlString);
-  url.search = '';
-  return url.href;
+  try {
+    const url = new URL(urlString);
+    url.search = '';
+    return url.href;
+  } catch {
+    // Try as a relative URL with LinkedIn as base
+    try {
+      const url = new URL(urlString, 'https://www.linkedin.com');
+      url.search = '';
+      return url.href;
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 /**

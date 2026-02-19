@@ -30,12 +30,27 @@ export const SearchInputSchema = z.object({
 });
 
 /**
- * Input schema for the `get_job_details` MCP tool.
+ * Base object schema for the `get_job_details` MCP tool.
+ *
+ * Exported separately so that `JobDetailsBaseSchema.shape` can be passed to
+ * the MCP SDK's `registerTool` (which requires a plain object shape), while
+ * the refined version ({@link JobDetailsInputSchema}) is used for runtime
+ * validation in the handler.
+ */
+export const JobDetailsBaseSchema = z.object({
+  jobUrl: z.string().optional().describe('The LinkedIn job posting URL'),
+  jobId: z.string().min(1).optional().describe('The LinkedIn job ID'),
+});
+
+/**
+ * Refined input schema for the `get_job_details` MCP tool.
  *
  * Requires at least one of `jobUrl` or `jobId` to identify the target posting.
- * When both are supplied the handler prefers `jobUrl`.
+ * When both are supplied the handler prefers `jobUrl`.  The `.refine()`
+ * constraint makes the "at least one required" rule visible at the schema level
+ * rather than only in handler logic.
  */
-export const JobDetailsInputSchema = z.object({
-  jobUrl: z.string().optional().describe('The LinkedIn job posting URL'),
-  jobId: z.string().optional().describe('The LinkedIn job ID'),
-});
+export const JobDetailsInputSchema = JobDetailsBaseSchema.refine(
+  (data) => data.jobUrl !== undefined || data.jobId !== undefined,
+  { message: 'Either jobUrl or jobId is required' },
+);

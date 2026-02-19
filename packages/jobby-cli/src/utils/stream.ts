@@ -15,23 +15,34 @@ export async function readFromStream(stream: Readable, isTTY: boolean | undefine
 
   return new Promise<string | undefined>((resolve) => {
     let data = '';
+
+    const cleanup = (): void => {
+      clearTimeout(timeout);
+      stream.removeListener('data', onData);
+      stream.removeListener('end', onEnd);
+      stream.removeListener('error', onError);
+    };
+
+    const onData = (chunk: string): void => {
+      data += chunk;
+    };
+    const onEnd = (): void => {
+      cleanup();
+      resolve(data.trim() || undefined);
+    };
+    const onError = (): void => {
+      cleanup();
+      resolve(undefined);
+    };
+
     const timeout = setTimeout(() => {
-      stream.removeAllListeners('data');
-      stream.removeAllListeners('end');
+      cleanup();
       resolve(data.trim() || undefined);
     }, timeoutMs);
 
     stream.setEncoding('utf8');
-    stream.on('data', (chunk: string) => {
-      data += chunk;
-    });
-    stream.on('end', () => {
-      clearTimeout(timeout);
-      resolve(data.trim() || undefined);
-    });
-    stream.on('error', () => {
-      clearTimeout(timeout);
-      resolve(undefined);
-    });
+    stream.on('data', onData);
+    stream.on('end', onEnd);
+    stream.on('error', onError);
   });
 }

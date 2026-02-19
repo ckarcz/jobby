@@ -9,10 +9,6 @@ import { JobbyClient } from 'jobby-client';
 
 const client = new JobbyClient({
   timeout: 15_000,
-  requestDelay: {
-    baseMs: 500,
-    jitterMs: 200,
-  },
   logging: {
     level: 'info',
   },
@@ -43,18 +39,6 @@ Custom User-Agent header. If not set, a random browser user-agent is used per re
 
 - **Type:** `string`
 - **Default:** Random user-agent
-
-### `requestDelay`
-
-Adds a delay before each request to avoid rate limiting.
-
-- **Type:** `RequestDelay`
-- **Default:** `{ baseMs: 2000, jitterMs: 1000 }`
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `baseMs` | `number` | Base delay in milliseconds |
-| `jitterMs` | `number` | Random additional delay (0 to jitterMs) |
 
 ### `logging`
 

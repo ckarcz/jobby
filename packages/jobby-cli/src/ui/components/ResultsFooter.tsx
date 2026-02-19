@@ -1,16 +1,17 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import type { LoadMoreStatus } from '../state/types.js';
-import { icons } from '../theme.js';
+import { glyphs, icons } from '../theme.js';
 
 interface ResultsFooterProps {
   isOnLastItem: boolean;
   loadMoreStatus: LoadMoreStatus;
+  loadMoreError: string | undefined;
   hasResults: boolean;
 }
 
 /** Load-more status messages below the results list. */
-export function ResultsFooter({ isOnLastItem, loadMoreStatus, hasResults }: ResultsFooterProps): React.ReactElement | null {
+export function ResultsFooter({ isOnLastItem, loadMoreStatus, loadMoreError, hasResults }: ResultsFooterProps): React.ReactElement | null {
   if (!hasResults || !isOnLastItem) {
     return null;
   }
@@ -20,6 +21,8 @@ export function ResultsFooter({ isOnLastItem, loadMoreStatus, hasResults }: Resu
     text = `${icons.lightning} Fetching more jobs...`;
   } else if (loadMoreStatus === 'exhausted') {
     text = 'No more jobs ლ(ಠ益ಠლ)';
+  } else if (loadMoreStatus === 'error') {
+    text = `${glyphs.cross} Failed to load more: ${loadMoreError ?? 'Unknown error'}`;
   } else {
     text = '[↓] To try to load more';
   }

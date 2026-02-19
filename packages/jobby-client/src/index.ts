@@ -4,7 +4,6 @@ export { JobbyClient } from './client.js';
 // Configuration
 export {
   type ClientConfig,
-  type RequestDelay,
   DEFAULT_CLIENT_CONFIG,
 } from './config.js';
 

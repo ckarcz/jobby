@@ -110,11 +110,12 @@ export async function executeJobDetailsQueryById(
   jobId: string,
   clientConfig?: ClientConfig
 ): Promise<JobDetails> {
-  if (!jobId.trim()) {
+  const trimmedId = jobId.trim();
+  if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
   const config = resolveConfig(clientConfig);
-  const jobUrl = `https://${config.baseUrl}/jobs/view/${jobId}`;
+  const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
   return executeJobDetailsQueryByUrl(jobUrl, clientConfig);
 }
 
@@ -123,11 +124,12 @@ export async function executeJobDetailsQueryRawHtmlById(
   jobId: string,
   clientConfig?: ClientConfig
 ): Promise<string> {
-  if (!jobId.trim()) {
+  const trimmedId = jobId.trim();
+  if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
   const config = resolveConfig(clientConfig);
-  const jobUrl = `https://${config.baseUrl}/jobs/view/${jobId}`;
+  const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
   return executeJobDetailsQueryRawHtmlByUrl(jobUrl, clientConfig);
 }
 
@@ -539,7 +541,8 @@ function formatExperienceRequirement(months: number | undefined): string | undef
   if (months === undefined) {
     return undefined;
   }
-  return `${Math.round(months / 12)} years`;
+  const years = Math.round(months / 12);
+  return `${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
 /** Extracts salary information from JSON-LD. */

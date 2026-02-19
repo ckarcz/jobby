@@ -332,12 +332,13 @@ describe('handleGetJobDetails - job detail resolution', () => {
     expect(result.content[0].type).toBe('text');
   });
 
-  it('should pass empty string to queryForJobDetailsById via nullish coalescing when jobId is empty string', async () => {
+  it('should call queryForJobDetailsById when jobId is empty string (schema rejects this, but handler uses explicit undefined check)', async () => {
     mockGetDetailsById.mockResolvedValueOnce({ id: '' });
+    // With explicit undefined checks, empty string is not undefined,
+    // so the handler treats it as a provided value and delegates to the client.
+    // In practice the schema's min(1) rejects empty strings before reaching the handler.
     await handleGetJobDetails({ jobId: '' });
-    // Empty string is falsy, so !args.jobId is true, but !args.jobUrl is also true
-    // so the handler returns the "required" error
-    // Actually: '' is falsy so !args.jobId === true and !args.jobUrl === true => error
+    expect(mockGetDetailsById).toHaveBeenCalledWith('');
   });
 
   it('should handle JobbyError thrown from queryForJobDetailsByUrl', async () => {

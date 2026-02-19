@@ -10,7 +10,7 @@ export type PanelId = 'search' | 'results' | 'filters';
 export type SearchStatus = 'idle' | 'searching' | 'results' | 'error';
 
 /** Status of loading the next page of results. */
-export type LoadMoreStatus = 'idle' | 'loading' | 'exhausted';
+export type LoadMoreStatus = 'idle' | 'loading' | 'exhausted' | 'error';
 
 /** Complete application state. */
 export interface AppState {
@@ -29,6 +29,7 @@ export interface AppState {
   searchError: string | undefined;
   selectedJobIndex: number;
   loadMoreStatus: LoadMoreStatus;
+  loadMoreError: string | undefined;
   searchFilters: SearchFilters;
   filterDrawerOpen: boolean;
 }

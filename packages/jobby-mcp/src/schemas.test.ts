@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SearchInputSchema, JobDetailsInputSchema } from './schemas.js';
+import { SearchInputSchema, JobDetailsBaseSchema, JobDetailsInputSchema } from './schemas.js';
 
 /**
  * Tests for MCP tool input schemas validating that enum constraints,
@@ -237,10 +237,64 @@ describe('SearchInputSchema - search tool input validation', () => {
   });
 });
 
-describe('JobDetailsInputSchema - job details tool input validation', () => {
-  it('should accept empty object (all fields optional at schema level)', () => {
-    const result = JobDetailsInputSchema.safeParse({});
+describe('JobDetailsBaseSchema - base object schema validation', () => {
+  it('should accept empty object (all fields optional at base level)', () => {
+    const result = JobDetailsBaseSchema.safeParse({});
     expect(result.success).toBe(true);
+  });
+
+  it('should accept jobUrl only', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobUrl: 'https://linkedin.com/jobs/view/123' });
+    expect(result.success).toBe(true);
+    expect(result.data?.jobUrl).toBe('https://linkedin.com/jobs/view/123');
+  });
+
+  it('should accept jobId only', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobId: '123456' });
+    expect(result.success).toBe(true);
+    expect(result.data?.jobId).toBe('123456');
+  });
+
+  it('should reject empty string for jobId (min length 1)', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobId: '' });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject non-string jobUrl', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobUrl: 123 });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject non-string jobId', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobId: 123 });
+    expect(result.success).toBe(false);
+  });
+
+  it('should expose .shape for MCP SDK tool registration', () => {
+    expect(JobDetailsBaseSchema.shape).toBeDefined();
+    expect(JobDetailsBaseSchema.shape.jobUrl).toBeDefined();
+    expect(JobDetailsBaseSchema.shape.jobId).toBeDefined();
+  });
+});
+
+describe('JobDetailsInputSchema - refined job details tool input validation', () => {
+  it('should reject empty object (refine requires at least one field)', () => {
+    const result = JobDetailsInputSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it('should include refine error message when neither field provided', () => {
+    const result = JobDetailsInputSchema.safeParse({});
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message);
+      expect(messages).toContain('Either jobUrl or jobId is required');
+    }
+  });
+
+  it('should reject when both jobUrl and jobId are explicitly undefined', () => {
+    const result = JobDetailsInputSchema.safeParse({ jobUrl: undefined, jobId: undefined });
+    expect(result.success).toBe(false);
   });
 
   it('should accept jobUrl only', () => {
@@ -278,9 +332,9 @@ describe('JobDetailsInputSchema - job details tool input validation', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept any string as jobId (validation happens in handler)', () => {
+  it('should reject empty string for jobId (min length 1)', () => {
     const result = JobDetailsInputSchema.safeParse({ jobId: '' });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('should reject boolean jobUrl', () => {

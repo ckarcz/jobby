@@ -102,4 +102,53 @@ describe('readFromStream - stdin stream reading for piped input', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('listener cleanup', () => {
+    it('should remove all listeners after timeout', async () => {
+      const stream = new Readable({
+        read() {
+          // Never sends data or ends — will trigger timeout
+        },
+      });
+      const errorListenersBefore = stream.listenerCount('error');
+      const dataListenersBefore = stream.listenerCount('data');
+      const endListenersBefore = stream.listenerCount('end');
+
+      await readFromStream(stream, false, 50);
+
+      expect(stream.listenerCount('error')).toBe(errorListenersBefore);
+      expect(stream.listenerCount('data')).toBe(dataListenersBefore);
+      expect(stream.listenerCount('end')).toBe(endListenersBefore);
+    });
+
+    it('should remove all listeners after stream ends', async () => {
+      const stream = new Readable({
+        read() {
+          this.push('data');
+          this.push(null);
+        },
+      });
+      const errorListenersBefore = stream.listenerCount('error');
+
+      const result = await readFromStream(stream, false);
+
+      expect(result).toBe('data');
+      expect(stream.listenerCount('error')).toBe(errorListenersBefore);
+    });
+
+    it('should remove all listeners after stream error', async () => {
+      const stream = new Readable({
+        read() {
+          this.destroy(new Error('test error'));
+        },
+      });
+      const dataListenersBefore = stream.listenerCount('data');
+      const endListenersBefore = stream.listenerCount('end');
+
+      await readFromStream(stream, false);
+
+      expect(stream.listenerCount('data')).toBe(dataListenersBefore);
+      expect(stream.listenerCount('end')).toBe(endListenersBefore);
+    });
+  });
 });

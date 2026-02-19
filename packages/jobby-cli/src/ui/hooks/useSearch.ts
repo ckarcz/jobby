@@ -51,7 +51,7 @@ export function useSearch(): UseSearchResult {
   );
 
   const loadMore = useCallback(() => {
-    if (loadMoreStatus !== 'idle' || !searchQuery || !searchPagination) {
+    if ((loadMoreStatus !== 'idle' && loadMoreStatus !== 'error') || !searchQuery || !searchPagination) {
       return;
     }
 

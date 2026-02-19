@@ -17,6 +17,7 @@ export const initialState: AppState = {
   searchError: undefined,
   selectedJobIndex: 0,
   loadMoreStatus: 'idle',
+  loadMoreError: undefined,
   searchFilters: emptyFilters,
   filterDrawerOpen: false,
 };
@@ -37,6 +38,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         searchStatus: 'searching',
         searchError: undefined,
         loadMoreStatus: 'idle',
+        loadMoreError: undefined,
       };
     case 'SEARCH_SUCCESS':
       return {
@@ -49,6 +51,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         searchQuery: action.query,
         selectedJobIndex: 0,
         loadMoreStatus: 'idle',
+        loadMoreError: undefined,
       };
     case 'SEARCH_ERROR':
       return {
@@ -59,9 +62,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_SELECTED_JOB_INDEX':
       return { ...state, selectedJobIndex: action.index };
     case 'CLEAR_RESULTS':
-      return { ...state, searchStatus: 'idle', totalResults: [], searchResults: [], searchPagination: undefined, searchMetadata: undefined, searchQuery: undefined, searchError: undefined, selectedJobIndex: 0, loadMoreStatus: 'idle' };
+      return { ...state, searchStatus: 'idle', totalResults: [], searchResults: [], searchPagination: undefined, searchMetadata: undefined, searchQuery: undefined, searchError: undefined, selectedJobIndex: 0, loadMoreStatus: 'idle', loadMoreError: undefined };
     case 'LOAD_MORE_START':
-      return { ...state, loadMoreStatus: 'loading' };
+      return { ...state, loadMoreStatus: 'loading', loadMoreError: undefined };
     case 'LOAD_MORE_SUCCESS':
       return {
         ...state,
@@ -72,7 +75,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         loadMoreStatus: action.results.length === 0 ? 'exhausted' : 'idle',
       };
     case 'LOAD_MORE_ERROR':
-      return { ...state, loadMoreStatus: 'idle' };
+      return { ...state, loadMoreStatus: 'error', loadMoreError: action.error };
     case 'OPEN_FILTER_DRAWER':
       return { ...state, filterDrawerOpen: true };
     case 'CLOSE_FILTER_DRAWER':

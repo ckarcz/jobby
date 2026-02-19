@@ -34,7 +34,7 @@ export function useResultsKeyboard(
     if (!scrollAfterLoadMore.current) { return; }
     if (loadMoreStatus === 'loading') { return; }
     scrollAfterLoadMore.current = false;
-    if (loadMoreStatus !== 'idle') { return; }
+    if (loadMoreStatus !== 'idle' && loadMoreStatus !== 'error') { return; }
     const newMaxIndex = totalResults.length - 1;
     if (newMaxIndex <= selectedJobIndex) { return; }
     const target = Math.min(selectedJobIndex + viewport.visibleCount, newMaxIndex);
@@ -64,7 +64,7 @@ export function useResultsKeyboard(
 
     if (key.end) {
       if (isOnLastItem) {
-        if (loadMoreStatus === 'idle') {
+        if (loadMoreStatus === 'idle' || loadMoreStatus === 'error') {
           scrollAfterLoadMore.current = true;
           loadMore();
         }
@@ -76,7 +76,7 @@ export function useResultsKeyboard(
 
     if (key.pageDown) {
       if (isOnLastItem) {
-        if (loadMoreStatus === 'idle') {
+        if (loadMoreStatus === 'idle' || loadMoreStatus === 'error') {
           scrollAfterLoadMore.current = true;
           loadMore();
         }
