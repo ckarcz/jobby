@@ -4,6 +4,7 @@ export { JobbyClient } from './client.js';
 // Configuration
 export {
   type ClientConfig,
+  type ResolvedClientConfig,
   DEFAULT_CLIENT_CONFIG,
 } from './config.js';
 

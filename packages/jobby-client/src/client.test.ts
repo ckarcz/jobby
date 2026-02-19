@@ -49,15 +49,19 @@ describe('JobbyClient - public API and query delegation', () => {
   });
 
   describe('getConfig', () => {
-    it('should return undefined when no config provided', () => {
+    it('should return resolved config with defaults when no config provided', () => {
       const client = new JobbyClient();
-      expect(client.getConfig()).toBeUndefined();
+      const config = client.getConfig();
+      expect(config.baseUrl).toBe('www.linkedin.com');
+      expect(config.timeout).toBe(10_000);
+      expect(config.retry).toBeDefined();
     });
 
-    it('should return config when provided', () => {
-      const config = { timeout: 5000, debug: true };
-      const client = new JobbyClient(config);
-      expect(client.getConfig()).toBe(config);
+    it('should return resolved config with overrides when provided', () => {
+      const client = new JobbyClient({ timeout: 5000 });
+      const config = client.getConfig();
+      expect(config.timeout).toBe(5000);
+      expect(config.baseUrl).toBe('www.linkedin.com');
     });
   });
 

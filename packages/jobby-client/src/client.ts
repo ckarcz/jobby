@@ -1,4 +1,4 @@
-import { type ClientConfig, resolveConfig } from './config.js';
+import { type ClientConfig, type ResolvedClientConfig, resolveConfig } from './config.js';
 import type { JobSearchParams, PaginationParams, Job, JobDetails, SearchResponse } from './types/index.js';
 import { executeJobsQuery, executeJobsQueryRawHtml  } from './queries/jobs-query.js';
 import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById  } from './queries/job-details-query.js';
@@ -139,6 +139,7 @@ export class JobbyClient {
   public readonly jobs: JobsResource;
 
   private readonly config: ClientConfig | undefined;
+  private readonly resolvedConfig: ResolvedClientConfig;
 
   /**
    * Creates a new LinkedIn Jobs client.
@@ -147,14 +148,14 @@ export class JobbyClient {
    */
   constructor(config?: ClientConfig) {
     this.config = config;
-    const resolved = resolveConfig(config);
-    this.jobs = new JobsResource(config, resolved.retry);
+    this.resolvedConfig = resolveConfig(config);
+    this.jobs = new JobsResource(config, this.resolvedConfig.retry);
   }
 
   /**
-   * Get the current configuration.
+   * Get the resolved configuration with all defaults applied.
    */
-  getConfig(): ClientConfig | undefined {
-    return this.config;
+  getConfig(): ResolvedClientConfig {
+    return this.resolvedConfig;
   }
 }
