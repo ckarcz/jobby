@@ -77,6 +77,4 @@ export async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))) {
-  void main();
-}
+void main();

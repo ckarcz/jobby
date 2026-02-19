@@ -1,16 +1,11 @@
 import type { AppState, AppAction } from './types.js';
 import { emptyFilters } from './filterTypes.js';
 
-// In non-TTY environments, columns/rows are undefined despite TypeScript's type declaration.
-// The UI command guards against non-TTY, but we provide safe defaults as defense-in-depth.
-const terminalWidth = (process.stdout.columns as number | undefined) ?? 80;
-const terminalHeight = (process.stdout.rows as number | undefined) ?? 24;
-
 export const initialState: AppState = {
-  terminalWidth,
-  terminalHeight,
-  maxWidth: terminalWidth - 1,
-  maxHeight: terminalHeight - 1,
+  terminalWidth: process.stdout.columns,
+  terminalHeight: process.stdout.rows,
+  maxWidth: process.stdout.columns - 1,
+  maxHeight: process.stdout.rows - 1,
   focusedPanel: null,
   searchKeyword: '',
   searchStatus: 'idle',
