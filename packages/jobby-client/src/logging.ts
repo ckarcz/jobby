@@ -55,8 +55,16 @@ export interface LoggingConfig {
   onLog?: ((entry: LogEntry) => void) | undefined;
 }
 
-/** Logger type used throughout the library. */
-export type Logger = winston.Logger;
+/** Logger interface used throughout the library. Decoupled from Winston internals. */
+export interface Logger {
+  level: string;
+  silent: boolean;
+  error(message: string, ...meta: unknown[]): void;
+  warn(message: string, ...meta: unknown[]): void;
+  info(message: string, ...meta: unknown[]): void;
+  verbose(message: string, ...meta: unknown[]): void;
+  debug(message: string, ...meta: unknown[]): void;
+}
 
 /**
  * Creates a configured Winston logger instance.
