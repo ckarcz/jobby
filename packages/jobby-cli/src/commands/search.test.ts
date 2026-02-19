@@ -80,12 +80,28 @@ describe('queryForJobs - search command handler', () => {
     it('should pass job-type and experience-level filter options', async () => {
       await queryForJobs({
         keyword: 'React',
-        jobType: 'full-time',
-        experienceLevel: 'senior',
+        jobType: ['full-time'],
+        experienceLevel: ['senior'],
       });
 
       expect(mockClientInstance.jobs.queryForJobs).toHaveBeenCalledWith(
-        expect.objectContaining({ jobType: 'full-time', experienceLevel: 'senior' }),
+        expect.objectContaining({ jobType: ['full-time'], experienceLevel: ['senior'] }),
+        expect.any(Object)
+      );
+    });
+
+    it('should pass multiple values for job-type and experience-level', async () => {
+      await queryForJobs({
+        keyword: 'React',
+        jobType: ['full-time', 'contract'],
+        experienceLevel: ['senior', 'mid-senior'],
+      });
+
+      expect(mockClientInstance.jobs.queryForJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jobType: ['full-time', 'contract'],
+          experienceLevel: ['senior', 'mid-senior'],
+        }),
         expect.any(Object)
       );
     });
@@ -93,15 +109,28 @@ describe('queryForJobs - search command handler', () => {
     it('should pass minimum-salary, workplace-type, and listing-age filter options', async () => {
       await queryForJobs({
         minimumSalary: '120,000',
-        workplaceType: 'remote',
+        workplaceType: ['remote'],
         listingAge: 'past-week',
       });
 
       expect(mockClientInstance.jobs.queryForJobs).toHaveBeenCalledWith(
         expect.objectContaining({
           minimumSalary: '120,000',
-          workplaceType: 'remote',
+          workplaceType: ['remote'],
           listingAge: 'past-week',
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it('should pass multiple values for workplace-type', async () => {
+      await queryForJobs({
+        workplaceType: ['remote', 'hybrid'],
+      });
+
+      expect(mockClientInstance.jobs.queryForJobs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workplaceType: ['remote', 'hybrid'],
         }),
         expect.any(Object)
       );
@@ -129,10 +158,10 @@ describe('queryForJobs - search command handler', () => {
       await queryForJobs({
         keyword: 'Python',
         location: 'San Francisco',
-        jobType: 'contract',
-        experienceLevel: 'entry-level',
+        jobType: ['contract'],
+        experienceLevel: ['entry-level'],
         minimumSalary: '80,000',
-        workplaceType: 'hybrid',
+        workplaceType: ['hybrid'],
         listingAge: 'past-month',
         geoId: '103644278',
         companyId: '1441',
@@ -142,10 +171,10 @@ describe('queryForJobs - search command handler', () => {
         expect.objectContaining({
           keyword: 'Python',
           location: 'San Francisco',
-          jobType: 'contract',
-          experienceLevel: 'entry-level',
+          jobType: ['contract'],
+          experienceLevel: ['entry-level'],
           minimumSalary: '80,000',
-          workplaceType: 'hybrid',
+          workplaceType: ['hybrid'],
           listingAge: 'past-month',
           geoId: '103644278',
           companyId: '1441',
@@ -405,10 +434,10 @@ describe('queryForJobs - search command handler', () => {
       await queryForJobs({
         keyword: 'Engineer',
         location: 'Seattle',
-        jobType: 'full-time',
-        experienceLevel: 'senior',
+        jobType: ['full-time'],
+        experienceLevel: ['senior'],
         minimumSalary: '100,000',
-        workplaceType: 'remote',
+        workplaceType: ['remote'],
         listingAge: 'past-week',
         geoId: '103644278',
         companyId: '1441',
@@ -421,10 +450,10 @@ describe('queryForJobs - search command handler', () => {
         expect.objectContaining({
           keyword: 'Engineer',
           location: 'Seattle',
-          jobType: 'full-time',
-          experienceLevel: 'senior',
+          jobType: ['full-time'],
+          experienceLevel: ['senior'],
           minimumSalary: '100,000',
-          workplaceType: 'remote',
+          workplaceType: ['remote'],
           listingAge: 'past-week',
           geoId: '103644278',
           companyId: '1441',

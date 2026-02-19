@@ -327,7 +327,13 @@ describe('search command option parsing', () => {
     ] as const)('should accept --job-type %s', (value) => {
       const cmd = getSearchCommand();
       cmd.parse(['node', 'search', '--job-type', value], { from: 'node' });
-      expect(cmd.opts().jobType).toBe(value);
+      expect(cmd.opts().jobType).toEqual([value]);
+    });
+
+    it('should accept multiple --job-type values', () => {
+      const cmd = getSearchCommand();
+      cmd.parse(['node', 'search', '--job-type', 'full-time', 'contract'], { from: 'node' });
+      expect(cmd.opts().jobType).toEqual(['full-time', 'contract']);
     });
   });
 
@@ -337,7 +343,13 @@ describe('search command option parsing', () => {
     ] as const)('should accept --experience-level %s', (value) => {
       const cmd = getSearchCommand();
       cmd.parse(['node', 'search', '--experience-level', value], { from: 'node' });
-      expect(cmd.opts().experienceLevel).toBe(value);
+      expect(cmd.opts().experienceLevel).toEqual([value]);
+    });
+
+    it('should accept multiple --experience-level values', () => {
+      const cmd = getSearchCommand();
+      cmd.parse(['node', 'search', '--experience-level', 'senior', 'director'], { from: 'node' });
+      expect(cmd.opts().experienceLevel).toEqual(['senior', 'director']);
     });
   });
 
@@ -357,7 +369,13 @@ describe('search command option parsing', () => {
     ] as const)('should accept --workplace-type %s', (value) => {
       const cmd = getSearchCommand();
       cmd.parse(['node', 'search', '--workplace-type', value], { from: 'node' });
-      expect(cmd.opts().workplaceType).toBe(value);
+      expect(cmd.opts().workplaceType).toEqual([value]);
+    });
+
+    it('should accept multiple --workplace-type values', () => {
+      const cmd = getSearchCommand();
+      cmd.parse(['node', 'search', '--workplace-type', 'remote', 'hybrid'], { from: 'node' });
+      expect(cmd.opts().workplaceType).toEqual(['remote', 'hybrid']);
     });
   });
 

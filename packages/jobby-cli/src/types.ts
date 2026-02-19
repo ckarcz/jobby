@@ -33,10 +33,10 @@ export interface JobbyCliArgs {
 export interface JobSearchQueryCliArgs extends JobbyCliArgs {
   keyword?: string | undefined;
   location?: string | undefined;
-  jobType?: JobType | undefined;
-  experienceLevel?: ExperienceLevel | undefined;
+  jobType?: JobType[] | undefined;
+  experienceLevel?: ExperienceLevel[] | undefined;
   minimumSalary?: MinimumSalary | undefined;
-  workplaceType?: WorkplaceType | undefined;
+  workplaceType?: WorkplaceType[] | undefined;
   listingAge?: ListingAge | undefined;
   geoId?: string | undefined;
   companyId?: string | undefined;

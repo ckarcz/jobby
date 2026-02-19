@@ -78,11 +78,11 @@ export function createSearchCommand(activeCliArgsRef: ActiveCliArgsRef = { curre
     .option('--keyword <string>', 'job title, skill, or company name')
     .option('--location <string>', 'city, state, or country')
     .addOption(
-      new Option('--job-type <type>', 'type of job')
+      new Option('--job-type <type...>', 'type of job (repeatable)')
         .choices(JOB_TYPE_CHOICES)
     )
     .addOption(
-      new Option('--experience-level <level>', 'required experience level')
+      new Option('--experience-level <level...>', 'required experience level (repeatable)')
         .choices(EXPERIENCE_LEVEL_CHOICES)
     )
     .addOption(
@@ -90,7 +90,7 @@ export function createSearchCommand(activeCliArgsRef: ActiveCliArgsRef = { curre
         .choices(MINIMUM_SALARY_CHOICES)
     )
     .addOption(
-      new Option('--workplace-type <type>', 'work location type')
+      new Option('--workplace-type <type...>', 'work location type (repeatable)')
         .choices(WORKPLACE_TYPE_CHOICES)
     )
     .addOption(
