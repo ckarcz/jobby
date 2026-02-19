@@ -19,22 +19,9 @@ vi.mock('random-useragent', () => ({
 }));
 
 // Mock logging to keep tests silent
-vi.mock('../logging.js', () => {
-  const noopLog = (): void => {};
-  return {
-    createLogger: () => ({
-      error: noopLog,
-      warn: noopLog,
-      info: noopLog,
-      http: noopLog,
-      verbose: noopLog,
-      debug: noopLog,
-      silly: noopLog,
-      level: 'silent',
-      silent: true,
-      transports: [],
-    }),
-  };
+vi.mock('../logging.js', async () => {
+  const { loggingMockFactory } = await import('../test-utils.js');
+  return loggingMockFactory();
 });
 
 /**
