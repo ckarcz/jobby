@@ -38,10 +38,12 @@ export class JobbyError extends Error {
     if (error instanceof JobbyError) {
       return error;
     }
-    if (error instanceof Error) {
-      return new NetworkError(error.message, error);
-    }
-    return new NetworkError(String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    return new JobbyError(ErrorCode.NETWORK, message, {
+      originalError: error,
+      isOperational: false,
+      retryable: false,
+    });
   }
 }
 

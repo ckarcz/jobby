@@ -47,23 +47,33 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
         expect(result).toBe(original);
       });
 
-      it('should wrap regular Error in NetworkError', () => {
+      it('should wrap regular Error as non-operational JobbyError', () => {
         const original = new Error('Regular error');
         const result = JobbyError.from(original);
-        expect(result).toBeInstanceOf(NetworkError);
+        expect(result).toBeInstanceOf(JobbyError);
+        expect(result).not.toBeInstanceOf(NetworkError);
         expect(result.message).toBe('Regular error');
+        expect(result.isOperational).toBe(false);
+        expect(result.retryable).toBe(false);
+        expect(result.originalError).toBe(original);
       });
 
-      it('should wrap string in NetworkError', () => {
+      it('should wrap string as non-operational JobbyError', () => {
         const result = JobbyError.from('string error');
-        expect(result).toBeInstanceOf(NetworkError);
+        expect(result).toBeInstanceOf(JobbyError);
+        expect(result).not.toBeInstanceOf(NetworkError);
         expect(result.message).toBe('string error');
+        expect(result.isOperational).toBe(false);
+        expect(result.retryable).toBe(false);
       });
 
-      it('should wrap other primitives in NetworkError', () => {
+      it('should wrap other primitives as non-operational JobbyError', () => {
         const result = JobbyError.from(123);
-        expect(result).toBeInstanceOf(NetworkError);
+        expect(result).toBeInstanceOf(JobbyError);
+        expect(result).not.toBeInstanceOf(NetworkError);
         expect(result.message).toBe('123');
+        expect(result.isOperational).toBe(false);
+        expect(result.retryable).toBe(false);
       });
     });
   });
@@ -175,28 +185,37 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   });
 
   describe('JobbyError.from edge cases', () => {
-    it('should wrap null as NetworkError', () => {
+    it('should wrap null as non-operational JobbyError', () => {
       const result = JobbyError.from(null);
-      expect(result).toBeInstanceOf(NetworkError);
+      expect(result).toBeInstanceOf(JobbyError);
+      expect(result).not.toBeInstanceOf(NetworkError);
       expect(result.message).toBe('null');
+      expect(result.isOperational).toBe(false);
+      expect(result.retryable).toBe(false);
     });
 
-    it('should wrap undefined as NetworkError', () => {
+    it('should wrap undefined as non-operational JobbyError', () => {
       const result = JobbyError.from(undefined);
-      expect(result).toBeInstanceOf(NetworkError);
+      expect(result).toBeInstanceOf(JobbyError);
+      expect(result).not.toBeInstanceOf(NetworkError);
       expect(result.message).toBe('undefined');
+      expect(result.isOperational).toBe(false);
     });
 
-    it('should wrap boolean as NetworkError', () => {
+    it('should wrap boolean as non-operational JobbyError', () => {
       const result = JobbyError.from(false);
-      expect(result).toBeInstanceOf(NetworkError);
+      expect(result).toBeInstanceOf(JobbyError);
+      expect(result).not.toBeInstanceOf(NetworkError);
       expect(result.message).toBe('false');
+      expect(result.isOperational).toBe(false);
     });
 
-    it('should preserve TypeError message when wrapping', () => {
+    it('should preserve TypeError message when wrapping as non-operational', () => {
       const result = JobbyError.from(new TypeError('type error'));
       expect(result.message).toBe('type error');
       expect(result.originalError).toBeInstanceOf(TypeError);
+      expect(result.isOperational).toBe(false);
+      expect(result.retryable).toBe(false);
     });
 
     it('should return same RateLimitError instance', () => {
