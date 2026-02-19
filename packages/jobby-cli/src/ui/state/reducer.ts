@@ -4,8 +4,8 @@ import { emptyFilters } from './filterTypes.js';
 export const initialState: AppState = {
   terminalWidth: process.stdout.columns,
   terminalHeight: process.stdout.rows,
-  maxWidth: process.stdout.columns - 1,
-  maxHeight: process.stdout.rows - 1,
+  maxWidth: process.stdout.columns,
+  maxHeight: process.stdout.rows,
   focusedPanel: null,
   searchKeyword: '',
   searchStatus: 'idle',
