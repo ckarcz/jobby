@@ -15,8 +15,8 @@ function singleOrArray<T extends z.ZodEnum>(schema: T): z.ZodType<z.infer<T> | z
 }
 
 const JobSearchParamsSchema = z.object({
-  keyword: z.string().transform(s => s.trim().replace(/\s+/g, '+')).optional(),
-  location: z.string().transform(s => s.trim().replace(/\s+/g, '+')).optional(),
+  keyword: z.string().transform(s => s.trim()).optional(),
+  location: z.string().transform(s => s.trim()).optional(),
   jobType: singleOrArray(JobTypeSchema).optional(),
   experienceLevel: singleOrArray(ExperienceLevelSchema).optional(),
   minimumSalary: MinimumSalarySchema.optional(),

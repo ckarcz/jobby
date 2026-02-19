@@ -25,19 +25,19 @@ describe('normalize utilities - search and pagination parameter validation', () 
       });
     });
 
-    it('should normalize keyword with spaces', () => {
+    it('should preserve keyword with spaces for URLSearchParams encoding', () => {
       const result = normalizeJobSearchParams({ keyword: 'software engineer' });
-      expect(result.keyword).toBe('software+engineer');
+      expect(result.keyword).toBe('software engineer');
     });
 
-    it('should normalize keyword with multiple spaces', () => {
+    it('should trim keyword but preserve inner spaces', () => {
       const result = normalizeJobSearchParams({ keyword: '  multiple   spaces  ' });
-      expect(result.keyword).toBe('multiple+spaces');
+      expect(result.keyword).toBe('multiple   spaces');
     });
 
-    it('should normalize location with spaces', () => {
+    it('should preserve location with spaces for URLSearchParams encoding', () => {
       const result = normalizeJobSearchParams({ location: 'New York' });
-      expect(result.location).toBe('New+York');
+      expect(result.location).toBe('New York');
     });
 
     it('should validate job type', () => {
@@ -168,14 +168,14 @@ describe('normalize utilities - search and pagination parameter validation', () 
   });
 
   describe('keyword and location normalization edge cases', () => {
-    it('should normalize tabs in keyword', () => {
+    it('should preserve tabs in keyword for URLSearchParams encoding', () => {
       const result = normalizeJobSearchParams({ keyword: 'software\tengineer' });
-      expect(result.keyword).toBe('software+engineer');
+      expect(result.keyword).toBe('software\tengineer');
     });
 
-    it('should normalize newlines in location', () => {
+    it('should preserve newlines in location for URLSearchParams encoding', () => {
       const result = normalizeJobSearchParams({ location: 'New\nYork' });
-      expect(result.location).toBe('New+York');
+      expect(result.location).toBe('New\nYork');
     });
 
     it('should normalize leading and trailing whitespace', () => {

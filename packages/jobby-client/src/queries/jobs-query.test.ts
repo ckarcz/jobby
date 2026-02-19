@@ -90,8 +90,8 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
     await executeJobsQuery({ keyword: 'React Developer' });
 
     const url = mockedAxios.get.mock.calls[0][0] as string;
-    // URLSearchParams encodes + as %2B
-    expect(url).toContain('keywords=React%2BDeveloper');
+    // URLSearchParams encodes spaces as + naturally
+    expect(url).toContain('keywords=React+Developer');
   });
 
   it('should include location in URL', async () => {
@@ -100,8 +100,8 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
     await executeJobsQuery({ location: 'New York' });
 
     const url = mockedAxios.get.mock.calls[0][0] as string;
-    // URLSearchParams encodes + as %2B
-    expect(url).toContain('location=New%2BYork');
+    // URLSearchParams encodes spaces as + naturally
+    expect(url).toContain('location=New+York');
   });
 
   it('should include job type in URL', async () => {
