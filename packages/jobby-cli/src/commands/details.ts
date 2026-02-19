@@ -1,7 +1,7 @@
 import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import process from 'node:process';
-import { JobbyClient } from 'jobby-client';
+import { JobbyClient, ValidationError } from 'jobby-client';
 import type { JobDetailsQueryCliArgs, ActiveCliArgsRef } from '../types.js';
 import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
@@ -28,17 +28,28 @@ export async function queryForJobDetails(idOrUrl: string, args: JobDetailsQueryC
   const url = args.url ?? ((!args.id && isUrl(idOrUrl)) ? idOrUrl : undefined);
   const id = args.id ?? ((!args.url && !isUrl(idOrUrl)) ? idOrUrl : undefined);
 
+  if (url) {
+    if (args.format === 'rawHtml') {
+      const rawHtml = await client.jobs.queryForJobDetailsRawHtmlByUrl(url);
+      await outputResult(rawHtml, args);
+      return;
+    }
+    const response = await client.jobs.queryForJobDetailsByUrl(url);
+    await outputResult(response, args);
+    return;
+  }
+
+  if (!id) {
+    throw new ValidationError('Could not resolve a job ID or URL from the provided input');
+  }
+
   if (args.format === 'rawHtml') {
-    const rawHtml = url
-      ? await client.jobs.queryForJobDetailsRawHtmlByUrl(url)
-      : await client.jobs.queryForJobDetailsRawHtmlById(id ?? '');
+    const rawHtml = await client.jobs.queryForJobDetailsRawHtmlById(id);
     await outputResult(rawHtml, args);
     return;
   }
 
-  const response = url
-    ? await client.jobs.queryForJobDetailsByUrl(url)
-    : await client.jobs.queryForJobDetailsById(id ?? '');
+  const response = await client.jobs.queryForJobDetailsById(id);
 
   await outputResult(response, args);
 }
