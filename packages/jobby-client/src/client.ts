@@ -1,15 +1,19 @@
-import type { ClientConfig } from './config.js';
+import { type ClientConfig, resolveConfig } from './config.js';
 import type { JobSearchParams, PaginationParams, Job, JobDetails, SearchResponse } from './types/index.js';
 import { executeJobsQuery, executeJobsQueryRawHtml  } from './queries/jobs-query.js';
 import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById  } from './queries/job-details-query.js';
 import { JobSearchBuilder } from './builders/job-search-builder.js';
+import { withRetry } from './utils/retry.js';
+import type { ResolvedRetryConfig } from './utils/retry.js';
 
 /** Jobs resource providing search and details methods. */
 class JobsResource {
   private readonly config: ClientConfig | undefined;
+  private readonly retryConfig: ResolvedRetryConfig;
 
-  constructor(config?: ClientConfig) {
+  constructor(config: ClientConfig | undefined, retryConfig: ResolvedRetryConfig) {
     this.config = config;
+    this.retryConfig = retryConfig;
   }
 
   /**
@@ -26,7 +30,7 @@ class JobsResource {
    * ```
    */
   async queryForJobs(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<SearchResponse<Job>> {
-    return executeJobsQuery(searchParams, paginationParams, this.config);
+    return withRetry(() => executeJobsQuery(searchParams, paginationParams, this.config), this.retryConfig);
   }
 
   /**
@@ -39,7 +43,7 @@ class JobsResource {
    * ```
    */
   async queryForJobDetailsByUrl(jobUrl: string): Promise<JobDetails> {
-    return executeJobDetailsQueryByUrl(jobUrl, this.config);
+    return withRetry(() => executeJobDetailsQueryByUrl(jobUrl, this.config), this.retryConfig);
   }
 
   /**
@@ -52,28 +56,28 @@ class JobsResource {
    * ```
    */
   async queryForJobDetailsById(jobId: string): Promise<JobDetails> {
-    return executeJobDetailsQueryById(jobId, this.config);
+    return withRetry(() => executeJobDetailsQueryById(jobId, this.config), this.retryConfig);
   }
 
   /**
    * Search for jobs and return the raw HTML response.
    */
   async queryForJobsRawHtml(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<string> {
-    return executeJobsQueryRawHtml(searchParams, paginationParams, this.config);
+    return withRetry(() => executeJobsQueryRawHtml(searchParams, paginationParams, this.config), this.retryConfig);
   }
 
   /**
    * Get the raw HTML response for a specific job posting by URL.
    */
   async queryForJobDetailsRawHtmlByUrl(jobUrl: string): Promise<string> {
-    return executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config);
+    return withRetry(() => executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config), this.retryConfig);
   }
 
   /**
    * Get the raw HTML response for a specific job posting by job ID.
    */
   async queryForJobDetailsRawHtmlById(jobId: string): Promise<string> {
-    return executeJobDetailsQueryRawHtmlById(jobId, this.config);
+    return withRetry(() => executeJobDetailsQueryRawHtmlById(jobId, this.config), this.retryConfig);
   }
 
   /**
@@ -143,7 +147,8 @@ export class JobbyClient {
    */
   constructor(config?: ClientConfig) {
     this.config = config;
-    this.jobs = new JobsResource(config);
+    const resolved = resolveConfig(config);
+    this.jobs = new JobsResource(config, resolved.retry);
   }
 
   /**

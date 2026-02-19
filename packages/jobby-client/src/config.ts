@@ -1,5 +1,6 @@
 import { type LoggingConfig, type Logger, createLogger } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
+import { type RetryConfig, type ResolvedRetryConfig, resolveRetryConfig } from './utils/retry.js';
 
 /** Configuration options for the LinkedIn Jobs client. */
 export interface ClientConfig {
@@ -31,6 +32,12 @@ export interface ClientConfig {
    * @default { level: 'error' }
    */
   logging?: LoggingConfig | undefined;
+
+  /**
+   * Retry configuration for retryable errors (network failures, rate limits).
+   * @default { maxRetries: 0 } (no retries)
+   */
+  retry?: RetryConfig | undefined;
 }
 
 /** Resolved configuration with all required values defined. */
@@ -41,6 +48,7 @@ export interface ResolvedClientConfig {
   userAgent: string;
   signal: AbortSignal | undefined;
   logger: Logger;
+  retry: ResolvedRetryConfig;
 }
 
 /** Default configuration values. */
@@ -72,5 +80,6 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
     userAgent: resolveUserAgent(config?.userAgent),
     signal: config?.signal,
     logger: createLogger(config?.logging),
+    retry: resolveRetryConfig(config?.retry),
   };
 }
