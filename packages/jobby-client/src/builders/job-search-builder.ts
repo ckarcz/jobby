@@ -11,6 +11,7 @@ import type {
   ListingAge,
 } from '../types/index.js';
 import { executeJobsQuery } from '../queries/jobs-query.js';
+import { type ResolvedRetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../utils/retry.js';
 
 /**
  * Fluent builder for constructing job search queries.
@@ -33,11 +34,13 @@ import { executeJobsQuery } from '../queries/jobs-query.js';
  */
 export class JobSearchBuilder {
   private readonly config: ClientConfig | undefined;
+  private readonly retryConfig: ResolvedRetryConfig;
   private params: JobSearchParams = {};
   private pagination: PaginationParams = {};
 
-  constructor(config?: ClientConfig) {
+  constructor(config?: ClientConfig, retryConfig?: ResolvedRetryConfig) {
     this.config = config;
+    this.retryConfig = retryConfig ?? DEFAULT_RETRY_CONFIG;
   }
 
   /**
@@ -154,6 +157,6 @@ export class JobSearchBuilder {
    * Execute the search query and return results.
    */
   async execute(): Promise<SearchResponse<Job>> {
-    return executeJobsQuery(this.params, this.pagination, this.config);
+    return withRetry(() => executeJobsQuery(this.params, this.pagination, this.config), this.retryConfig);
   }
 }

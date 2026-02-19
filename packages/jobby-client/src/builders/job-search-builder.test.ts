@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JobSearchBuilder } from './job-search-builder.js';
+import type { ResolvedRetryConfig } from '../utils/retry.js';
 
 // Mock the jobs query module
 vi.mock('../queries/jobs-query.js', () => ({
@@ -9,6 +10,15 @@ vi.mock('../queries/jobs-query.js', () => ({
     metadata: { query: {}, timestamp: new Date(), durationMs: 100 },
   }),
 }));
+
+// Mock the retry module — passthrough by default
+vi.mock('../utils/retry.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../utils/retry.js')>();
+  return {
+    ...original,
+    withRetry: vi.fn().mockImplementation((fn: () => Promise<unknown>) => fn()),
+  };
+});
 
 /**
  * Tests for the JobSearchBuilder fluent API that provides a chainable
@@ -208,6 +218,24 @@ describe('JobSearchBuilder - fluent search query construction API', () => {
       await builder.execute();
 
       expect(executeJobsQuery).toHaveBeenCalled();
+    });
+
+    it('should wrap executeJobsQuery with withRetry using default retry config', async () => {
+      const { withRetry, DEFAULT_RETRY_CONFIG } = await import('../utils/retry.js');
+
+      await builder.withKeyword('Test').execute();
+
+      expect(withRetry).toHaveBeenCalledWith(expect.any(Function), DEFAULT_RETRY_CONFIG);
+    });
+
+    it('should wrap executeJobsQuery with withRetry using provided retry config', async () => {
+      const { withRetry } = await import('../utils/retry.js');
+      const customRetry: ResolvedRetryConfig = { maxRetries: 3, initialDelayMs: 500, maxDelayMs: 5000 };
+      const retryBuilder = new JobSearchBuilder(undefined, customRetry);
+
+      await retryBuilder.withKeyword('Test').execute();
+
+      expect(withRetry).toHaveBeenCalledWith(expect.any(Function), customRetry);
     });
   });
 
