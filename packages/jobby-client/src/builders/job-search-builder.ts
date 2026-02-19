@@ -15,6 +15,10 @@ import { executeJobsQuery } from '../queries/jobs-query.js';
 /**
  * Fluent builder for constructing job search queries.
  *
+ * **Note:** This builder is mutable by design — each `with*` method modifies
+ * the builder in place and returns `this` for chaining. Do not reuse a single
+ * builder instance for multiple independent queries; create a new one instead.
+ *
  * @example
  * ```typescript
  * const response = await new JobSearchBuilder(config)
