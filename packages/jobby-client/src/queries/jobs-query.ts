@@ -65,8 +65,8 @@ async function fetchJobsHtml(
   const normalizedJobSearchParams = normalizeJobSearchParams(resolvedJobSearchParams);
   const normalizedPaginationParams = normalizePaginationParams(resolvedPaginationParams);
 
-  logger.verbose('Normalized search params.', JSON.stringify(normalizedJobSearchParams));
-  logger.verbose('Normalized pagination params.', JSON.stringify(normalizedPaginationParams));
+  logger.verbose('Normalized search params.', normalizedJobSearchParams);
+  logger.verbose('Normalized pagination params.', normalizedPaginationParams);
 
   const start = normalizedPaginationParams.start ?? 0;
 
@@ -121,7 +121,7 @@ export async function executeJobsQuery(
   }
 
   const durationMs = Date.now() - startTime;
-  config.logger.info('Job search query completed.', JSON.stringify({ durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length }));
+  config.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
 
   return {
     results: fetchedJobs,
@@ -149,7 +149,7 @@ export async function executeJobsQueryRawHtml(
 ): Promise<string> {
   const { html, config, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, clientConfig);
 
-  config.logger.info('Raw job search query completed.', JSON.stringify({ durationMs: Date.now() - startTime }));
+  config.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }

@@ -89,7 +89,7 @@ export async function executeJobDetailsQueryByUrl(
 
   const details = parseJobDetails(html, jobUrl, config);
 
-  config.logger.info('Job details query completed.', JSON.stringify({ durationMs: Date.now() - startTime }));
+  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -101,7 +101,7 @@ export async function executeJobDetailsQueryRawHtmlByUrl(
 ): Promise<string> {
   const { html, config, startTime } = await fetchJobDetailsHtml(jobUrl, clientConfig);
 
-  config.logger.info('Raw job details query completed.', JSON.stringify({ durationMs: Date.now() - startTime }));
+  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -123,7 +123,7 @@ export async function executeJobDetailsQueryById(
 
   const details = parseJobDetails(html, jobUrl, resolvedConfig);
 
-  resolvedConfig.logger.info('Job details query completed.', JSON.stringify({ durationMs: Date.now() - startTime }));
+  resolvedConfig.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -141,7 +141,7 @@ export async function executeJobDetailsQueryRawHtmlById(
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
   const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, undefined, config);
 
-  resolvedConfig.logger.info('Raw job details query completed.', JSON.stringify({ durationMs: Date.now() - startTime }));
+  resolvedConfig.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
