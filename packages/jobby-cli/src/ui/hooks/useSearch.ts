@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { JobbyClient } from 'jobby-client';
 import { useAppState, useAppDispatch } from '../state/context.js';
 import { buildSearchParams } from '../utils/buildSearchParams.js';
@@ -14,6 +14,7 @@ export function useSearch(): UseSearchResult {
   const { searchQuery, searchPagination, loadMoreStatus } = useAppState();
   const dispatch = useAppDispatch();
   const abortRef = useRef<AbortController | null>(null);
+  const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
 
   const search = useCallback(
     (keyword: string, filters?: SearchFilters) => {
@@ -23,7 +24,6 @@ export function useSearch(): UseSearchResult {
 
       dispatch({ type: 'SEARCH_START' });
 
-      const client = new JobbyClient({ signal: controller.signal, logging: { level: 'silent' } });
       const params = buildSearchParams(keyword, filters);
 
       void client.jobs.queryForJobs(params)
@@ -47,7 +47,7 @@ export function useSearch(): UseSearchResult {
           dispatch({ type: 'SEARCH_ERROR', error: message });
         });
     },
-    [dispatch],
+    [client, dispatch],
   );
 
   const loadMore = useCallback(() => {
@@ -61,8 +61,6 @@ export function useSearch(): UseSearchResult {
 
     const nextStart = searchPagination.start + searchPagination.responseCount;
     dispatch({ type: 'LOAD_MORE_START' });
-
-    const client = new JobbyClient({ signal: controller.signal, logging: { level: 'silent' } });
 
     void client.jobs.queryForJobs(searchQuery, { start: nextStart })
       .then((response) => {
@@ -83,7 +81,7 @@ export function useSearch(): UseSearchResult {
         const message = error instanceof Error ? error.message : String(error);
         dispatch({ type: 'LOAD_MORE_ERROR', error: message });
       });
-  }, [dispatch, searchQuery, searchPagination, loadMoreStatus]);
+  }, [client, dispatch, searchQuery, searchPagination, loadMoreStatus]);
 
   return { search, loadMore };
 }
