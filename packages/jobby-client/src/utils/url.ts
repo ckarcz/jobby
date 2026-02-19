@@ -34,7 +34,7 @@ export function extractJobIdFromUrl(jobUrl: string | null | undefined): string |
   if (!jobUrl) {
     return undefined;
   }
-  const match = /(\d+)\s*\/?$/.exec(jobUrl);
+  const match = /(\d+)\/?$/.exec(jobUrl);
   return match?.[1] ?? undefined;
 }
 

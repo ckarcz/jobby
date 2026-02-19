@@ -134,8 +134,8 @@ describe('extractJobIdFromUrl - additional edge cases', () => {
     expect(extractJobIdFromUrl('https://linkedin.com/jobs/view/12345')).toBe('12345');
   });
 
-  it('should handle URL with trailing whitespace', () => {
-    expect(extractJobIdFromUrl('https://linkedin.com/jobs/view/123  ')).toBe('123');
+  it('should return undefined for URL with trailing whitespace', () => {
+    expect(extractJobIdFromUrl('https://linkedin.com/jobs/view/123  ')).toBeUndefined();
   });
 });
 
