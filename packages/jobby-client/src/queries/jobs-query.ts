@@ -6,6 +6,10 @@ import {
   type PaginationParams,
   type Job,
   type SearchResponse,
+  ParsingError,
+  ValidationError,
+} from '../types/index.js';
+import {
   type ParamMap,
   JOB_TYPE_MAPPING,
   EXPERIENCE_LEVEL_MAPPING,
@@ -13,9 +17,7 @@ import {
   WORKPLACE_TYPE_MAPPING,
   LISTING_AGE_MAPPING,
   getApiValue,
-  ParsingError,
-  ValidationError,
-} from '../types/index.js';
+} from '../types/params.js';
 import { handleHttpError, createRequestHeaders } from '../utils/http.js';
 import { urlWithNoQueryParams, extractJobIdFromUrl, buildCanonicalJobUrl, extractCompanySlug } from '../utils/url.js';
 import {

@@ -24,27 +24,6 @@ export {
   type PaginationParams,
 } from './params.js';
 
-// Internal param mappings and helpers (used by queries, not part of public API)
-export {
-  type ParamMap,
-  getApiValue,
-  JOB_TYPE_MAPPING,
-  EXPERIENCE_LEVEL_MAPPING,
-  MINIMUM_SALARY_MAPPING,
-  WORKPLACE_TYPE_MAPPING,
-  LISTING_AGE_MAPPING,
-} from './params.js';
-
-// Parameter schemas
-export {
-  zodEnumFromMap,
-  JobTypeSchema,
-  ExperienceLevelSchema,
-  MinimumSalarySchema,
-  WorkplaceTypeSchema,
-  ListingAgeSchema,
-} from './params-schemas.js';
-
 // Responses
 export {
   type JobCompany,
