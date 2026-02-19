@@ -1,5 +1,5 @@
-export type { OutputFormatter, OutputFormatterOptions } from './formatter.js';
-export { registerFormatter, getFormatter } from './formatter.js';
+export type { OutputFormatter, OutputFormatterOptions, FormatterRegistry } from './formatter.js';
+export { registerFormatter, getFormatter, createFormatterRegistry } from './formatter.js';
 export { jsonFormatter } from './json-formatter.js';
 export { xmlFormatter } from './xml-formatter.js';
 export { yamlFormatter } from './yaml-formatter.js';

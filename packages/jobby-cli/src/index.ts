@@ -6,9 +6,9 @@
  */
 
 export type { JobbyCliArgs, JobSearchQueryCliArgs, JobDetailsQueryCliArgs, OutputFormat } from './types.js';
-export type { OutputFormatter, OutputFormatterOptions } from './formatters/index.js';
+export type { OutputFormatter, OutputFormatterOptions, FormatterRegistry } from './formatters/index.js';
 
-export { registerFormatter, getFormatter, registerDefaultFormatters, jsonFormatter, xmlFormatter, yamlFormatter, csvFormatter, htmlFormatter } from './formatters/index.js';
+export { registerFormatter, getFormatter, createFormatterRegistry, registerDefaultFormatters, jsonFormatter, xmlFormatter, yamlFormatter, csvFormatter, htmlFormatter } from './formatters/index.js';
 export { logLevelChoices, formatChoices } from './constants.js';
 export { outputResult } from './utils/output.js';
 export type { OutputOptions } from './utils/output.js';

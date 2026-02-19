@@ -17,27 +17,49 @@ export interface OutputFormatter {
   format(data: unknown, opts: OutputFormatterOptions): Promise<string>;
 }
 
-const formatters = new Map<OutputFormat, OutputFormatter>();
+/** A registry that maps output format keys to formatter implementations. */
+export interface FormatterRegistry {
+  /** Registers an output formatter for the given format type. */
+  register(format: OutputFormat, formatter: OutputFormatter): void;
+  /** Retrieves the registered output formatter for the given format type. */
+  get(format: OutputFormat): OutputFormatter;
+}
+
+/** Creates a new, independent formatter registry instance. */
+export function createFormatterRegistry(): FormatterRegistry {
+  const formatters = new Map<OutputFormat, OutputFormatter>();
+  return {
+    register(format: OutputFormat, formatter: OutputFormatter): void {
+      formatters.set(format, formatter);
+    },
+    get(format: OutputFormat): OutputFormatter {
+      const formatter = formatters.get(format);
+      if (!formatter) {
+        throw new Error(`Unknown output format: ${format}`);
+      }
+      return formatter;
+    },
+  };
+}
+
+/** Default shared registry used by the CLI. */
+const defaultRegistry = createFormatterRegistry();
 
 /**
- * Registers an output formatter for the given format type.
+ * Registers an output formatter for the given format type on the default registry.
  * @param format - The output format key to associate with the formatter.
  * @param formatter - The formatter implementation to register.
  */
 export function registerFormatter(format: OutputFormat, formatter: OutputFormatter): void {
-  formatters.set(format, formatter);
+  defaultRegistry.register(format, formatter);
 }
 
 /**
- * Retrieves the registered output formatter for the given format type.
+ * Retrieves the registered output formatter for the given format type from the default registry.
  * @param format - The output format key to look up.
  * @returns The registered formatter for the specified format.
  * @throws Error if no formatter is registered for the given format.
  */
 export function getFormatter(format: OutputFormat): OutputFormatter {
-  const formatter = formatters.get(format);
-  if (!formatter) {
-    throw new Error(`Unknown output format: ${format}`);
-  }
-  return formatter;
+  return defaultRegistry.get(format);
 }
