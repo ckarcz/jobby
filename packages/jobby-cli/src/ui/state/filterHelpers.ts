@@ -1,5 +1,4 @@
 import type { SearchFilters, CheckboxFilterKey, RadioFilterKey } from './filterTypes.js';
-import { filterSections } from './filterTypes.js';
 
 /** Get the selected values for a section from the draft selections. */
 export function getSelected(selections: SearchFilters, key: keyof SearchFilters): string[] {
@@ -38,17 +37,4 @@ export function toggleCheckboxOption(selections: SearchFilters, key: CheckboxFil
 export function toggleRadioOption(selections: SearchFilters, key: RadioFilterKey, option: string): SearchFilters {
   const current = selections[key];
   return { ...selections, [key]: current === option ? undefined : option } as SearchFilters;
-}
-
-/** Calculate the line offset for a section (header + options above it). */
-export function getSectionLineOffset(sectionIndex: number): number {
-  let offset = 0;
-  for (let i = 0; i < sectionIndex; i++) {
-    const section = filterSections[i];
-    if (!section) {
-      break;
-    }
-    offset += 1 + (section.type === 'text' ? 1 : section.options.length);
-  }
-  return offset;
 }

@@ -1,18 +1,29 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Box, Text } from 'ink';
+import { ScrollList, type ScrollListRef } from 'ink-scroll-list';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
 import { useFilterDraft } from '../hooks/useFilterDraft.js';
 import { useFilterKeyboard } from '../hooks/useFilterKeyboard.js';
+import { useAppState } from '../state/context.js';
 import { getSelected, getTextValue } from '../state/filterHelpers.js';
 import { FilterSection } from './FilterSection.js';
 import { FocusableBox } from './FocusableBox.js';
+import { FILTER_DRAWER_WIDTH } from '../constants.js';
 import { icons } from '../theme.js';
 
-/** Animated filter drawer panel. */
+/** Filter drawer panel with scrollable content. */
 export function FilterDrawer(): React.ReactElement {
   const focused = usePanelFocus('filters');
   const [draft, draftDispatch] = useFilterDraft();
   useFilterKeyboard(draft, draftDispatch);
+
+  const { maxHeight } = useAppState();
+  const scrollRef = useRef<ScrollListRef>(null);
+
+  // Remeasure on terminal resize
+  useEffect(() => {
+    scrollRef.current?.remeasure();
+  }, [maxHeight]);
 
   return (
     <FocusableBox
@@ -20,12 +31,13 @@ export function FilterDrawer(): React.ReactElement {
       flexDirection="column"
       borderStyle="single"
       paddingX={1}
+      width={FILTER_DRAWER_WIDTH}
       overflow="hidden"
     >
       <Box marginBottom={1}>
         <Text bold>{icons.cog} Filters</Text>
       </Box>
-      <Box flexDirection="column" marginTop={-draft.scrollOffset}>
+      <ScrollList ref={scrollRef} selectedIndex={draft.activeSectionIndex} flexGrow={1} overflow="hidden">
         {draft.sections.map((section, i) => {
           const isFocused = focused && i === draft.activeSectionIndex;
           const marginBottom = i < draft.sections.length - 1 ? 1 : 0;
@@ -58,7 +70,7 @@ export function FilterDrawer(): React.ReactElement {
             </Box>
           );
         })}
-      </Box>
+      </ScrollList>
     </FocusableBox>
   );
 }

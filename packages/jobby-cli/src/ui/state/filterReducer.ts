@@ -8,7 +8,6 @@ export interface FilterDrawerState {
   activeSectionIndex: number;
   cursorIndexes: number[];
   selections: SearchFilters;
-  scrollOffset: number;
 }
 
 export type FilterDrawerAction =
@@ -18,7 +17,6 @@ export type FilterDrawerAction =
   | { type: 'MOVE_DOWN' }
   | { type: 'TOGGLE_OPTION' }
   | { type: 'SET_TEXT'; key: TextFilterKey; value: string }
-  | { type: 'SET_SCROLL_OFFSET'; offset: number }
   | { type: 'RESET'; filters: SearchFilters };
 
 /** Create initial draft state from applied filters. */
@@ -28,7 +26,6 @@ export function createInitialDraftState(filters: SearchFilters): FilterDrawerSta
     activeSectionIndex: 0,
     cursorIndexes: filterSections.map(() => 0),
     selections: { ...filters },
-    scrollOffset: 0,
   };
 }
 
@@ -156,8 +153,6 @@ export function filterDrawerReducer(state: FilterDrawerState, action: FilterDraw
       const selections = { ...state.selections, [action.key]: action.value };
       return { ...state, selections };
     }
-    case 'SET_SCROLL_OFFSET':
-      return { ...state, scrollOffset: action.offset };
     case 'RESET':
       return createInitialDraftState(action.filters);
   }
