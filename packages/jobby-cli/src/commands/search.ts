@@ -4,12 +4,6 @@ import process from 'node:process';
 import {
   JobbyClient,
   ValidationError,
-  type LogLevel,
-  type JobType,
-  type ExperienceLevel,
-  type MinimumSalary,
-  type WorkplaceType,
-  type ListingAge,
   JOB_TYPE_CHOICES,
   EXPERIENCE_LEVEL_CHOICES,
   MINIMUM_SALARY_CHOICES,
@@ -28,17 +22,17 @@ import { helpConfig } from '../program.js';
 export async function queryForJobs(args: JobSearchQueryCliArgs): Promise<void> {
   const logLevel = (args.debug ? 'debug' : args.logLevel) ?? 'silent';
   const client = new JobbyClient({
-    logging: { level: logLevel as LogLevel },
+    logging: { level: logLevel },
   });
 
   const searchParams = {
     keyword: args.keyword,
     location: args.location,
-    jobType: args.jobType as JobType | undefined,
-    experienceLevel: args.experienceLevel as ExperienceLevel | undefined,
-    minimumSalary: args.minimumSalary as MinimumSalary | undefined,
-    workplaceType: args.workplaceType as WorkplaceType | undefined,
-    listingAge: args.listingAge as ListingAge | undefined,
+    jobType: args.jobType,
+    experienceLevel: args.experienceLevel,
+    minimumSalary: args.minimumSalary,
+    workplaceType: args.workplaceType,
+    listingAge: args.listingAge,
     geoId: args.geoId,
     companyId: args.companyId,
   };

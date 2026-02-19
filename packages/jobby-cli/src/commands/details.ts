@@ -1,7 +1,7 @@
 import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import process from 'node:process';
-import { JobbyClient, type LogLevel } from 'jobby-client';
+import { JobbyClient } from 'jobby-client';
 import type { JobDetailsQueryCliArgs, ActiveCliArgsRef } from '../types.js';
 import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
@@ -22,7 +22,7 @@ function isUrl(value: string): boolean {
 export async function queryForJobDetails(idOrUrl: string, args: JobDetailsQueryCliArgs): Promise<void> {
   const logLevel = (args.debug ? 'debug' : args.logLevel) ?? 'silent';
   const client = new JobbyClient({
-    logging: { level: logLevel as LogLevel },
+    logging: { level: logLevel },
   });
 
   const url = args.url ?? ((!args.id && isUrl(idOrUrl)) ? idOrUrl : undefined);

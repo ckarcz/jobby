@@ -1,3 +1,12 @@
+import type {
+  JobType,
+  ExperienceLevel,
+  MinimumSalary,
+  WorkplaceType,
+  ListingAge,
+  LogLevel,
+} from 'jobby-client';
+
 /**
  * Mutable ref that command action handlers write to, giving the top-level
  * error and signal handlers access to the active command's parsed options
@@ -14,7 +23,7 @@ export type OutputFormat = 'json' | 'xml' | 'yaml' | 'csv' | 'rawHtml';
 export interface JobbyCliArgs {
   format?: OutputFormat | undefined;
   pretty?: boolean | undefined;
-  logLevel?: string | undefined;
+  logLevel?: LogLevel | undefined;
   noColor?: boolean | undefined;
   debug?: boolean | undefined;
   file?: string | undefined;
@@ -24,11 +33,11 @@ export interface JobbyCliArgs {
 export interface JobSearchQueryCliArgs extends JobbyCliArgs {
   keyword?: string | undefined;
   location?: string | undefined;
-  jobType?: string | undefined;
-  experienceLevel?: string | undefined;
-  minimumSalary?: string | undefined;
-  workplaceType?: string | undefined;
-  listingAge?: string | undefined;
+  jobType?: JobType | undefined;
+  experienceLevel?: ExperienceLevel | undefined;
+  minimumSalary?: MinimumSalary | undefined;
+  workplaceType?: WorkplaceType | undefined;
+  listingAge?: ListingAge | undefined;
   geoId?: string | undefined;
   companyId?: string | undefined;
   start?: number | undefined;
