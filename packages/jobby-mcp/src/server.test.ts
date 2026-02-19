@@ -1,4 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
+
+/** Shape returned by tool handlers, matching the MCP SDK's CallToolResult. */
+interface ToolResult {
+  content: { type: string; text: string }[];
+  isError?: boolean;
+}
+
+/** Signature of a registerTool callback captured from mock calls. */
+type ToolHandler = (args: Record<string, unknown>, extra: Record<string, unknown>) => Promise<ToolResult>;
+
+/** A single registerTool mock call: [name, config, handler]. */
+type RegisterToolCall = [name: string, config: Record<string, unknown>, handler: ToolHandler];
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
   const mockServer = {
@@ -48,9 +61,9 @@ vi.mock('jobby-client', async (importOriginal) => {
  */
 
 describe('Jobby MCP Server - tool registration and call handling', () => {
-  let searchJobsHandler: (args: any, extra: any) => Promise<any>;
-  let getJobDetailsHandler: (args: any, extra: any) => Promise<any>;
-  let registerToolCalls: any[];
+  let searchJobsHandler: ToolHandler;
+  let getJobDetailsHandler: ToolHandler;
+  let registerToolCalls: RegisterToolCall[];
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -64,8 +77,8 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
     createServer();
 
     const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-    const serverInstance = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-    registerToolCalls = serverInstance.registerTool.mock.calls;
+    const serverInstance = (McpServer as unknown as Mock).mock.results[0]?.value as { registerTool: Mock };
+    registerToolCalls = serverInstance.registerTool.mock.calls as RegisterToolCall[];
 
     for (const call of registerToolCalls) {
       if (call[0] === 'search_jobs') {
@@ -83,18 +96,18 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
     it('should create server with name "jobby-mcp"', async () => {
       const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-      const constructorCall = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+      const constructorCall = (McpServer as unknown as Mock).mock.calls[0] as [Record<string, unknown>];
       expect(constructorCall[0].name).toBe('jobby-mcp');
     });
 
     it('should create server with version from package.json', async () => {
       const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-      const constructorCall = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+      const constructorCall = (McpServer as unknown as Mock).mock.calls[0] as [Record<string, unknown>];
       expect(constructorCall[0].version).toBe('1.0.0');
     });
 
     it('should register search_jobs tool with correct config', () => {
-      const searchCall = registerToolCalls.find((c: any) => c[0] === 'search_jobs');
+      const searchCall = registerToolCalls.find((c) => c[0] === 'search_jobs');
 
       expect(searchCall).toBeDefined();
       expect(searchCall[1].description).toContain('Search for jobs');
@@ -105,7 +118,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
     });
 
     it('should register get_job_details tool with correct config', () => {
-      const detailsCall = registerToolCalls.find((c: any) => c[0] === 'get_job_details');
+      const detailsCall = registerToolCalls.find((c) => c[0] === 'get_job_details');
 
       expect(detailsCall).toBeDefined();
       expect(detailsCall[1].description).toContain('Get detailed information');
@@ -392,7 +405,7 @@ describe('main - MCP server startup', () => {
     expect(McpServer).toHaveBeenCalled();
     expect(StdioServerTransport).toHaveBeenCalled();
 
-    const serverInstance = (McpServer as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    const serverInstance = (McpServer as unknown as Mock).mock.results[0]?.value as { connect: Mock };
     expect(serverInstance.connect).toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledWith('Jobby MCP server started.');
 
