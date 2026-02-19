@@ -1,54 +1,62 @@
 import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
 
-const turndown = new TurndownService({
-  headingStyle: 'atx',
-  bulletListMarker: '-',
-});
+/** Creates a configured TurndownService instance with custom rules for job descriptions. */
+export function createTurndownService(): TurndownService {
+  const service = new TurndownService({
+    headingStyle: 'atx',
+    bulletListMarker: '-',
+  });
 
-turndown.addRule('lineBreak', {
-  filter: 'br',
-  replacement: () => '<br>',
-});
+  service.addRule('lineBreak', {
+    filter: 'br',
+    replacement: () => '<br>',
+  });
 
-turndown.addRule('paragraph', {
-  filter: 'p',
-  replacement: (content) => '<br><br>' + content + '<br><br>',
-});
+  service.addRule('paragraph', {
+    filter: 'p',
+    replacement: (content) => '<br><br>' + content + '<br><br>',
+  });
 
-turndown.addRule('heading', {
-  filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-  replacement: (content, node) => {
-    const level = Number(node.nodeName.charAt(1));
-    return '<br><br>' + '#'.repeat(level) + ' ' + content + '<br><br>';
-  },
-});
+  service.addRule('heading', {
+    filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    replacement: (content, node) => {
+      const level = Number(node.nodeName.charAt(1));
+      return '<br><br>' + '#'.repeat(level) + ' ' + content + '<br><br>';
+    },
+  });
 
-turndown.addRule('list', {
-  filter: ['ul', 'ol'],
-  replacement: (content, node) => {
-    const parent = node.parentNode as Element | null;
-    if (parent?.nodeName === 'LI' && parent.lastElementChild === node) {
-      return '<br>' + content;
-    }
-    return '<br><br>' + content + '<br><br>';
-  },
-});
+  service.addRule('list', {
+    filter: ['ul', 'ol'],
+    replacement: (content, node) => {
+      const parent = node.parentNode as Element | null;
+      if (parent?.nodeName === 'LI' && parent.lastElementChild === node) {
+        return '<br>' + content;
+      }
+      return '<br><br>' + content + '<br><br>';
+    },
+  });
 
-turndown.addRule('listItem', {
-  filter: 'li',
-  replacement: (rawContent, node, options) => {
-    const trimmed = rawContent.replace(/^\s+/, '').replace(/\s+$/, '');
-    let prefix: string = String(options.bulletListMarker) + ' ';
-    const parent = node.parentNode as Element | null;
-    if (parent?.nodeName === 'OL') {
-      const start = parent.getAttribute('start');
-      const index: number = Array.prototype.indexOf.call(parent.children, node);
-      prefix = String(start ? Number(start) + index : index + 1) + '. ';
-    }
-    return prefix + trimmed + (node.nextSibling ? '<br>' : '');
-  },
-});
+  service.addRule('listItem', {
+    filter: 'li',
+    replacement: (rawContent, node, options) => {
+      const trimmed = rawContent.replace(/^\s+/, '').replace(/\s+$/, '');
+      let prefix: string = String(options.bulletListMarker) + ' ';
+      const parent = node.parentNode as Element | null;
+      if (parent?.nodeName === 'OL') {
+        const start = parent.getAttribute('start');
+        const index: number = Array.prototype.indexOf.call(parent.children, node);
+        prefix = String(start ? Number(start) + index : index + 1) + '. ';
+      }
+      return prefix + trimmed + (node.nextSibling ? '<br>' : '');
+    },
+  });
+
+  return service;
+}
+
+/** Module-level singleton for production use. */
+const turndown = createTurndownService();
 
 /**
  * Pre-processes HTML to fix oddities before markdown conversion.
