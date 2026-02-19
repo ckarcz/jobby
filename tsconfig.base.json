@@ -53,6 +53,7 @@
     // ============================================
     "outDir": "./dist",                           // Output directory for compiled files
     "rootDir": "./src",                           // Root directory of source files
+    "composite": true,                             // Enable project references support
     "declaration": true,                          // Generate .d.ts declaration files
     "declarationMap": true,                       // Generate source maps for .d.ts files
     "sourceMap": true,                            // Generate .js.map source map files

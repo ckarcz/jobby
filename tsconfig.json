@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/jobby-client" },
+    { "path": "packages/jobby-cli" },
+    { "path": "packages/jobby-mcp" }
+  ]
+}
