@@ -24,14 +24,16 @@ export function Layout(): React.ReactElement {
             <FilterDrawer />
           </FocusableBox>
         )}
-        <FocusableBox panel="results" flexGrow={1} flexDirection="column" borderStyle="single" paddingX={1}>
-          <ContentArea />
-        </FocusableBox>
-        {showDetailsPanel && (
-          <FocusableBox panel="details" flexGrow={1} flexDirection="column" borderStyle="single" paddingX={1}>
-            <JobDetailsPanel />
+        <Box flexGrow={1} flexDirection="row">
+          <FocusableBox panel="results" flexGrow={1} flexBasis={0} flexDirection="column" borderStyle="single" paddingX={1}>
+            <ContentArea />
           </FocusableBox>
-        )}
+          {showDetailsPanel && (
+            <FocusableBox panel="details" flexGrow={1} flexBasis={0} flexDirection="column" borderStyle="single" paddingX={1}>
+              <JobDetailsPanel />
+            </FocusableBox>
+          )}
+        </Box>
       </Box>
       <StatusBar />
     </Box>
