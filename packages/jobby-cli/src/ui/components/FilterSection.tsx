@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { glyphs, colors } from '../theme.js';
 
@@ -59,6 +59,11 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
 
 /** Renders a controlled text input field with optional maxLength. */
 function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFilterSectionProps): React.ReactElement {
+  // Use a ref to always read the latest textValue inside the useInput callback.
+  // Without this, rapid keystrokes can see a stale closure value and drop characters.
+  const textRef = useRef(textValue);
+  textRef.current = textValue;
+
   useInput((input, key) => {
     if (!focused) {
       return;
@@ -69,15 +74,15 @@ function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFi
     }
 
     if (key.backspace || key.delete) {
-      onTextChange(textValue.slice(0, -1));
+      onTextChange(textRef.current.slice(0, -1));
       return;
     }
 
     if (input && !key.ctrl && !key.meta) {
-      if (maxLength !== undefined && textValue.length >= maxLength) {
+      if (maxLength !== undefined && textRef.current.length >= maxLength) {
         return;
       }
-      const next = textValue + input;
+      const next = textRef.current + input;
       onTextChange(maxLength !== undefined ? next.slice(0, maxLength) : next);
     }
   });
