@@ -34,6 +34,11 @@ export function useKeyboardNavigation(): void {
       return;
     }
 
+    if (key.escape && state.focusedPanel === 'details') {
+      dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
+      return;
+    }
+
     if (key.escape && state.focusedPanel === 'filters') {
       dispatch({ type: 'CLOSE_FILTER_DRAWER' });
       dispatch({ type: 'FOCUS_PANEL', panel: 'results' });

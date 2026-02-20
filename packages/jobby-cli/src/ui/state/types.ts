@@ -1,16 +1,19 @@
-import type { Job, PaginationInfo, SearchMetadata, JobSearchParams } from 'jobby-client';
+import type { Job, JobDetails, PaginationInfo, SearchMetadata, JobSearchParams } from 'jobby-client';
 import type { SearchFilters } from './filterTypes.js';
 
 export type { SearchFilters } from './filterTypes.js';
 
 /** Identifiers for focusable panels. */
-export type PanelId = 'search' | 'results' | 'filters';
+export type PanelId = 'search' | 'results' | 'filters' | 'details';
 
 /** Current search lifecycle status. */
 export type SearchStatus = 'idle' | 'searching' | 'results' | 'error';
 
 /** Status of loading the next page of results. */
 export type LoadMoreStatus = 'idle' | 'loading' | 'exhausted' | 'error';
+
+/** Status of fetching job details for the selected job. */
+export type JobDetailsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /** Complete application state. */
 export interface AppState {
@@ -34,6 +37,9 @@ export interface AppState {
   loadMoreError: string | undefined;
   searchFilters: SearchFilters;
   filterDrawerOpen: boolean;
+  jobDetails: JobDetails | null;
+  jobDetailsStatus: JobDetailsStatus;
+  jobDetailsError: string | undefined;
 }
 
 /** All possible state actions. */
@@ -52,4 +58,8 @@ export type AppAction =
   | { type: 'LOAD_MORE_ERROR'; error: string }
   | { type: 'OPEN_FILTER_DRAWER' }
   | { type: 'CLOSE_FILTER_DRAWER' }
-  | { type: 'APPLY_FILTERS'; filters: SearchFilters };
+  | { type: 'APPLY_FILTERS'; filters: SearchFilters }
+  | { type: 'JOB_DETAILS_START' }
+  | { type: 'JOB_DETAILS_SUCCESS'; details: JobDetails }
+  | { type: 'JOB_DETAILS_ERROR'; error: string }
+  | { type: 'CLEAR_JOB_DETAILS' };

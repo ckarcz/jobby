@@ -7,8 +7,6 @@ import { useFilterKeyboard } from '../hooks/useFilterKeyboard.js';
 import { useAppState } from '../state/context.js';
 import { getSelected, getTextValue } from '../state/filterHelpers.js';
 import { FilterSection } from './FilterSection.js';
-import { FocusableBox } from './FocusableBox.js';
-import { FILTER_DRAWER_WIDTH } from '../constants.js';
 import { icons } from '../theme.js';
 
 /** Filter drawer panel with scrollable content. */
@@ -26,14 +24,7 @@ export function FilterDrawer(): React.ReactElement {
   }, [maxHeight]);
 
   return (
-    <FocusableBox
-      panel="filters"
-      flexDirection="column"
-      borderStyle="single"
-      paddingX={1}
-      width={FILTER_DRAWER_WIDTH}
-      overflow="hidden"
-    >
+    <>
       <Box marginBottom={1}>
         <Text bold>{icons.cog} Filters</Text>
       </Box>
@@ -71,6 +62,6 @@ export function FilterDrawer(): React.ReactElement {
           );
         })}
       </ScrollList>
-    </FocusableBox>
+    </>
   );
 }

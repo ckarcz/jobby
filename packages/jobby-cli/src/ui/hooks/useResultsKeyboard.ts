@@ -105,6 +105,13 @@ export function useResultsKeyboard(
       return;
     }
 
+    if (key.return) {
+      if (totalResults.length > 0) {
+        dispatch({ type: 'FOCUS_PANEL', panel: 'details' });
+      }
+      return;
+    }
+
     if (key.escape) {
       dispatch({ type: 'CLEAR_RESULTS' });
       dispatch({ type: 'BLUR_ALL' });

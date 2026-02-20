@@ -20,6 +20,9 @@ export const initialState: AppState = {
   loadMoreError: undefined,
   searchFilters: emptyFilters,
   filterDrawerOpen: false,
+  jobDetails: null,
+  jobDetailsStatus: 'idle',
+  jobDetailsError: undefined,
 };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -39,6 +42,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         searchError: undefined,
         loadMoreStatus: 'idle',
         loadMoreError: undefined,
+        jobDetails: null,
+        jobDetailsStatus: 'idle',
+        jobDetailsError: undefined,
       };
     case 'SEARCH_SUCCESS':
       return {
@@ -62,7 +68,22 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_SELECTED_JOB_INDEX':
       return { ...state, selectedJobIndex: action.index };
     case 'CLEAR_RESULTS':
-      return { ...state, searchStatus: 'idle', totalResults: [], searchResults: [], searchPagination: undefined, searchMetadata: undefined, searchQuery: undefined, searchError: undefined, selectedJobIndex: 0, loadMoreStatus: 'idle', loadMoreError: undefined };
+      return {
+        ...state,
+        searchStatus: 'idle',
+        totalResults: [],
+        searchResults: [],
+        searchPagination: undefined,
+        searchMetadata: undefined,
+        searchQuery: undefined,
+        searchError: undefined,
+        selectedJobIndex: 0,
+        loadMoreStatus: 'idle',
+        loadMoreError: undefined,
+        jobDetails: null,
+        jobDetailsStatus: 'idle',
+        jobDetailsError: undefined,
+      };
     case 'LOAD_MORE_START':
       return { ...state, loadMoreStatus: 'loading', loadMoreError: undefined };
     case 'LOAD_MORE_SUCCESS':
@@ -82,5 +103,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, filterDrawerOpen: false };
     case 'APPLY_FILTERS':
       return { ...state, searchFilters: action.filters };
+    case 'JOB_DETAILS_START':
+      return { ...state, jobDetailsStatus: 'loading', jobDetailsError: undefined };
+    case 'JOB_DETAILS_SUCCESS':
+      return { ...state, jobDetails: action.details, jobDetailsStatus: 'loaded' };
+    case 'JOB_DETAILS_ERROR':
+      return { ...state, jobDetailsStatus: 'error', jobDetailsError: action.error };
+    case 'CLEAR_JOB_DETAILS':
+      return { ...state, jobDetails: null, jobDetailsStatus: 'idle', jobDetailsError: undefined };
   }
 }

@@ -4,6 +4,7 @@ import { appReducer, initialState } from './state/reducer.js';
 import { Layout } from './components/Layout.js';
 import { useFullScreen } from './hooks/useFullScreen.js';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation.js';
+import { useJobDetails } from './hooks/useJobDetails.js';
 import type { SearchStatus } from './state/types.js';
 
 /** Auto-focus results panel after a search completes successfully. */
@@ -27,6 +28,7 @@ function AppInner(): React.ReactElement {
   useFullScreen();
   useKeyboardNavigation();
   useSearchFocusSync();
+  useJobDetails();
   return <Layout />;
 }
 
