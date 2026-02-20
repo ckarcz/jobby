@@ -1,27 +1,11 @@
-import React, { useEffect, useReducer, useRef } from 'react';
-import { AppContext, useAppState, useAppDispatch } from './state/context.js';
+import React, { useReducer } from 'react';
+import { AppContext } from './state/context.js';
 import { appReducer, initialState } from './state/reducer.js';
 import { Layout } from './components/Layout.js';
 import { useFullScreen } from './hooks/useFullScreen.js';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation.js';
 import { useJobDetails } from './hooks/useJobDetails.js';
-import type { SearchStatus } from './state/types.js';
-
-/** Auto-focus results panel after a search completes successfully. */
-function useSearchFocusSync(): void {
-  const { searchStatus, totalResults } = useAppState();
-  const dispatch = useAppDispatch();
-  const prevStatusRef = useRef<SearchStatus>(searchStatus);
-
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    prevStatusRef.current = searchStatus;
-
-    if (prev === 'searching' && searchStatus === 'results' && totalResults.length > 0) {
-      dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
-    }
-  }, [searchStatus, totalResults.length, dispatch]);
-}
+import { useSearchFocusSync } from './hooks/useSearchFocusSync.js';
 
 /** Inner app component that uses context hooks (must be inside providers). */
 function AppInner(): React.ReactElement {

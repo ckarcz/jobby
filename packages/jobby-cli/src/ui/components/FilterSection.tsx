@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { Box, Text, useInput } from 'ink';
+import React from 'react';
+import { Box, Text } from 'ink';
+import { TextInput } from '@inkjs/ui';
 import { glyphs, colors } from '../theme.js';
 
 interface BaseProps {
@@ -25,7 +26,6 @@ interface TextFilterSectionProps extends BaseProps {
   type: 'text';
   textValue: string;
   onTextChange: (value: string) => void;
-  maxLength?: number | undefined;
 }
 
 type FilterSectionProps = CheckboxFilterSectionProps | RadioFilterSectionProps | TextFilterSectionProps;
@@ -57,57 +57,24 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
   );
 }
 
-/** Renders a controlled text input field with optional maxLength. */
-function TextFilterInput({ textValue, focused, onTextChange, maxLength }: TextFilterSectionProps): React.ReactElement {
-  // Use a ref to always read the latest textValue inside the useInput callback.
-  // Without this, rapid keystrokes can see a stale closure value and drop characters.
-  const textRef = useRef(textValue);
-  textRef.current = textValue;
-
-  useInput((input, key) => {
-    if (!focused) {
-      return;
-    }
-
-    if (key.return) {
-      return;
-    }
-
-    if (key.backspace || key.delete) {
-      onTextChange(textRef.current.slice(0, -1));
-      return;
-    }
-
-    if (input && !key.ctrl && !key.meta) {
-      if (maxLength !== undefined && textRef.current.length >= maxLength) {
-        return;
-      }
-      const next = textRef.current + input;
-      onTextChange(maxLength !== undefined ? next.slice(0, maxLength) : next);
-    }
-  });
+/** Renders a text input field for filter values using @inkjs/ui TextInput. */
+function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
+  if (focused) {
+    return (
+      <Box>
+        <Text color={colors.focus}>{glyphs.arrowRight}</Text>
+        <TextInput
+          defaultValue={textValue}
+          placeholder="(none)"
+          onChange={onTextChange}
+        />
+      </Box>
+    );
+  }
 
   return (
-    <Box>
-      {focused ? (
-        <>
-          {textValue ? (
-            <>
-              <Text color={colors.focus}>{glyphs.arrowRight}</Text>
-              <Text>{textValue}</Text>
-            </>
-          ) : (
-            <>
-              <Text color={colors.focus}>{glyphs.arrowRight}</Text>
-              <Text dimColor>{textValue || '(none)'}</Text>
-            </>
-          )}
-        </>
-      ) : (
-        <Box paddingLeft={1}>
-          <Text dimColor>{textValue || '(none)'}</Text>
-        </Box>
-      )}
+    <Box paddingLeft={1}>
+      <Text dimColor>{textValue || '(none)'}</Text>
     </Box>
   );
 }

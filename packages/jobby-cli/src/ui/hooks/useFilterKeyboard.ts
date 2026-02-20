@@ -38,12 +38,12 @@ export function useFilterKeyboard(
       return;
     }
 
-    if (key.upArrow) {
+    if (key.upArrow && !isTextSection) {
       draftDispatch({ type: 'MOVE_UP' });
       return;
     }
 
-    if (key.downArrow) {
+    if (key.downArrow && !isTextSection) {
       draftDispatch({ type: 'MOVE_DOWN' });
       return;
     }

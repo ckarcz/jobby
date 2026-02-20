@@ -45,11 +45,10 @@ describe('filterSections', () => {
     expect(filterSections).toHaveLength(8);
   });
 
-  it('should have location maxLength of 64', () => {
-    const locationSection = filterSections.find(s => s.key === 'location');
-    expect(locationSection).toBeDefined();
-    if (locationSection?.type === 'text') {
-      expect(locationSection.maxLength).toBe(64);
+  it('should have text sections without maxLength', () => {
+    const textSections = filterSections.filter(s => s.type === 'text');
+    for (const section of textSections) {
+      expect(section).not.toHaveProperty('maxLength');
     }
   });
 });
