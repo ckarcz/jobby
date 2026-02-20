@@ -24,6 +24,9 @@ export function buildSearchParams(keyword: string, filters?: SearchFilters): Job
   if (filters.listingAge !== undefined) {
     params.listingAge = filters.listingAge;
   }
+  if (filters.location.length > 0) {
+    params.location = filters.location;
+  }
   if (filters.geoId.length > 0) {
     params.geoId = filters.geoId;
   }

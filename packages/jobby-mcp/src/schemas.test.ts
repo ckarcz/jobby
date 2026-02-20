@@ -42,6 +42,22 @@ describe('SearchInputSchema - search tool input validation', () => {
         expect(result.success).toBe(true);
       }
     });
+
+    it('should accept an array of valid job types', () => {
+      const result = SearchInputSchema.safeParse({ jobType: ['full-time', 'contract'] });
+      expect(result.success).toBe(true);
+      expect(result.data?.jobType).toEqual(['full-time', 'contract']);
+    });
+
+    it('should reject an array containing invalid job type', () => {
+      const result = SearchInputSchema.safeParse({ jobType: ['full-time', 'invalid'] });
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept an empty array for job type', () => {
+      const result = SearchInputSchema.safeParse({ jobType: [] });
+      expect(result.success).toBe(true);
+    });
   });
 
   describe('experienceLevel enum validation', () => {
@@ -61,6 +77,17 @@ describe('SearchInputSchema - search tool input validation', () => {
         const result = SearchInputSchema.safeParse({ experienceLevel: level });
         expect(result.success).toBe(true);
       }
+    });
+
+    it('should accept an array of valid experience levels', () => {
+      const result = SearchInputSchema.safeParse({ experienceLevel: ['senior', 'director'] });
+      expect(result.success).toBe(true);
+      expect(result.data?.experienceLevel).toEqual(['senior', 'director']);
+    });
+
+    it('should reject an array containing invalid experience level', () => {
+      const result = SearchInputSchema.safeParse({ experienceLevel: ['senior', 'invalid'] });
+      expect(result.success).toBe(false);
     });
   });
 
@@ -101,6 +128,17 @@ describe('SearchInputSchema - search tool input validation', () => {
         const result = SearchInputSchema.safeParse({ workplaceType: type });
         expect(result.success).toBe(true);
       }
+    });
+
+    it('should accept an array of valid workplace types', () => {
+      const result = SearchInputSchema.safeParse({ workplaceType: ['remote', 'hybrid'] });
+      expect(result.success).toBe(true);
+      expect(result.data?.workplaceType).toEqual(['remote', 'hybrid']);
+    });
+
+    it('should reject an array containing invalid workplace type', () => {
+      const result = SearchInputSchema.safeParse({ workplaceType: ['remote', 'anywhere'] });
+      expect(result.success).toBe(false);
     });
   });
 
@@ -197,7 +235,7 @@ describe('SearchInputSchema - search tool input validation', () => {
   });
 
   describe('all fields combined', () => {
-    it('should accept a fully populated search input', () => {
+    it('should accept a fully populated search input with single values', () => {
       const result = SearchInputSchema.safeParse({
         keyword: 'TypeScript',
         location: 'San Francisco',
@@ -213,6 +251,27 @@ describe('SearchInputSchema - search tool input validation', () => {
         take: 25,
       });
       expect(result.success).toBe(true);
+    });
+
+    it('should accept a fully populated search input with array values', () => {
+      const result = SearchInputSchema.safeParse({
+        keyword: 'TypeScript',
+        location: 'San Francisco',
+        jobType: ['full-time', 'contract'],
+        experienceLevel: ['senior', 'director'],
+        minimumSalary: '120,000',
+        workplaceType: ['remote', 'hybrid'],
+        listingAge: 'past-week',
+        geoId: '103644278',
+        companyId: '1441',
+        start: 0,
+        skip: 0,
+        take: 25,
+      });
+      expect(result.success).toBe(true);
+      expect(result.data?.jobType).toEqual(['full-time', 'contract']);
+      expect(result.data?.experienceLevel).toEqual(['senior', 'director']);
+      expect(result.data?.workplaceType).toEqual(['remote', 'hybrid']);
     });
 
     it('should parse all fields correctly in fully populated input', () => {

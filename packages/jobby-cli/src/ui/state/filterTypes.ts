@@ -14,6 +14,7 @@ export interface SearchFilters {
   workplaceType: WorkplaceType[];
   minimumSalary: MinimumSalary | undefined;
   listingAge: ListingAge | undefined;
+  location: string;
   geoId: string;
   companyId: string;
 }
@@ -25,6 +26,7 @@ export const emptyFilters: SearchFilters = {
   workplaceType: [],
   minimumSalary: undefined,
   listingAge: undefined,
+  location: '',
   geoId: '',
   companyId: '',
 };
@@ -36,7 +38,7 @@ export type CheckboxFilterKey = 'jobType' | 'experienceLevel' | 'workplaceType';
 export type RadioFilterKey = 'minimumSalary' | 'listingAge';
 
 /** Keys for text-type filter sections (free-form string). */
-export type TextFilterKey = 'geoId' | 'companyId';
+export type TextFilterKey = 'location' | 'geoId' | 'companyId';
 
 export interface CheckboxFilterSectionDef {
   key: CheckboxFilterKey;
@@ -70,6 +72,7 @@ export const filterSections: FilterSectionDef[] = [
   { key: 'workplaceType', title: 'Workplace Type', type: 'checkbox', options: WORKPLACE_TYPE_CHOICES as string[] },
   { key: 'minimumSalary', title: 'Minimum Salary', type: 'radio', options: MINIMUM_SALARY_CHOICES as string[] },
   { key: 'listingAge', title: 'Listing Age', type: 'radio', options: LISTING_AGE_CHOICES as string[] },
+  { key: 'location', title: 'Location', type: 'text', options: [], maxLength: 64 },
   { key: 'geoId', title: 'Geo ID', type: 'text', options: [], maxLength: 16 },
   { key: 'companyId', title: 'Company ID', type: 'text', options: [], maxLength: 16 },
 ];
@@ -84,6 +87,9 @@ export function countActiveFilters(filters: SearchFilters): number {
     count++;
   }
   if (filters.listingAge !== undefined) {
+    count++;
+  }
+  if (filters.location.length > 0) {
     count++;
   }
   if (filters.geoId.length > 0) {

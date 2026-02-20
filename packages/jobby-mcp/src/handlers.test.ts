@@ -120,6 +120,27 @@ describe('handleSearchJobs - search parameter forwarding', () => {
     );
   });
 
+  it('should pass array filter params to client', async () => {
+    mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
+
+    await handleSearchJobs({
+      keyword: 'TypeScript',
+      jobType: ['full-time', 'contract'],
+      experienceLevel: ['senior', 'director'],
+      workplaceType: ['remote', 'hybrid'],
+    });
+
+    expect(mockSearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keyword: 'TypeScript',
+        jobType: ['full-time', 'contract'],
+        experienceLevel: ['senior', 'director'],
+        workplaceType: ['remote', 'hybrid'],
+      }),
+      expect.any(Object),
+    );
+  });
+
   it('should pass pagination params separately', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
 

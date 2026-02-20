@@ -14,10 +14,10 @@ All parameters are optional.
 |-----------|------|-------------|
 | `keyword` | `string` | Job title, skill, or company name to search for |
 | `location` | `string` | City, state, or country to search in |
-| `jobType` | `string` | Employment type (see values below) |
-| `experienceLevel` | `string` | Required experience level (see values below) |
+| `jobType` | `string \| string[]` | Employment type — single value or array (see values below) |
+| `experienceLevel` | `string \| string[]` | Required experience level — single value or array (see values below) |
 | `minimumSalary` | `string` | Minimum salary filter (see values below) |
-| `workplaceType` | `string` | Workplace arrangement (see values below) |
+| `workplaceType` | `string \| string[]` | Workplace arrangement — single value or array (see values below) |
 | `listingAge` | `string` | How recently posted (see values below) |
 | `geoId` | `string` | LinkedIn geo ID (e.g. `103644278` for US) |
 | `companyId` | `string` | LinkedIn company ID (e.g. `1441` for Google) |
@@ -37,7 +37,9 @@ All parameters are optional.
 
 **`listingAge`**: `past-24-hours`, `past-week`, `past-month`
 
-### Example Request
+### Example Requests
+
+Single values:
 
 ```json
 {
@@ -45,6 +47,18 @@ All parameters are optional.
   "location": "San Francisco",
   "jobType": "full-time",
   "workplaceType": "remote",
+  "take": 10
+}
+```
+
+Array values for multi-select filters:
+
+```json
+{
+  "keyword": "React developer",
+  "jobType": ["full-time", "contract"],
+  "experienceLevel": ["senior", "director"],
+  "workplaceType": ["remote", "hybrid"],
   "take": 10
 }
 ```
