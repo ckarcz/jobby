@@ -247,33 +247,23 @@ if (statusRef.current !== 'idle') {
 
 ## 5. React Anti-Patterns
 
-### 5.1 Stale `draftRef` in SearchBar
+### 5.1 ~~Stale `draftRef` in SearchBar~~ **FIXED**
 
 **File:** `src/ui/components/SearchBar.tsx`
-**Severity:** Low (currently no bug, but fragile)
+**Severity:** Low — **Resolved**
 
-```typescript
-const draftRef = useRef(searchKeyword);
-```
-
-The `draftRef` is initialized from the global `searchKeyword` at mount time but is never updated if `searchKeyword` changes externally. For example, after `CLEAR_RESULTS` dispatches and resets `searchKeyword` to `''`, the `draftRef` still holds the old keyword.
-
-Currently this doesn't cause a visible bug because:
-1. `SearchBar` never unmounts (it's always in the layout)
-2. `CLEAR_RESULTS` is only triggered by pressing Escape in results, which changes focus away from search
-
-However, if any future action resets `searchKeyword` while the search bar is focused, the `TextInput` would show the stale value from the ref.
-
-**Recommended fix:** Sync the ref when the global state changes:
+The `draftRef` is now synced with the global `searchKeyword` via `useEffect`:
 
 ```typescript
 const draftRef = useRef(searchKeyword);
 
-// Keep ref in sync with global state
+// Keep ref in sync when global state changes (e.g. CLEAR_RESULTS resets keyword)
 useEffect(() => {
   draftRef.current = searchKeyword;
 }, [searchKeyword]);
 ```
+
+This ensures that external state changes (like `CLEAR_RESULTS` resetting the keyword to `''`) are reflected in the draft, preventing the `TextInput` from showing stale values.
 
 ### 5.2 `selectedJob` Derived in Component Instead of During Render
 
@@ -655,7 +645,7 @@ process.once('SIGTERM', () => process.exit(143));
 | 7.2 | Dispatch bundled with state context | Informational | Performance | **Fixed** |
 | 10.4 | Markdown re-parsed on every render | Low | Performance | **Fixed** |
 | 10.5 | Metadata lines rebuilt on every render | Low | Performance | **Fixed** |
-| 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | Open |
+| 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | **Fixed** |
 | 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | Open |
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
 | 7.1 | 21-field flat state object | Medium | Maintainability | Open |
@@ -684,9 +674,11 @@ process.once('SIGTERM', () => process.exit(143));
 11. ~~Memoize markdown parsing (10.4)~~ — **Done**
 12. ~~Memoize summary/metadata lines independently (10.5)~~ — **Done**
 
+**Completed (Round 3 — Anti-Patterns):**
+13. ~~Sync `draftRef` in SearchBar (5.1)~~ — **Done**
+
 **Remaining quick wins:**
 1. Remove dead code (9.1, 9.2)
-2. Sync `draftRef` in SearchBar (5.1)
 
 **Remaining medium-term improvements:**
 3. Make text input focus tracking explicit (6.2, 8.1)

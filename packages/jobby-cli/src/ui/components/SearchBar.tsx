@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { TextInput } from '@inkjs/ui';
 import { useSearchState, useAppDispatch } from '../state/context.js';
@@ -15,6 +15,11 @@ export function SearchBar(): React.ReactElement {
 
   // Persist typed text across TextInput mount/unmount cycles
   const draftRef = useRef(searchKeyword);
+
+  // Keep ref in sync when global state changes (e.g. CLEAR_RESULTS resets keyword)
+  useEffect(() => {
+    draftRef.current = searchKeyword;
+  }, [searchKeyword]);
 
   // Stable refs for callbacks that need current values
   const searchFiltersRef = useRef(searchFilters);
