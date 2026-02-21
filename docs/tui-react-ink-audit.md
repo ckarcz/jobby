@@ -381,58 +381,23 @@ The codebase uses `@inkjs/ui`'s `TextInput`, `Spinner`, and `Alert` components, 
 
 ## 7. State Management Concerns
 
-### 7.1 AppState Has 21 Fields in a Single Object
+### 7.1 AppState Has 21 Fields in a Single Object — **Resolved via Context Split**
 
 **File:** `src/ui/state/types.ts`
-**Severity:** Medium (maintainability)
+**Severity:** Medium (maintainability) — **Addressed**
 
-The `AppState` interface has grown to 21 fields covering terminal dimensions, panel focus, search state, pagination, job details, filters, and UI toggles. While `useReducer` handles this correctly, a single flat state object makes it harder to:
+The original concern was that a flat 21-field state makes it hard to understand grouping, split contexts, and test slices independently. The 5-context split (4.1, 4.6) has addressed all three concerns:
 
-1. Understand which actions affect which fields
-2. Split the context for performance (see 4.1)
-3. Test individual state slices independently
+1. **Grouping is documented by context interfaces** — `LayoutState`, `SearchState`, `SelectionState`, `JobDetailsState` each define which fields belong together
+2. **Context splitting is done** — performance benefit already realized
+3. **Testability** — context interfaces serve as the public API for state slices
 
-**Recommended improvement:** Group related fields into sub-objects:
+Restructuring `AppState` into nested sub-objects was considered but rejected:
+- The reducer would become more verbose (nested spreads like `{ ...state, search: { ...state.search, status: 'idle' } }`)
+- The flat structure is idiomatic for `useReducer` — simple spreads, no accidental nested reference sharing
+- The context layer already provides the logical grouping that consumers see
 
-```typescript
-interface AppState {
-  terminal: {
-    width: number;
-    height: number;
-    maxWidth: number;
-    maxHeight: number;
-  };
-  ui: {
-    focusedPanel: PanelId | null;
-    filterDrawerOpen: boolean;
-  };
-  search: {
-    keyword: string;
-    status: SearchStatus;
-    results: Job[];
-    totalResults: Job[];
-    pagination: PaginationInfo | undefined;
-    metadata: SearchMetadata | undefined;
-    query: JobSearchParams | undefined;
-    error: string | undefined;
-    filters: SearchFilters;
-  };
-  navigation: {
-    selectedJobIndex: number;
-  };
-  loadMore: {
-    status: LoadMoreStatus;
-    error: string | undefined;
-  };
-  jobDetails: {
-    data: JobDetails | null;
-    status: JobDetailsStatus;
-    error: string | undefined;
-  };
-}
-```
-
-This makes the state shape self-documenting and makes it easier to split into separate contexts later if needed.
+The flat `AppState` + context slice pattern is a reasonable architecture for this app's complexity level.
 
 ### 7.2 ~~Dispatch Identity Stability~~ **FIXED**
 
@@ -616,7 +581,7 @@ process.once('SIGTERM', () => process.exit(143));
 | 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | **Fixed** |
 | 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | **Fixed** |
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
-| 7.1 | 21-field flat state object | Medium | Maintainability | Open |
+| 7.1 | 21-field flat state object | Medium | Maintainability | **Addressed** |
 | 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | **Fixed** |
 | 9.1 | useSlideAnimation dead code | Low | Cleanup | Open |
 | 9.2 | Modal dead code | Low | Cleanup | Open |
@@ -649,8 +614,8 @@ process.once('SIGTERM', () => process.exit(143));
 **Remaining quick wins:**
 1. Remove dead code (9.1, 9.2)
 
-**Remaining larger refactors:**
-2. Restructure AppState into sub-objects (7.1)
+**Addressed (no code change needed):**
+- ~~Restructure AppState into sub-objects (7.1)~~ — **Addressed** by context split; flat reducer state is idiomatic
 
 ---
 
