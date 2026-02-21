@@ -12,7 +12,7 @@ export function useFilterDraft(): [FilterDrawerState, React.Dispatch<FilterDrawe
   // Reset draft state when drawer opens
   useEffect(() => {
     if (filterDrawerOpen && !prevOpenRef.current) {
-      draftDispatch({ type: 'RESET', filters: searchFilters });
+      draftDispatch({ type: 'RESET_FILTERS', filters: searchFilters });
     }
     prevOpenRef.current = filterDrawerOpen;
   }, [filterDrawerOpen, searchFilters]);

@@ -64,6 +64,21 @@ export interface TextFilterSectionDef {
 /** Discriminated union of all filter section definitions. */
 export type FilterSectionDef = CheckboxFilterSectionDef | RadioFilterSectionDef | TextFilterSectionDef;
 
+/** Union of all filter section keys. */
+export type FilterSectionKey = CheckboxFilterKey | RadioFilterKey | TextFilterKey;
+
+/** Static ordered list of section keys — defines drawer navigation order. */
+export const SECTION_ORDER: FilterSectionKey[] = [
+  'jobType',
+  'experienceLevel',
+  'workplaceType',
+  'minimumSalary',
+  'listingAge',
+  'location',
+  'geoId',
+  'companyId',
+];
+
 /** All filter sections displayed in the drawer. */
 export const filterSections: FilterSectionDef[] = [
   { key: 'jobType', title: 'Job Type', type: 'checkbox', options: JOB_TYPE_CHOICES as string[] },
@@ -75,6 +90,15 @@ export const filterSections: FilterSectionDef[] = [
   { key: 'geoId', title: 'Geo ID', type: 'text', options: [] },
   { key: 'companyId', title: 'Company ID', type: 'text', options: [] },
 ];
+
+/** Look up a section definition by key. */
+export function getFilterSection(key: FilterSectionKey): FilterSectionDef {
+  const section = filterSections.find(s => s.key === key);
+  if (!section) {
+    throw new Error(`Unknown filter section key: ${key}`);
+  }
+  return section;
+}
 
 /** Count how many filters are actively set. */
 export function countActiveFilters(filters: SearchFilters): number {
