@@ -158,7 +158,7 @@ export function useFilterKeyboard(
       return;
     }
 
-    if (key.upArrow && !isTextSection) {
+    if (key.upArrow) {
       const action = moveUp(d);
       if (action) {
         draftDispatchRef.current(action);
@@ -166,7 +166,7 @@ export function useFilterKeyboard(
       return;
     }
 
-    if (key.downArrow && !isTextSection) {
+    if (key.downArrow) {
       const action = moveDown(d);
       if (action) {
         draftDispatchRef.current(action);
