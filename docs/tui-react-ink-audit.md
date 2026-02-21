@@ -453,55 +453,36 @@ Removed the unused `Modal` component.
 
 ## 10. Minor Issues & Recommendations
 
-### 10.1 Fixed Filter Drawer Width
+### 10.1 Fixed Filter Drawer Width — **Intentional**
 
 **File:** `src/ui/constants.ts`
+**Status:** Won't fix — intentional design choice
 
-```typescript
-export const FILTER_DRAWER_WIDTH = 22;
-```
+The fixed `FILTER_DRAWER_WIDTH = 22` is kept as-is. A consistent fixed width provides predictable layout behavior across terminal sizes.
 
-This is a fixed column width regardless of terminal size. On very narrow terminals (< 80 columns), the filter drawer consumes a significant portion of the available width. On very wide terminals (> 200 columns), it looks disproportionately small.
-
-**Recommendation:** Consider a responsive approach:
-```typescript
-const filterDrawerWidth = Math.max(20, Math.min(30, Math.floor(terminalWidth * 0.2)));
-```
-
-### 10.2 Consider `key` Prop Reset Pattern for `JobDetailsPanel`
+### 10.2 Consider `key` Prop Reset Pattern for `JobDetailsPanel` — **Intentional**
 
 **File:** `src/ui/components/JobDetailsPanel.tsx`
+**Status:** Won't fix — current approach is more efficient
 
-The component manually resets `scrollOffset` to 0 when `selectedJob?.id` changes via `useEffect`:
+The `useEffect` scroll reset is intentionally kept over the `key` prop pattern. The key prop would unmount/remount the entire component on every selection change, losing the container height measurement and triggering unnecessary re-measurement. The `useEffect` approach only resets the scroll offset — a single `setState` call with no side effects.
 
-```typescript
-useEffect(() => {
-  setScrollOffset(0);
-}, [selectedJob?.id]);
-```
-
-React's `key` prop can handle this more idiomatically:
-
-```typescript
-// In Layout.tsx or wherever JobDetailsPanel is rendered:
-<JobDetailsPanel key={selectedJobId} />
-```
-
-When the `key` changes, React unmounts the old instance and mounts a new one — automatically resetting all internal state (including `scrollOffset`). This eliminates the `useEffect` and is the React-recommended pattern for "resetting state when a prop changes."
-
-**Trade-off:** This unmounts and remounts the component, which has a small cost. For `JobDetailsPanel`, the cost is negligible since the markdown parsing is the expensive part, not the React mount.
-
-### 10.3 `VIRTUAL_LIST_RESERVED_LINES` May Need Dynamic Calculation
+### 10.3 ~~`VIRTUAL_LIST_RESERVED_LINES` May Need Dynamic Calculation~~ **DOCUMENTED**
 
 **File:** `src/ui/constants.ts`
+**Status:** Resolved — documented the breakdown
+
+The constant now has a clear comment documenting the breakdown:
 
 ```typescript
+/**
+ * Lines reserved for non-list content in the results panel.
+ * Breakdown: 1 header + 2 border (top/bottom) + 1 footer + 1 padding = 5
+ */
 export const VIRTUAL_LIST_RESERVED_LINES = 5;
 ```
 
-This reserves 5 lines for header/footer content in the virtual list. If the header or footer height changes (e.g., longer error messages, multi-line status), the reserved count won't match, potentially causing content to be clipped or overflow.
-
-**Recommendation:** Calculate this dynamically based on actual header/footer measurement, or document the exact breakdown (e.g., "1 header + 1 border top + 1 footer + 1 border bottom + 1 margin = 5").
+Dynamic calculation was considered but would add complexity without benefit — the header and footer heights are fixed by design.
 
 ### 10.4 ~~Markdown Processing on Every Render~~ **FIXED**
 
@@ -537,22 +518,12 @@ const metadataLines = useMemo(() => {
 
 The `allLines` useMemo composes these memoized arrays, so summary lines don't rebuild when details change and vice versa.
 
-### 10.6 Process Signal Handlers Don't Clean Up
+### 10.6 ~~Process Signal Handlers Don't Clean Up~~ **FIXED**
 
 **File:** `src/main.ts`
+**Status:** Resolved
 
-```typescript
-process.on('SIGINT', () => process.exit(130));
-process.on('SIGTERM', () => process.exit(143));
-```
-
-These listeners are registered but never removed. In production CLI usage this is fine (the process exits), but in tests it could cause listener leaks if `main()` is called multiple times.
-
-**Recommendation:** Return cleanup functions or use `once` instead of `on`:
-```typescript
-process.once('SIGINT', () => process.exit(130));
-process.once('SIGTERM', () => process.exit(143));
-```
+Changed all signal and error handlers from `process.on` to `process.once`. Since each handler calls `process.exit()`, they only need to fire once. Using `once` prevents listener accumulation if `main()` is called multiple times in tests.
 
 ---
 
@@ -579,9 +550,10 @@ process.once('SIGTERM', () => process.exit(143));
 | 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | **Fixed** |
 | 9.1 | useSlideAnimation dead code | Low | Cleanup | **Removed** |
 | 9.2 | Modal dead code | Low | Cleanup | **Removed** |
-| 10.1 | Fixed filter drawer width | Low | UX | Open |
-| 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | Open |
-| 10.6 | Process signal handlers don't clean up | Low | Robustness | Open |
+| 10.1 | Fixed filter drawer width | Low | UX | **Intentional** |
+| 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | **Intentional** |
+| 10.3 | VIRTUAL_LIST_RESERVED_LINES undocumented | Low | Documentation | **Documented** |
+| 10.6 | Process signal handlers don't clean up | Low | Robustness | **Fixed** |
 
 ### Priority Recommendations
 
@@ -605,11 +577,15 @@ process.once('SIGTERM', () => process.exit(143));
 13. ~~Sync `draftRef` in SearchBar (5.1)~~ — **Done**
 14. ~~Replace panel-based text input check with ref-based registration (6.2, 8.1)~~ — **Done** (TextInputActiveContext + useTextInputRegistration)
 
-**Completed (Round 4 — Cleanup):**
+**Completed (Round 4 — Cleanup & Minor):**
 15. ~~Remove dead code (9.1, 9.2)~~ — **Done** (useSlideAnimation, Modal, unused constants)
+16. ~~Document VIRTUAL_LIST_RESERVED_LINES breakdown (10.3)~~ — **Done**
+17. ~~Use `process.once` for signal handlers (10.6)~~ — **Done**
 
 **Addressed (no code change needed):**
 - ~~Restructure AppState into sub-objects (7.1)~~ — **Addressed** by context split; flat reducer state is idiomatic
+- ~~Fixed filter drawer width (10.1)~~ — **Intentional** design choice
+- ~~Manual scroll reset vs key prop (10.2)~~ — **Intentional** (useEffect is more efficient)
 
 ---
 

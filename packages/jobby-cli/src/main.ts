@@ -14,23 +14,23 @@ import { formatErrorMessage } from './utils/errors.js';
 export async function main(): Promise<void> {
   const activeCliArgs: ActiveCliArgsRef = { current: {} };
 
-  process.on('SIGINT', () => {
+  process.once('SIGINT', () => {
     if (activeCliArgs.current.debug || activeCliArgs.current.logLevel === 'debug') {
       console.debug('Received SIGINT signal. Terminating.');
     }
     process.exit(130);
   });
-  process.on('SIGTERM', () => {
+  process.once('SIGTERM', () => {
     if (activeCliArgs.current.debug || activeCliArgs.current.logLevel === 'debug') {
       console.debug('Received SIGTERM signal. Terminating.');
     }
     process.exit(143);
   });
-  process.on('unhandledRejection', (reason: unknown) => {
+  process.once('unhandledRejection', (reason: unknown) => {
     console.error('Unhandled promise rejection:', reason);
     process.exit(1);
   });
-  process.on('uncaughtException', (error: Error) => {
+  process.once('uncaughtException', (error: Error) => {
     console.error('Uncaught exception:', error);
     process.exit(1);
   });
