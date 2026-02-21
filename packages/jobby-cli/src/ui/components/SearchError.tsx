@@ -7,7 +7,7 @@ interface SearchErrorProps {
 }
 
 /** Error display with retry hint. */
-export function SearchError({ message }: SearchErrorProps): React.ReactElement {
+export const SearchError = React.memo(function SearchError({ message }: SearchErrorProps): React.ReactElement {
   return (
     <Box flexDirection="column" flexGrow={1} paddingTop={1}>
       <Alert variant="error">{message}</Alert>
@@ -16,4 +16,4 @@ export function SearchError({ message }: SearchErrorProps): React.ReactElement {
       </Box>
     </Box>
   );
-}
+});

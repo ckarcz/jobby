@@ -1,18 +1,20 @@
 import { useState, useEffect, type RefObject } from 'react';
 import { measureElement, type DOMElement } from 'ink';
+import { useLayoutState } from '../state/context.js';
 
 /**
  * Measures the height of a DOM element and returns it as state.
  *
- * The effect runs after every render intentionally: Ink has no resize event
- * API, so terminal resize is detected by re-rendering and re-measuring.
- * The `height !== measuredHeight` guard ensures state is only updated when the
- * height actually changes, preventing unnecessary downstream re-renders.
+ * Re-measures when terminal dimensions or filter drawer visibility change,
+ * as these are the state changes that affect Ink layout geometry.
  */
 export function useContainerHeight(ref: RefObject<DOMElement | null>): number {
+  const { terminalWidth, terminalHeight, filterDrawerOpen } = useLayoutState();
   const [measuredHeight, setMeasuredHeight] = useState(0);
 
-  // No dependency array — intentional. See JSDoc above.
+  // Note: measuredHeight is intentionally excluded from the dependency array.
+  // The internal guard `height !== measuredHeight` handles staleness; including it
+  // would cause a redundant extra render on every layout change.
   useEffect(() => {
     if (ref.current) {
       const { height } = measureElement(ref.current);
@@ -20,7 +22,7 @@ export function useContainerHeight(ref: RefObject<DOMElement | null>): number {
         setMeasuredHeight(height);
       }
     }
-  });
+  }, [terminalWidth, terminalHeight, filterDrawerOpen]);
 
   return measuredHeight;
 }

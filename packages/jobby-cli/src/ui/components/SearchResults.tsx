@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Box, type DOMElement } from 'ink';
 import { VirtualList, type VirtualListRef, type ViewportState } from 'ink-virtual-list';
-import { useAppState } from '../state/context.js';
+import { useSearchState, useNavigationState } from '../state/context.js';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
 import { useContainerHeight } from '../hooks/useContainerHeight.js';
 import { useResultsKeyboard } from '../hooks/useResultsKeyboard.js';
@@ -14,7 +14,8 @@ import type { Job } from 'jobby-client';
 
 /** Scrollable list of job search results. */
 export function SearchResults(): React.ReactElement {
-  const { totalResults, searchResults, searchMetadata, selectedJobIndex, loadMoreStatus, loadMoreError } = useAppState();
+  const { totalResults, searchResults, searchMetadata, loadMoreStatus, loadMoreError } = useSearchState();
+  const { selectedJobIndex } = useNavigationState();
   const panelFocused = usePanelFocus('results');
   const containerRef = useRef<DOMElement>(null);
   const listRef = useRef<VirtualListRef>(null);

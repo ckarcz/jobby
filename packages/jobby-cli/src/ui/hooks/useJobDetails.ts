@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { JobbyClient } from 'jobby-client';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useNavigationState, useAppDispatch } from '../state/context.js';
 import { JOB_DETAILS_DEBOUNCE_MS } from '../constants.js';
 
 /** Fetches job details for the selected job with debounce and cancellation. */
 export function useJobDetails(): void {
-  const { totalResults, selectedJobIndex, searchStatus } = useAppState();
+  const { totalResults, searchStatus } = useSearchState();
+  const { selectedJobIndex } = useNavigationState();
   const dispatch = useAppDispatch();
   const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
   const abortRef = useRef<AbortController | null>(null);

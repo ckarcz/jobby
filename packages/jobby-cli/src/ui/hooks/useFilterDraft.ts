@@ -1,11 +1,12 @@
 import { useReducer, useEffect, useRef } from 'react';
-import { useAppState } from '../state/context.js';
+import { useLayoutState, useSearchState } from '../state/context.js';
 import { filterDrawerReducer, createInitialDraftState } from '../state/filterReducer.js';
 import type { FilterDrawerState, FilterDrawerAction } from '../state/filterReducer.js';
 
 /** Manages filter drawer draft state, including reset-on-open. */
 export function useFilterDraft(): [FilterDrawerState, React.Dispatch<FilterDrawerAction>] {
-  const { filterDrawerOpen, searchFilters } = useAppState();
+  const { filterDrawerOpen } = useLayoutState();
+  const { searchFilters } = useSearchState();
   const [draft, draftDispatch] = useReducer(filterDrawerReducer, searchFilters, createInitialDraftState);
   const prevOpenRef = useRef(filterDrawerOpen);
 

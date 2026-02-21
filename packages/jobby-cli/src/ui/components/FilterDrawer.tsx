@@ -11,7 +11,7 @@ import {
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
 import { useFilterDraft } from '../hooks/useFilterDraft.js';
 import { useFilterKeyboard } from '../hooks/useFilterKeyboard.js';
-import { useAppState } from '../state/context.js';
+import { useLayoutState } from '../state/context.js';
 import { getSelected, getTextValue } from '../state/filterHelpers.js';
 import { SECTION_ORDER } from '../state/filterTypes.js';
 import { FilterSection } from './FilterSection.js';
@@ -27,7 +27,7 @@ export function FilterDrawer(): React.ReactElement {
   const [draft, draftDispatch] = useFilterDraft();
   useFilterKeyboard(draft, draftDispatch);
 
-  const { maxHeight } = useAppState();
+  const { maxHeight } = useLayoutState();
   const scrollRef = useRef<ScrollListRef>(null);
 
   // Remeasure on terminal resize

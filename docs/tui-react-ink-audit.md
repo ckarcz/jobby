@@ -1,6 +1,6 @@
 # TUI Application Audit: React & Ink Best Practices Review
 
-> **Date:** 2026-02-20
+> **Date:** 2026-02-20 (updated 2026-02-21)
 > **Scope:** `packages/jobby-cli/src/ui/` — the interactive TUI (Ink/React terminal UI)
 > **Methodology:** Cross-referenced against React documentation, Ink library source code & documentation, `@inkjs/ui` API, and community Ink component libraries.
 
@@ -27,8 +27,8 @@
 The jobby-cli TUI is a well-structured application that follows many best practices. It uses a Redux-style `useReducer` + Context architecture, proper abort controller patterns for cancellation, and a clean component hierarchy. However, there are several areas where React and Ink best practices are not fully followed, leading to potential performance degradation, unnecessary re-renders, and missed optimization opportunities.
 
 **Key findings:**
-- **1 critical issue** — `JobDetailsPanel` renders all off-screen content (no virtualization)
-- **4 performance issues** — context structure causing unnecessary re-renders, missing memoization, measurement on every render, unmount/remount pattern
+- ~~**1 critical issue** — `JobDetailsPanel` renders all off-screen content (no virtualization)~~ **Fixed** — proper windowing implemented
+- ~~**4 performance issues** — context structure causing unnecessary re-renders, missing memoization, measurement on every render, unmount/remount pattern~~ **All fixed** — context split into 4 (Layout, Search, Navigation, Dispatch), `useContainerHeight` dependency array added, FilterDrawer uses `display="none"`, leaf components memoized
 - **3 React anti-patterns** — stale ref, missing `isActive` on `useInput`, derived state opportunities
 - **3 Ink-specific issues** — no use of `<Static>`, keyboard event propagation, custom vs @inkjs/ui filter inputs (resolved — kept custom with dedicated memoized components)
 - **2 dead code items** — `useSlideAnimation` hook, `Modal` component
@@ -40,8 +40,8 @@ The jobby-cli TUI is a well-structured application that follows many best practi
 
 Before listing issues, it's important to acknowledge the strong patterns already in place:
 
-### 2.1 Redux-Style Architecture with `useReducer` + Context
-The `App` → `AppContext.Provider` → `AppInner` split is textbook. Hooks that consume context are correctly placed *inside* the provider (in `AppInner`), avoiding the classic mistake of calling context hooks at the provider level.
+### 2.1 Redux-Style Architecture with `useReducer` + Split Contexts
+The `App` → providers → `AppInner` split is textbook. State is managed by a single `useReducer` but exposed through four split contexts (`LayoutContext`, `SearchContext`, `NavigationContext`, `DispatchContext`) via `useMemo` slicing. This ensures components only re-render when their specific state slice changes. Hooks that consume context are correctly placed *inside* the providers (in `AppInner`), avoiding the classic mistake of calling context hooks at the provider level.
 
 ### 2.2 Two-Level Filter State (Draft Pattern)
 The filter drawer maintains a local `useReducer` (draft state) that is only committed to global state on Enter. This "controlled draft" pattern prevents intermediate edits from triggering searches and is exactly the right approach for form-like UIs. The reducer is intentionally minimal (3 actions: `NAVIGATE_FILTERS`, `SET_FILTERS`, `RESET_FILTERS`) — navigation computation lives in the keyboard hook, and the reducer just applies the result.
@@ -77,194 +77,98 @@ The TUI launch in `commands/ui.ts` passes `incrementalRendering: true` to Ink's 
 
 ## 3. Critical Issues
 
-### 3.1 `JobDetailsPanel` Renders ALL Lines Below Scroll Offset
+### 3.1 ~~`JobDetailsPanel` Renders ALL Lines Below Scroll Offset~~ **FIXED**
 
 **File:** `src/ui/components/JobDetailsPanel.tsx`
-**Severity:** Critical (Performance)
+**Severity:** Critical (Performance) — **Resolved**
 
-The job details panel builds a flat array of `ContentLine[]` from metadata and the markdown description, then renders:
-
-```typescript
-const visibleLines = allLines.slice(scrollOffset);
-```
-
-This passes *every line from `scrollOffset` to the end* to React, relying on the containing `<Box overflow="hidden">` for visual clipping. While the user only sees the lines that fit in the viewport, **React still creates and reconciles elements for every off-screen line**.
-
-For a typical job description with 50-200+ lines of content, this means React is creating, diffing, and managing 150+ elements that are never visible. In Ink's rendering pipeline, every element is traversed during the full-tree render, converted to the 2D character buffer, and then clipped — wasting CPU cycles.
-
-**Impact:** Visible lag when scrolling long job descriptions. Ink performs a full-tree traversal on every state change, so extra elements directly increase render time.
-
-**Recommended fix:** Implement proper windowing:
+Proper windowing has been implemented. The visible lines are now sliced to only the viewport range:
 
 ```typescript
-// BEFORE (current)
-const visibleLines = allLines.slice(scrollOffset);
-
-// AFTER (windowed)
-const visibleCount = containerHeight || 20;
+const visibleCount = Math.max(1, containerHeight);
 const visibleLines = allLines.slice(scrollOffset, scrollOffset + visibleCount);
 ```
 
-This limits React to only managing the lines actually visible in the viewport. Since `containerHeight` is already being measured via `useContainerHeight`, the value is readily available.
+React now only manages the lines actually visible in the viewport, eliminating the performance cost of creating and reconciling off-screen elements.
 
 ---
 
 ## 4. Performance Issues
 
-### 4.1 Single Context Causes Unnecessary Re-Renders for All Consumers
+### 4.1 ~~Single Context Causes Unnecessary Re-Renders for All Consumers~~ **FIXED**
 
 **File:** `src/ui/state/context.ts`
-**Severity:** Medium
+**Severity:** Medium — **Resolved**
 
-The entire `AppState` (21 fields) and `dispatch` function are bundled into a single `AppContext`. Any state change — even changing `scrollOffset` in the details panel — causes *every* component that calls `useAppState()` to re-render, because the context value is a new object on every dispatch.
+The single `AppContext` has been split into four focused contexts:
 
-React Context triggers re-renders for ALL consumers when the context value changes, regardless of whether the specific fields a consumer uses have changed. This means:
-
-- Typing in the search bar → `searchKeyword` changes → `StatusBar`, `FilterDrawer`, `JobDetailsPanel`, `SearchResults` all re-render
-- Scrolling in details → `selectedJobIndex` changes → `SearchBar`, `StatusBar`, `FilterDrawer` all re-render
-- Terminal resize → `terminalWidth`/`terminalHeight` changes → everything re-renders
-
-**Recommended fix (choose one):**
-
-**Option A — Split contexts by update frequency:**
 ```typescript
-// Rarely changes (terminal size, drawer state)
-const AppLayoutContext = createContext<LayoutState>(...);
-
-// Changes during search lifecycle
-const AppSearchContext = createContext<SearchState>(...);
-
-// Changes during navigation
-const AppNavigationContext = createContext<NavigationState>(...);
-
-// Stable dispatch (never changes identity)
-const AppDispatchContext = createContext<Dispatch<AppAction>>(...);
+const LayoutContext = createContext<LayoutState>(...);      // terminal size, focusedPanel, filterDrawerOpen
+const SearchContext = createContext<SearchState>(...);      // keyword, status, results, pagination, filters
+const NavigationContext = createContext<NavigationState>(...); // selectedJobIndex, jobDetails
+const DispatchContext = createContext<Dispatch<AppAction>>(...); // stable dispatch
 ```
 
-**Option B — Selector hooks with `useSyncExternalStore`:**
-Create a store that allows subscribing to specific slices of state, so components only re-render when their slice changes.
+`App.tsx` derives each context value via `useMemo`, so context objects only change when their specific fields change. All consumers have been migrated from `useAppState()` to the specific hooks: `useLayoutState()`, `useSearchState()`, `useNavigationState()`, `useAppDispatch()`.
 
-**Option C — `React.memo` on leaf components (simpler):**
-Wrap components like `StatusBar`, `JobCard`, `Header`, `ResultsHeader`, `ResultsFooter` in `React.memo()` so they skip re-rendering when their props haven't changed. This is the simplest approach and often sufficient.
+This eliminates the cascade where navigation changes re-rendered search components and vice versa.
 
-### 4.2 `useContainerHeight` Runs Measurement on Every Render
+### 4.2 ~~`useContainerHeight` Runs Measurement on Every Render~~ **FIXED**
 
 **File:** `src/ui/hooks/useContainerHeight.ts`
-**Severity:** Low-Medium
+**Severity:** Low-Medium — **Resolved**
+
+The hook now consumes `useLayoutState()` and only re-measures when layout-affecting state changes:
 
 ```typescript
-useEffect(() => {
-  if (!ref.current) return;
-  const { height } = measureElement(ref.current);
-  if (height !== measuredHeight) {
-    setMeasuredHeight(height);
-  }
-});
-```
-
-The intentional omission of the dependency array means this `useEffect` fires after *every* render. While the guard `height !== measuredHeight` prevents infinite loops, `measureElement()` still runs on every render cycle across the entire application. Ink's `measureElement` calls into the Yoga layout engine to read computed dimensions.
-
-**Why this matters in Ink:** Unlike browser DOM where layout measurements can be batched by the browser engine, Ink's `measureElement` reads directly from the Yoga node tree. Every call traverses the Yoga graph.
-
-**Recommended fix:** This is intentionally designed to catch resize-driven layout changes, so it can't use a standard dependency array. However, it could be optimized by:
-
-1. Only measuring when terminal dimensions change:
-```typescript
-const { terminalWidth, terminalHeight } = useAppState();
+const { terminalWidth, terminalHeight, filterDrawerOpen } = useLayoutState();
 
 useEffect(() => {
-  if (!ref.current) return;
-  const { height } = measureElement(ref.current);
-  if (height !== measuredHeight) {
-    setMeasuredHeight(height);
+  if (ref.current) {
+    const { height } = measureElement(ref.current);
+    if (height !== measuredHeight) {
+      setMeasuredHeight(height);
+    }
   }
-}, [terminalWidth, terminalHeight, measuredHeight]);
+}, [terminalWidth, terminalHeight, filterDrawerOpen, measuredHeight, ref]);
 ```
 
-2. Or measuring after specific state changes that affect layout (e.g., `filterDrawerOpen`):
-```typescript
-const { terminalWidth, terminalHeight, filterDrawerOpen } = useAppState();
+This eliminates unnecessary Yoga layout traversals on every render while still catching all layout-affecting changes (terminal resize and filter drawer toggle).
 
-useEffect(() => {
-  if (!ref.current) return;
-  const { height } = measureElement(ref.current);
-  if (height !== measuredHeight) {
-    setMeasuredHeight(height);
-  }
-}, [terminalWidth, terminalHeight, filterDrawerOpen, measuredHeight]);
-```
-
-### 4.3 FilterDrawer Unmounts/Remounts on Toggle
+### 4.3 ~~FilterDrawer Unmounts/Remounts on Toggle~~ **FIXED**
 
 **File:** `src/ui/components/Layout.tsx`
-**Severity:** Low-Medium
+**Severity:** Low-Medium — **Resolved**
+
+The FilterDrawer now uses `display="none"` instead of conditional rendering:
 
 ```tsx
-{filterDrawerOpen && (
-  <FocusableBox panel="filters" ...>
-    <FilterDrawer />
-  </FocusableBox>
-)}
-```
-
-When `filterDrawerOpen` is `false`, the entire `FilterDrawer` component tree is unmounted from React. When it becomes `true`, React must:
-1. Create all component instances from scratch
-2. Run all `useState` initializers
-3. Run the `filterReducer` initialization
-4. Mount the `ScrollList` component
-5. Run all `useEffect` hooks
-
-While the `useFilterDraft` hook correctly resets the draft state on open, the cost of unmounting and remounting the entire subtree is unnecessary.
-
-**Recommended fix:** Use `display="none"` instead of conditional rendering:
-
-```tsx
-<FocusableBox
-  panel="filters"
-  display={filterDrawerOpen ? 'flex' : 'none'}
-  ...
->
+<FocusableBox panel="filters" display={filterDrawerOpen ? 'flex' : 'none'} ...>
   <FilterDrawer />
 </FocusableBox>
 ```
 
-This keeps the component mounted but hidden. Ink's `display="none"` is handled by Yoga and prevents the element from participating in layout calculation, similar to CSS `display: none`. The component retains its state without re-initialization.
+The component stays mounted but hidden when the drawer is closed. Ink's `display="none"` is handled by Yoga and prevents the element from participating in layout calculation. This eliminates the cost of destroying and recreating the entire component subtree on every toggle.
 
-**Trade-off:** The component remains in memory when hidden. For a filter drawer, this is negligible.
+### 4.4 ~~Missing `React.memo` on Leaf Components~~ **FIXED**
 
-### 4.4 Missing `React.memo` on Leaf Components
+**Severity:** Low-Medium — **Resolved**
 
-**Severity:** Low-Medium
+All leaf components are now wrapped in `React.memo`:
 
-Several leaf components that receive stable or primitive props are not wrapped in `React.memo`. In Ink's full-tree rendering model, every component re-renders when its parent re-renders. Since Ink traverses the entire component tree on every state change, memoizing leaf components provides meaningful savings.
-
-**Already memoized (done):**
+**All memoized components:**
 - `FilterSection` — layout wrapper for filter sections
 - `FilterCheckboxInput` — checkbox option list
 - `FilterRadioInput` — radio option list
 - `FilterTextInput` — text input field
-
-**Components that would still benefit from `React.memo`:**
-
-| Component | Reason |
-|---|---|
-| `JobCard` | Rendered inside VirtualList; props only change when job data or focus changes |
-| `StatusBar` | Only needs to update when `focusedPanel` or filter count changes |
-| `WelcomeScreen` | Static content, never needs to re-render |
-| `SearchingSpinner` | Only renders a spinner, no props |
-| `SearchError` | Only needs `message` prop |
-| `NoSearchResults` | Static content |
-| `ResultsHeader` | Only needs viewport + metadata |
-| `ResultsFooter` | Only needs status + position info |
-
-**Example:**
-```typescript
-// BEFORE
-export function JobCard({ job, focused }: JobCardProps) { ... }
-
-// AFTER
-export const JobCard = React.memo(function JobCard({ job, focused }: JobCardProps) { ... });
-```
+- `JobCard` — rendered inside VirtualList
+- `ResultsHeader` — viewport info display
+- `ResultsFooter` — load-more status display
+- `StatusBar` — context-sensitive keyboard hints
+- `WelcomeScreen` — static initial screen
+- `SearchingSpinner` — search progress indicator
+- `SearchError` — error display with retry hint
+- `NoSearchResults` — empty results display
 
 ---
 
@@ -469,20 +373,12 @@ interface AppState {
 
 This makes the state shape self-documenting and makes it easier to split into separate contexts later if needed.
 
-### 7.2 Dispatch Identity Stability
+### 7.2 ~~Dispatch Identity Stability~~ **FIXED**
 
 **File:** `src/ui/App.tsx`
-**Severity:** Informational (currently correct)
+**Severity:** Informational — **Resolved**
 
-The `dispatch` function from `useReducer` is guaranteed by React to have a stable identity across renders. The current code passes it via context alongside `state`, which means the context value object changes on every state update (because `state` changes).
-
-If the context is split (as recommended in 4.1), `dispatch` should go in its own context:
-
-```typescript
-const AppDispatchContext = createContext<Dispatch<AppAction>>(noopDispatch);
-```
-
-This ensures components that only need `dispatch` (like event handlers) never re-render due to state changes.
+The `dispatch` function now has its own dedicated `DispatchContext`, separate from all state contexts. Since `dispatch` from `useReducer` has a stable identity, the `DispatchContext` value never changes, ensuring components that only need `dispatch` (like event handlers) never re-render due to state changes.
 
 ---
 
@@ -674,43 +570,47 @@ process.once('SIGTERM', () => process.exit(143));
 
 ## 11. Summary Table
 
-| # | Issue | Severity | Category | Effort |
+| # | Issue | Severity | Category | Status |
 |---|---|---|---|---|
-| 3.1 | JobDetailsPanel renders all off-screen lines | Critical | Performance | Low |
-| 4.1 | Single context causes unnecessary re-renders | Medium | Performance | Medium-High |
-| 4.2 | useContainerHeight measures on every render | Low-Medium | Performance | Low |
-| 4.3 | FilterDrawer unmounts/remounts on toggle | Low-Medium | Performance | Low |
-| 4.4 | Missing React.memo on leaf components (filter inputs done) | Low-Medium | Performance | Low |
-| 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | Low |
-| 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | Low |
+| 3.1 | JobDetailsPanel renders all off-screen lines | Critical | Performance | **Fixed** |
+| 4.1 | Single context causes unnecessary re-renders | Medium | Performance | **Fixed** |
+| 4.2 | useContainerHeight measures on every render | Low-Medium | Performance | **Fixed** |
+| 4.3 | FilterDrawer unmounts/remounts on toggle | Low-Medium | Performance | **Fixed** |
+| 4.4 | Missing React.memo on leaf components | Low-Medium | Performance | **Fixed** |
+| 7.2 | Dispatch bundled with state context | Informational | Performance | **Fixed** |
+| 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | Open |
+| 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | Open |
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
-| 7.1 | 21-field flat state object | Medium | Maintainability | Medium |
-| 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | Low |
-| 9.1 | useSlideAnimation dead code | Low | Cleanup | Trivial |
-| 9.2 | Modal dead code | Low | Cleanup | Trivial |
-| 10.1 | Fixed filter drawer width | Low | UX | Low |
-| 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | Low |
-| 10.4 | Markdown re-parsed on every render | Low | Performance | Low |
-| 10.5 | Metadata lines rebuilt on every render | Low | Performance | Low |
-| 10.6 | Process signal handlers don't clean up | Low | Robustness | Trivial |
+| 7.1 | 21-field flat state object | Medium | Maintainability | Open |
+| 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | Open |
+| 9.1 | useSlideAnimation dead code | Low | Cleanup | Open |
+| 9.2 | Modal dead code | Low | Cleanup | Open |
+| 10.1 | Fixed filter drawer width | Low | UX | Open |
+| 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | Open |
+| 10.4 | Markdown re-parsed on every render | Low | Performance | Open |
+| 10.5 | Metadata lines rebuilt on every render | Low | Performance | Open |
+| 10.6 | Process signal handlers don't clean up | Low | Robustness | Open |
 
 ### Priority Recommendations
 
-**Quick wins (do first):**
-1. Fix `JobDetailsPanel` windowing (3.1) — single line change, biggest impact
-2. Memoize markdown parsing and metadata lines (10.4, 10.5)
-3. Add `React.memo` to remaining leaf components (4.4) — filter inputs already done
-4. Remove dead code (9.1, 9.2)
-5. Sync `draftRef` in SearchBar (5.1)
+**Completed:**
+1. ~~Fix `JobDetailsPanel` windowing (3.1)~~ — **Done**
+2. ~~Split AppContext by update frequency (4.1)~~ — **Done** (4-context split with useMemo slicing)
+3. ~~Add dependency array to `useContainerHeight` (4.2)~~ — **Done**
+4. ~~Use `display="none"` for FilterDrawer instead of unmounting (4.3)~~ — **Done**
+5. ~~Add `React.memo` to all leaf components (4.4)~~ — **Done**
+6. ~~Separate dispatch into its own context (7.2)~~ — **Done**
 
-**Medium-term improvements:**
-6. Use `display="none"` for FilterDrawer instead of unmounting (4.3)
-7. Add dependency array to `useContainerHeight` (4.2)
-8. Make text input focus tracking explicit (6.2, 8.1)
+**Remaining quick wins:**
+1. Memoize markdown parsing and metadata lines (10.4, 10.5)
+2. Remove dead code (9.1, 9.2)
+3. Sync `draftRef` in SearchBar (5.1)
 
-**Larger refactors (consider for future):**
-9. Split AppContext by update frequency (4.1)
-10. Restructure AppState into sub-objects (7.1)
+**Remaining medium-term improvements:**
+4. Make text input focus tracking explicit (6.2, 8.1)
+
+**Remaining larger refactors:**
+5. Restructure AppState into sub-objects (7.1)
 
 ---
 

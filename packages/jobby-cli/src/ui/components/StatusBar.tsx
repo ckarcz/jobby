@@ -1,11 +1,12 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useAppState } from '../state/context.js';
+import { useLayoutState, useSearchState } from '../state/context.js';
 import { countActiveFilters } from '../state/filterTypes.js';
 
 /** Bottom bar showing context-sensitive keyboard hints. */
-export function StatusBar(): React.ReactElement {
-  const { searchFilters, terminalWidth, terminalHeight, focusedPanel } = useAppState();
+export const StatusBar = React.memo(function StatusBar(): React.ReactElement {
+  const { terminalWidth, terminalHeight, focusedPanel } = useLayoutState();
+  const { searchFilters } = useSearchState();
 
   const activeCount = countActiveFilters(searchFilters);
   const filterBadge = activeCount > 0 ? ` (${String(activeCount)})` : '';
@@ -31,4 +32,4 @@ export function StatusBar(): React.ReactElement {
       <Text dimColor>{rightInfo}</Text>
     </Box>
   );
-}
+});

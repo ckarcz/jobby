@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { JobbyClient } from 'jobby-client';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useAppDispatch } from '../state/context.js';
 import { buildSearchParams } from '../utils/buildSearchParams.js';
 import type { SearchFilters } from '../state/filterTypes.js';
 
@@ -11,7 +11,7 @@ interface UseSearchResult {
 
 /** Fires a job search and dispatches results to state. */
 export function useSearch(): UseSearchResult {
-  const { searchQuery, searchPagination, loadMoreStatus } = useAppState();
+  const { searchQuery, searchPagination, loadMoreStatus } = useSearchState();
   const dispatch = useAppDispatch();
   const abortRef = useRef<AbortController | null>(null);
   const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);

@@ -1,14 +1,14 @@
 import React, { useRef, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { TextInput } from '@inkjs/ui';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useAppDispatch } from '../state/context.js';
 import { useSearch } from '../hooks/useSearch.js';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
 import { colors, icons } from '../theme.js';
 
 /** Search bar that mounts a TextInput when focused, shows static text when blurred. */
 export function SearchBar(): React.ReactElement {
-  const { searchKeyword, searchFilters, totalResults } = useAppState();
+  const { searchKeyword, searchFilters, totalResults } = useSearchState();
   const dispatch = useAppDispatch();
   const { search } = useSearch();
   const focused = usePanelFocus('search');

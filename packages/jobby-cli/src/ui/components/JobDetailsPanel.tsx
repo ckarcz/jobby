@@ -4,7 +4,7 @@ import { Spinner } from '@inkjs/ui';
 import { Marked } from 'marked';
 import { markedTerminal } from 'marked-terminal';
 import type { Job, JobDetails } from 'jobby-client';
-import { useAppState } from '../state/context.js';
+import { useSearchState, useNavigationState } from '../state/context.js';
 import { useContainerHeight } from '../hooks/useContainerHeight.js';
 import { useDetailsKeyboard } from '../hooks/useDetailsKeyboard.js';
 import { icons } from '../theme.js';
@@ -104,7 +104,8 @@ function buildDetailsMetadataLines(details: JobDetails): ContentLine[] {
 
 /** Panel displaying job details for the currently selected search result. */
 export function JobDetailsPanel(): React.ReactElement {
-  const { totalResults, selectedJobIndex, jobDetails, jobDetailsStatus, jobDetailsError } = useAppState();
+  const { totalResults } = useSearchState();
+  const { selectedJobIndex, jobDetails, jobDetailsStatus, jobDetailsError } = useNavigationState();
   const containerRef = useRef<DOMElement>(null);
   const containerHeight = useContainerHeight(containerRef);
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -170,7 +171,8 @@ export function JobDetailsPanel(): React.ReactElement {
     );
   }
 
-  const visibleLines = allLines.slice(scrollOffset);
+  const visibleCount = Math.max(1, containerHeight);
+  const visibleLines = allLines.slice(scrollOffset, scrollOffset + visibleCount);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1} overflow="hidden">

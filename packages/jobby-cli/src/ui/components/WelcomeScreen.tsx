@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { icons } from '../theme.js';
 
 /** Initial screen shown before the first search. */
-export function WelcomeScreen(): React.ReactElement {
+export const WelcomeScreen = React.memo(function WelcomeScreen(): React.ReactElement {
   return (
     <Box rowGap={1} flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Text>
@@ -14,4 +14,4 @@ export function WelcomeScreen(): React.ReactElement {
       </Text>
     </Box>
   );
-}
+});

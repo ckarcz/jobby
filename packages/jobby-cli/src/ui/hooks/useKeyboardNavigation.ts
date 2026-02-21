@@ -1,5 +1,5 @@
 import { useInput } from 'ink';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useLayoutState, useAppDispatch } from '../state/context.js';
 
 /**
  * Global keyboard handler — routes shortcuts based on current panel focus.
@@ -13,14 +13,14 @@ import { useAppState, useAppDispatch } from '../state/context.js';
  * where they only fire when the active section is not a text input.
  */
 export function useKeyboardNavigation(): void {
-  const state = useAppState();
+  const { focusedPanel, filterDrawerOpen } = useLayoutState();
   const dispatch = useAppDispatch();
 
   useInput((input, key) => {
-    const inTextInput = state.focusedPanel === 'search' || state.focusedPanel === 'filters';
+    const inTextInput = focusedPanel === 'search' || focusedPanel === 'filters';
 
     if (input === '\\' && !inTextInput) {
-      if (state.filterDrawerOpen) {
+      if (filterDrawerOpen) {
         dispatch({ type: 'FOCUS_PANEL', panel: 'filters' });
       } else {
         dispatch({ type: 'OPEN_FILTER_DRAWER' });
@@ -34,12 +34,12 @@ export function useKeyboardNavigation(): void {
       return;
     }
 
-    if (key.escape && state.focusedPanel === 'details') {
+    if (key.escape && focusedPanel === 'details') {
       dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
       return;
     }
 
-    if (key.escape && state.focusedPanel === 'filters') {
+    if (key.escape && focusedPanel === 'filters') {
       dispatch({ type: 'CLOSE_FILTER_DRAWER' });
       dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
       return;

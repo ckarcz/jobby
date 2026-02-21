@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { icons } from '../theme.js';
 
 /** Shown when a search completes but returns no matching jobs. */
-export function NoSearchResults(): React.ReactElement {
+export const NoSearchResults = React.memo(function NoSearchResults(): React.ReactElement {
   return (
     <Box rowGap={1} flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Box flexDirection="column" justifyContent="center" alignItems="center">
@@ -24,4 +24,4 @@ export function NoSearchResults(): React.ReactElement {
       </Box>
     </Box>
   );
-}
+});

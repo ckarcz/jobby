@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { useInput } from 'ink';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
 import { useSearch } from './useSearch.js';
 import { toggleCheckboxOption, toggleRadioOption } from '../state/filterHelpers.js';
@@ -120,7 +120,7 @@ export function useFilterKeyboard(
   draft: FilterDrawerState,
   draftDispatch: React.Dispatch<FilterDrawerAction>,
 ): void {
-  const state = useAppState();
+  const searchState = useSearchState();
   const dispatch = useAppDispatch();
   const { search } = useSearch();
   const focused = usePanelFocus('filters');
@@ -135,8 +135,8 @@ export function useFilterKeyboard(
   dispatchRef.current = dispatch;
   const searchRef = useRef(search);
   searchRef.current = search;
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const searchStateRef = useRef(searchState);
+  searchStateRef.current = searchState;
 
   const stableHandler = useCallback((_input: string, key: InputKey): void => {
     const d = draftRef.current;
@@ -146,7 +146,7 @@ export function useFilterKeyboard(
     if (key.return) {
       dispatchRef.current({ type: 'APPLY_FILTERS', filters: d.selections });
       dispatchRef.current({ type: 'CLOSE_FILTER_DRAWER' });
-      searchRef.current(stateRef.current.searchKeyword, d.selections);
+      searchRef.current(searchStateRef.current.searchKeyword, d.selections);
       return;
     }
 

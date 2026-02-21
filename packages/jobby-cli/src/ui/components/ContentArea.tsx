@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppState } from '../state/context.js';
+import { useSearchState } from '../state/context.js';
 import { WelcomeScreen } from './WelcomeScreen.js';
 import { SearchingSpinner } from './SearchingSpinner.js';
 import { SearchResults } from './SearchResults.js';
@@ -8,7 +8,7 @@ import { NoSearchResults } from './NoSearchResults.js';
 
 /** Routes the main content area based on the current search status. */
 export function ContentArea(): React.ReactElement {
-  const { searchStatus, searchError, totalResults } = useAppState();
+  const { searchStatus, searchError, totalResults } = useSearchState();
 
   switch (searchStatus) {
     case 'idle':

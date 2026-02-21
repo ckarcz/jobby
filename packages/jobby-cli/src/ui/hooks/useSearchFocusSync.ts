@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { useAppState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useAppDispatch } from '../state/context.js';
 import type { SearchStatus } from '../state/types.js';
 
 /** Auto-focus results panel after a search completes successfully. */
 export function useSearchFocusSync(): void {
-  const { searchStatus, totalResults } = useAppState();
+  const { searchStatus, totalResults } = useSearchState();
   const dispatch = useAppDispatch();
   const prevStatusRef = useRef<SearchStatus>(searchStatus);
 
