@@ -19,6 +19,7 @@
 9. [Dead Code](#9-dead-code)
 10. [Minor Issues & Recommendations](#10-minor-issues--recommendations)
 11. [Summary Table](#11-summary-table)
+12. [Testing Status](#12-testing-status)
 
 ---
 
@@ -586,6 +587,16 @@ Changed all signal and error handlers from `process.on` to `process.once`. Since
 - ~~Restructure AppState into sub-objects (7.1)~~ — **Addressed** by context split; flat reducer state is idiomatic
 - ~~Fixed filter drawer width (10.1)~~ — **Intentional** design choice
 - ~~Manual scroll reset vs key prop (10.2)~~ — **Intentional** (useEffect is more efficient)
+
+---
+
+---
+
+## 12. Testing Status
+
+> **TUI test coverage is deliberately deferred.** The TUI (`src/ui/`) is not yet in a final state, and comprehensive tests will be added once the application stabilizes. This is an intentional decision — not a coverage gap.
+>
+> See `docs/tui-architecture-audit.md` section 9 for recommended test focus areas when tests are added.
 
 ---
 
