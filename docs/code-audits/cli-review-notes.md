@@ -8,79 +8,39 @@
 
 ## Critical Issues
 
-### 1. Signal handler tests spy on `process.on` but production code uses `process.once` — false negatives
+### 1. Signal handler tests spy on `process.on` but production code uses `process.once` — false negatives — **FIXED**
 
 **Confidence: 95**
-**Files:**
-- `packages/jobby-cli/src/main.test.ts`, lines 237, 260
-- `packages/jobby-cli/src/main.ts`, lines 17-36
+**Status: FIXED** — Changed `vi.spyOn(process, 'on')` to `vi.spyOn(process, 'once')` in `main.test.ts`. Also added `process.once` mock in beforeEach to prevent `main()` from registering real process handlers that crash the vitest worker. Fix matched the recommended approach.
 
-The two signal-handler registration tests both spy on `process.on`, but `main.ts` registers every handler with `process.once`. `process.once` and `process.on` are separate EventEmitter methods. A spy on `.on` does not intercept calls to `.once`. The tests pass vacuously because the vitest/Node infrastructure itself calls `process.on` during test execution.
-
-**Fix:** Change both spies to `process.once`:
-
-```typescript
-const onceSpy = vi.spyOn(process, 'once');
-expect(onceSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
-```
-
-### 2. Integration tests assert `--easy-apply-only` and `--under-10-applicants` flags that are not implemented
+### 2. Integration tests assert `--easy-apply-only` and `--under-10-applicants` flags that are not implemented — **FIXED**
 
 **Confidence: 95**
-**Files:**
-- `packages/jobby-cli/tests/integration/cli-help.test.ts`, lines 83-84
-- `packages/jobby-cli/tests/integration/cli-output.test.ts`, lines 68-69
-
-Neither `--easy-apply-only` nor `--under-10-applicants` is defined anywhere in `src/commands/search.ts`. These tests will fail against the real CLI. Either the flags need to be implemented or the tests/docs need to be removed.
+**Status: FIXED** — Removed `--easy-apply-only` and `--under-10-applicants` assertions from integration tests. Updated `docs/commands.md`.
 
 ---
 
 ## Important Issues
 
-### 3. `details` command calls `process.exit(1)` directly, bypassing centralized error handler
+### 3. `details` command calls `process.exit(1)` directly, bypassing centralized error handler — **FIXED**
 
 **Confidence: 85**
-**File:** `packages/jobby-cli/src/commands/details.ts`, lines 82-85
+**Status: FIXED** — Replaced `console.error + process.exit(1)` with `throw new ValidationError(...)` in `details.ts`. Fix matched the recommended approach.
 
-When neither a URL/ID argument nor piped stdin is provided, the `details` action handler calls `process.exit(1)` directly. Every other error path throws an exception that bubbles up to `main()`'s `catch` block.
-
-**Fix:** Throw `ValidationError` instead.
-
-### 4. Integration test helper `runCli` builds shell command by naive string quoting
+### 4. Integration test helper `runCli` builds shell command by naive string quoting — **Partially Fixed**
 
 **Confidence: 88**
-**File:** `packages/jobby-cli/tests/integration/helpers.ts`, lines 25-26
+**Status: Partially Fixed** — Escaped double quotes in integration test helpers. The fundamental architecture (string-based `exec`) was not changed to `execFile`/`spawn`, but the immediate quoting issue was addressed.
 
-```typescript
-const quotedArgs = args.map(a => `"${a}"`).join(' ');
-const cmd = `npx tsx "${entrypoint}" ${quotedArgs}`;
-```
-
-Any argument containing a double-quote character will break the shell command string. On Windows, `exec` uses `cmd.exe` where double-quoting rules differ from POSIX shells.
-
-**Fix:** Use `execFile` or `spawn` with an array of arguments.
-
-### 5. `search.test.ts` uses `'mid-senior'` as an experience level — not a valid value
+### 5. `search.test.ts` uses `'mid-senior'` as an experience level — not a valid value — **FIXED**
 
 **Confidence: 90**
-**File:** `packages/jobby-cli/src/commands/search.test.ts`, lines 94-107
+**Status: FIXED** — Changed invalid `'mid-senior'` to `'director'` in search.test.ts. Used a different valid value than recommended (`'director'` instead of `'associate'`).
 
-`EXPERIENCE_LEVEL_CHOICES` does not contain `mid-senior`. The tests pass because TypeScript type enforcement is bypassed.
-
-**Fix:** Replace `'mid-senior'` with a valid value such as `'associate'`.
-
-### 6. Circular import: `program.ts` ↔ command files via `helpConfig`
+### 6. Circular import: `program.ts` ↔ command files via `helpConfig` — **FIXED**
 
 **Confidence: 80**
-**Files:**
-- `packages/jobby-cli/src/program.ts` (imports command factories)
-- `packages/jobby-cli/src/commands/search.ts`, line 19 (imports `helpConfig` from `../program.js`)
-- `packages/jobby-cli/src/commands/details.ts`, line 9 (same)
-- `packages/jobby-cli/src/commands/ui.ts`, line 5 (same)
-
-Currently works because `helpConfig` is a `const` defined before imports resolve, but fragile.
-
-**Fix:** Extract `helpConfig` into its own module (e.g., `src/help-config.ts`).
+**Status: FIXED** — Created `src/help-config.ts` extracting `helpConfig` from `program.ts`. Updated imports in all command files and `index.ts`. Fix matched the recommended approach.
 
 ---
 
@@ -118,13 +78,13 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 
 ## Summary Table
 
-| # | Severity | File | Description |
-|---|----------|------|-------------|
-| 1 | Critical | `main.test.ts:237,260` | Signal handler tests spy on `.on` instead of `.once` — false negatives |
-| 2 | Critical | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Tests assert flags that don't exist in the CLI |
-| 3 | Important | `details.ts:83-85` | `process.exit(1)` called directly, bypassing centralized error handler |
-| 4 | Important | `helpers.ts:25-26` | Naive shell string quoting is fragile |
-| 5 | Important | `search.test.ts:97,103` | `'mid-senior'` is not a valid `ExperienceLevel` value |
-| 6 | Important | `program.ts` / command files | Circular import of `helpConfig` |
-| 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup |
-| 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output |
+| # | Severity | File | Description | Status |
+|---|----------|------|-------------|--------|
+| 1 | Critical | `main.test.ts:237,260` | Signal handler tests spy on `.on` instead of `.once` — false negatives | **Fixed** |
+| 2 | Critical | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Tests assert flags that don't exist in the CLI | **Fixed** |
+| 3 | Important | `details.ts:83-85` | `process.exit(1)` called directly, bypassing centralized error handler | **Fixed** |
+| 4 | Important | `helpers.ts:25-26` | Naive shell string quoting is fragile | **Partially Fixed** |
+| 5 | Important | `search.test.ts:97,103` | `'mid-senior'` is not a valid `ExperienceLevel` value | **Fixed** |
+| 6 | Important | `program.ts` / command files | Circular import of `helpConfig` | **Fixed** |
+| 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup | Open |
+| 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output | Open |

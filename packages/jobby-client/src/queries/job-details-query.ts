@@ -595,7 +595,9 @@ function extractCriteriaValue($: ReturnType<typeof cheerio.load>, label: string)
     const header = $(element).find('.description__job-criteria-subheader').text().trim();
     if (header.toLowerCase() === label.toLowerCase()) {
       value = $(element).find('.description__job-criteria-text').text().trim() || undefined;
+      return false;
     }
+    return;
   });
   return value;
 }

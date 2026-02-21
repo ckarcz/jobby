@@ -6,15 +6,15 @@ beforeAll(() => {
   registerDefaultFormatters();
 });
 
-vi.mock('node:fs', () => ({
-  writeFileSync: vi.fn(),
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn(),
 }));
 
 vi.mock('cli-highlight', () => ({
   highlight: (str: string, opts: { language: string }) => `\x1b[highlighted:${opts.language}]${str}\x1b[/highlighted]`,
 }));
 
-import { writeFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 
 /**
  * Tests for the outputResult utility that dispatches to the
@@ -59,14 +59,14 @@ describe('outputResult - output format dispatch and highlighting', () => {
     });
 
     it('should skip highlight when --no-color is set', async () => {
-      await outputResult({ key: 'value' }, { noColor: true });
+      await outputResult({ key: 'value' }, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\x1b[highlighted');
       expect(output).toBe('{"key":"value"}');
     });
 
     it('should skip highlight with --no-color and --pretty combined', async () => {
-      await outputResult({ key: 'value' }, { noColor: true, pretty: true });
+      await outputResult({ key: 'value' }, { color: false, pretty: true });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\x1b[highlighted');
       expect(output).toContain('\n');
@@ -75,7 +75,7 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
   describe('XML output', () => {
     it('should output compact XML by default', async () => {
-      await outputResult({ key: 'value' }, { format: 'xml', noColor: true });
+      await outputResult({ key: 'value' }, { format: 'xml', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('<?xml version="1.0"');
       expect(output).toContain('<key>value</key>');
@@ -83,7 +83,7 @@ describe('outputResult - output format dispatch and highlighting', () => {
     });
 
     it('should output pretty XML with --pretty', async () => {
-      await outputResult({ key: 'value' }, { format: 'xml', noColor: true, pretty: true });
+      await outputResult({ key: 'value' }, { format: 'xml', color: false, pretty: true });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('\n');
       expect(output).toContain('  <key>value</key>');
@@ -98,7 +98,7 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
   describe('YAML output', () => {
     it('should output YAML', async () => {
-      await outputResult({ key: 'value' }, { format: 'yaml', noColor: true });
+      await outputResult({ key: 'value' }, { format: 'yaml', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('key: value');
     });
@@ -112,7 +112,7 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
   describe('CSV output', () => {
     it('should output CSV with headers', async () => {
-      await outputResult({ key: 'value', num: 1 }, { format: 'csv', noColor: true });
+      await outputResult({ key: 'value', num: 1 }, { format: 'csv', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('key,num');
       expect(output).toContain('value,1');
@@ -127,7 +127,7 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
   describe('default format when opts.format is undefined', () => {
     it('should default to json format when format is undefined', async () => {
-      await outputResult({ key: 'value' }, { noColor: true });
+      await outputResult({ key: 'value' }, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('{"key":"value"}');
     });
@@ -151,19 +151,19 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
   describe('data serialization', () => {
     it('should serialize nested objects', async () => {
-      await outputResult({ outer: { inner: 'value' } }, { noColor: true });
+      await outputResult({ outer: { inner: 'value' } }, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('{"outer":{"inner":"value"}}');
     });
 
     it('should serialize arrays', async () => {
-      await outputResult([1, 2, 3], { noColor: true });
+      await outputResult([1, 2, 3], { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('[1,2,3]');
     });
 
     it('should serialize null', async () => {
-      await outputResult(null, { noColor: true });
+      await outputResult(null, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('null');
     });
@@ -178,12 +178,12 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
     afterEach(() => {
       infoSpy.mockRestore();
-      vi.mocked(writeFileSync).mockClear();
+      vi.mocked(writeFile).mockClear();
     });
 
     it('should write output to file when --file is set', async () => {
       await outputResult({ key: 'value' }, { file: 'out.json' });
-      expect(writeFileSync).toHaveBeenCalledWith('out.json', '{"key":"value"}\n', 'utf-8');
+      expect(writeFile).toHaveBeenCalledWith('out.json', '{"key":"value"}\n', 'utf-8');
     });
 
     it('should not call console.log when --file is set', async () => {
@@ -198,20 +198,20 @@ describe('outputResult - output format dispatch and highlighting', () => {
 
     it('should write without syntax highlighting (no ANSI codes) to file', async () => {
       await outputResult({ key: 'value' }, { file: 'out.json' });
-      const written = vi.mocked(writeFileSync).mock.calls[0]![1] as string;
+      const written = vi.mocked(writeFile).mock.calls[0]![1] as string;
       expect(written).not.toContain('\x1b[');
       expect(written).toBe('{"key":"value"}\n');
     });
 
     it('should write pretty-printed output to file when --pretty is set', async () => {
       await outputResult({ key: 'value' }, { file: 'out.json', pretty: true });
-      const written = vi.mocked(writeFileSync).mock.calls[0]![1] as string;
+      const written = vi.mocked(writeFile).mock.calls[0]![1] as string;
       expect(written).toContain('\n');
       expect(written).toContain('"key"');
     });
 
     it('should propagate file write errors', async () => {
-      vi.mocked(writeFileSync).mockImplementationOnce(() => {
+      vi.mocked(writeFile).mockImplementationOnce(() => {
         throw new Error('EACCES: permission denied');
       });
       await expect(

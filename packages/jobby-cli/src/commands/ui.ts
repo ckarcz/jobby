@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import React from 'react';
 import { render } from 'ink';
 import { App } from '../ui/App.js';
-import { helpConfig } from '../program.js';
+import { helpConfig } from '../help-config.js';
 
 // swapping terminal buffers may not work well on every OS
 // it does work very well on Windows

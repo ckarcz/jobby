@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { JobbyClient } from 'jobby-client';
 import { useSearchState, useAppDispatch } from '../state/context.js';
 import { buildSearchParams } from '../utils/buildSearchParams.js';
@@ -14,7 +14,7 @@ export function useSearch(): UseSearchResult {
   const { searchQuery, searchPagination, loadMoreStatus } = useSearchState();
   const dispatch = useAppDispatch();
   const abortRef = useRef<AbortController | null>(null);
-  const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
+  const client = useRef(new JobbyClient({ logging: { level: 'silent' } })).current;
 
   const search = useCallback(
     (keyword: string, filters?: SearchFilters) => {

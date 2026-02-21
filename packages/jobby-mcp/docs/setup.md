@@ -56,7 +56,7 @@ If you've cloned the monorepo and built the packages, point to the built file di
   "mcpServers": {
     "jobby": {
       "command": "node",
-      "args": ["path/to/jobby/packages/jobby-mcp/dist/server.js"]
+      "args": ["path/to/jobby/packages/jobby-mcp/dist/bin.js"]
     }
   }
 }
@@ -86,4 +86,4 @@ Try asking: "Search for remote software engineer jobs in New York"
 
 ### Timeout errors
 
-The default timeout is 10 seconds. If you're experiencing timeouts, the server inherits its timeout from the client library defaults.
+The default timeout is 30 seconds. If you're experiencing timeouts, the server inherits its timeout from the client library defaults.

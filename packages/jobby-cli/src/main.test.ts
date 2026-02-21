@@ -20,6 +20,7 @@ const MockedJobbyClient = vi.mocked(JobbyClient);
 
 describe('main - CLI entrypoint error handling', () => {
   let mockProcessExit: ReturnType<typeof vi.spyOn>;
+  let mockProcessOnce: ReturnType<typeof vi.spyOn>;
   let mockConsoleError: ReturnType<typeof vi.spyOn>;
   let originalArgv: string[];
 
@@ -27,11 +28,15 @@ describe('main - CLI entrypoint error handling', () => {
     vi.clearAllMocks();
     originalArgv = process.argv;
     mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    // Prevent main() from registering real process-level handlers (uncaughtException,
+    // unhandledRejection, SIGINT, SIGTERM) that would interfere with vitest's worker.
+    mockProcessOnce = vi.spyOn(process, 'once').mockImplementation(() => process);
     mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterEach(() => {
     mockProcessExit.mockRestore();
+    mockProcessOnce.mockRestore();
     mockConsoleError.mockRestore();
     process.argv = originalArgv;
   });
@@ -234,7 +239,7 @@ describe('main - CLI entrypoint error handling', () => {
 
   describe('signal handler registration', () => {
     it('should register SIGINT and SIGTERM handlers', async () => {
-      const onSpy = vi.spyOn(process, 'on');
+      const onSpy = vi.spyOn(process, 'once');
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
       MockedJobbyClient.mockImplementation(() => ({
@@ -257,7 +262,7 @@ describe('main - CLI entrypoint error handling', () => {
 
   describe('unhandledRejection and uncaughtException handler registration', () => {
     it('should register unhandledRejection and uncaughtException handlers', async () => {
-      const onSpy = vi.spyOn(process, 'on');
+      const onSpy = vi.spyOn(process, 'once');
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
       MockedJobbyClient.mockImplementation(() => ({

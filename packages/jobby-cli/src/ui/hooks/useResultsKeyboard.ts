@@ -1,9 +1,11 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useInput } from 'ink';
 import type { VirtualListRef, ViewportState } from 'ink-virtual-list';
 import { useSearchState, useSelectionState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
-import { useSearch } from './useSearch.js';
+import { useSearchActions } from '../state/searchActions.js';
+
+interface InputKey { downArrow: boolean; upArrow: boolean; home: boolean; end: boolean; pageDown: boolean; pageUp: boolean; return: boolean; escape: boolean }
 
 /** Keyboard handling and deferred-scroll logic for the results list. */
 export function useResultsKeyboard(
@@ -14,13 +16,24 @@ export function useResultsKeyboard(
   const { selectedJobIndex } = useSelectionState();
   const dispatch = useAppDispatch();
   const panelFocused = usePanelFocus('results');
-  const { loadMore } = useSearch();
+  const { loadMore } = useSearchActions();
 
   const pendingScroll = useRef<{ index: number; alignment: 'top' | 'bottom' } | null>(null);
   const scrollAfterLoadMore = useRef(false);
 
-  const maxIndex = totalResults.length - 1;
-  const isOnLastItem = selectedJobIndex >= maxIndex;
+  // Store values in refs so the stable handler always reads current state
+  const selectedJobIndexRef = useRef(selectedJobIndex);
+  selectedJobIndexRef.current = selectedJobIndex;
+  const totalResultsRef = useRef(totalResults);
+  totalResultsRef.current = totalResults;
+  const loadMoreStatusRef = useRef(loadMoreStatus);
+  loadMoreStatusRef.current = loadMoreStatus;
+  const loadMoreRef = useRef(loadMore);
+  loadMoreRef.current = loadMore;
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
 
   // After a page jump, scroll so the new selection is at the correct position
   useEffect(() => {
@@ -43,80 +56,89 @@ export function useResultsKeyboard(
     dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: target });
   }, [totalResults.length, loadMoreStatus, selectedJobIndex, viewport.visibleCount, dispatch]);
 
-  useInput((_input, key) => {
+  const stableHandler = useCallback((_input: string, key: InputKey): void => {
+    const idx = selectedJobIndexRef.current;
+    const results = totalResultsRef.current;
+    const lmStatus = loadMoreStatusRef.current;
+    const maxIdx = results.length - 1;
+    const onLastItem = idx >= maxIdx;
+    const vp = viewportRef.current;
+
     if (key.downArrow) {
-      if (isOnLastItem) {
-        loadMore();
+      if (onLastItem) {
+        loadMoreRef.current();
       } else {
-        dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: Math.min(selectedJobIndex + 1, maxIndex) });
+        dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: Math.min(idx + 1, maxIdx) });
       }
       return;
     }
 
     if (key.upArrow) {
-      dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: Math.max(selectedJobIndex - 1, 0) });
+      dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: Math.max(idx - 1, 0) });
       return;
     }
 
     if (key.home) {
-      dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: 0 });
+      dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: 0 });
       return;
     }
 
     if (key.end) {
-      if (isOnLastItem) {
-        if (loadMoreStatus === 'idle' || loadMoreStatus === 'error') {
+      if (onLastItem) {
+        if (lmStatus === 'idle' || lmStatus === 'error') {
           scrollAfterLoadMore.current = true;
-          loadMore();
+          loadMoreRef.current();
         }
         return;
       }
-      dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: maxIndex });
+      dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: maxIdx });
       return;
     }
 
     if (key.pageDown) {
-      if (isOnLastItem) {
-        if (loadMoreStatus === 'idle' || loadMoreStatus === 'error') {
+      if (onLastItem) {
+        if (lmStatus === 'idle' || lmStatus === 'error') {
           scrollAfterLoadMore.current = true;
-          loadMore();
+          loadMoreRef.current();
         }
         return;
       }
-      const lastVisibleIndex = Math.min(viewport.offset + viewport.visibleCount - 1, maxIndex);
-      if (selectedJobIndex < lastVisibleIndex) {
-        dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: lastVisibleIndex });
+      const lastVisibleIndex = Math.min(vp.offset + vp.visibleCount - 1, maxIdx);
+      if (idx < lastVisibleIndex) {
+        dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: lastVisibleIndex });
       } else {
-        const target = Math.min(lastVisibleIndex + viewport.visibleCount, maxIndex);
+        const target = Math.min(lastVisibleIndex + vp.visibleCount, maxIdx);
         pendingScroll.current = { index: target, alignment: 'bottom' };
-        dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: target });
+        dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: target });
       }
       return;
     }
 
     if (key.pageUp) {
-      const firstVisibleIndex = viewport.offset;
-      if (selectedJobIndex > firstVisibleIndex) {
-        dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: firstVisibleIndex });
+      const firstVisibleIndex = vp.offset;
+      if (idx > firstVisibleIndex) {
+        dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: firstVisibleIndex });
       } else {
-        const target = Math.max(firstVisibleIndex - viewport.visibleCount, 0);
+        const target = Math.max(firstVisibleIndex - vp.visibleCount, 0);
         pendingScroll.current = { index: target, alignment: 'top' };
-        dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: target });
+        dispatchRef.current({ type: 'SET_SELECTED_JOB_INDEX', index: target });
       }
       return;
     }
 
     if (key.return) {
-      if (totalResults.length > 0) {
-        dispatch({ type: 'FOCUS_PANEL', panel: 'details' });
+      if (results.length > 0) {
+        dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'details' });
       }
       return;
     }
 
     if (key.escape) {
-      dispatch({ type: 'CLEAR_RESULTS' });
-      dispatch({ type: 'BLUR_ALL' });
+      dispatchRef.current({ type: 'CLEAR_RESULTS' });
+      dispatchRef.current({ type: 'BLUR_ALL' });
       return;
     }
-  }, { isActive: panelFocused });
+  }, []);
+
+  useInput(stableHandler, { isActive: panelFocused });
 }

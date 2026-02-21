@@ -18,6 +18,7 @@ export { formatErrorMessage } from './utils/errors.js';
 export { queryForJobs, createSearchCommand } from './commands/search.js';
 export { queryForJobDetails, createDetailsCommand } from './commands/details.js';
 export { createUiCommand } from './commands/ui.js';
-export { createProgram, helpConfig } from './program.js';
+export { createProgram } from './program.js';
+export { helpConfig } from './help-config.js';
 export type { ActiveCliArgsRef } from './types.js';
 export { main } from './main.js';

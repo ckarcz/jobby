@@ -3,12 +3,14 @@ import {
   LayoutContext, SearchContext, SelectionContext, JobDetailsContext, DispatchContext, TextInputActiveContext,
   type LayoutState, type SearchState, type SelectionState, type JobDetailsState,
 } from './state/context.js';
+import { SearchActionsContext } from './state/searchActions.js';
 import { appReducer, initialState } from './state/reducer.js';
 import { Layout } from './components/Layout.js';
 import { useFullScreen } from './hooks/useFullScreen.js';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation.js';
 import { useJobDetails } from './hooks/useJobDetails.js';
 import { useSearchFocusSync } from './hooks/useSearchFocusSync.js';
+import { useSearch } from './hooks/useSearch.js';
 
 /** Inner app component that uses context hooks (must be inside providers). */
 function AppInner(): React.ReactElement {
@@ -16,7 +18,12 @@ function AppInner(): React.ReactElement {
   useKeyboardNavigation();
   useSearchFocusSync();
   useJobDetails();
-  return <Layout />;
+  const searchActions = useSearch();
+  return (
+    <SearchActionsContext.Provider value={searchActions}>
+      <Layout />
+    </SearchActionsContext.Provider>
+  );
 }
 
 /** Root application component for the interactive terminal UI. */

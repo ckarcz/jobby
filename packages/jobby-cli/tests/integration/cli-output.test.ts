@@ -65,8 +65,6 @@ describe('CLI output formatting - help output structure', () => {
       expect(stdout).toContain('--pretty');
       expect(stdout).toContain('--no-color');
       expect(stdout).toContain('--debug');
-      expect(stdout).toContain('--easy-apply-only');
-      expect(stdout).toContain('--under-10-applicants');
     });
   });
 

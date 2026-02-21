@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import process from 'node:process';
 import { JobbyError } from 'jobby-client';
 import { createProgram } from './program.js';
@@ -76,5 +74,3 @@ export async function main(): Promise<void> {
     process.exit(1);
   }
 }
-
-void main();

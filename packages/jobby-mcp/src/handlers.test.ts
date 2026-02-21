@@ -275,18 +275,6 @@ describe('handleGetJobDetails - job detail resolution', () => {
     expect(mockGetDetailsById).not.toHaveBeenCalled();
   });
 
-  it('should return error when neither jobUrl nor jobId provided', async () => {
-    const result = await handleGetJobDetails({});
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Either jobUrl or jobId is required');
-  });
-
-  it('should return error when both jobUrl and jobId are undefined', async () => {
-    const result = await handleGetJobDetails({ jobUrl: undefined, jobId: undefined });
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Either jobUrl or jobId is required');
-  });
-
   it('should return isError true on fetch failure', async () => {
     mockGetDetailsByUrl.mockRejectedValueOnce(new Error('not found'));
     const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
@@ -326,12 +314,6 @@ describe('handleGetJobDetails - job detail resolution', () => {
   it('should return content array with single text element on success', async () => {
     mockGetDetailsById.mockResolvedValueOnce({ id: '1' });
     const result = await handleGetJobDetails({ jobId: '1' });
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].type).toBe('text');
-  });
-
-  it('should return content array with single text element on error', async () => {
-    const result = await handleGetJobDetails({});
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
   });

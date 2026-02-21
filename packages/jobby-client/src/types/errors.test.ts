@@ -118,6 +118,31 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
       const error = new NetworkError('Wrapped', original);
       expect(error.originalError).toBe(original);
     });
+
+    it('should be retryable when no status is provided', () => {
+      const error = new NetworkError('Connection failed');
+      expect(error.retryable).toBe(true);
+    });
+
+    it('should be retryable for 5xx status codes', () => {
+      const error = new NetworkError('Server error', undefined, 500);
+      expect(error.retryable).toBe(true);
+    });
+
+    it('should not be retryable for 4xx status codes', () => {
+      const error = new NetworkError('Client error', undefined, 403);
+      expect(error.retryable).toBe(false);
+    });
+
+    it('should not be retryable for 404 status', () => {
+      const error = new NetworkError('Not found', undefined, 404);
+      expect(error.retryable).toBe(false);
+    });
+
+    it('should be retryable for 503 status', () => {
+      const error = new NetworkError('Service unavailable', undefined, 503);
+      expect(error.retryable).toBe(true);
+    });
   });
 
   describe('ParsingError', () => {

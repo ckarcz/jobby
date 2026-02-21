@@ -6,7 +6,7 @@ import type { JobDetailsQueryCliArgs, ActiveCliArgsRef } from '../types.js';
 import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
 import { readFromStream } from '../utils/stream.js';
-import { helpConfig } from '../program.js';
+import { helpConfig } from '../help-config.js';
 
 /** Returns true when value is a valid absolute URL, false otherwise. */
 function isUrl(value: string): boolean {
@@ -80,8 +80,7 @@ export function createDetailsCommand(activeCliArgsRef: ActiveCliArgsRef = { curr
       activeCliArgsRef.current = opts;
       const value = opts.url ?? opts.id ?? idOrUrl ?? await readFromStream(process.stdin, process.stdin.isTTY);
       if (!value) {
-        console.error('Error: Missing required argument. Provide a job ID or URL as an argument, via --url/--id, or pipe via stdin');
-        process.exit(1);
+        throw new ValidationError('Missing required argument. Provide a job ID or URL as an argument, via --url/--id, or pipe via stdin');
       }
       await queryForJobDetails(value, opts);
     });

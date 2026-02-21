@@ -15,8 +15,8 @@ import type { JobType, ExperienceLevel, MinimumSalary, WorkplaceType, ListingAge
  * the LinkedIn job search endpoint.
  */
 export const SearchInputSchema = z.object({
-  keyword: z.string().optional().describe('Job title, skill, or company name to search for'),
-  location: z.string().optional().describe('City, state, or country to search in'),
+  keyword: z.string().min(1).optional().describe('Job title, skill, or company name to search for'),
+  location: z.string().min(1).optional().describe('City, state, or country to search in'),
   jobType: z.union([
     z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]]),
     z.array(z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]])),
@@ -33,9 +33,9 @@ export const SearchInputSchema = z.object({
   listingAge: z.enum(LISTING_AGE_CHOICES as [ListingAge, ...ListingAge[]]).optional().describe('How recently the job was posted'),
   geoId: z.string().optional().describe('LinkedIn geo ID (e.g. 103644278 for US, 101165590 for UK)'),
   companyId: z.string().optional().describe('LinkedIn company ID (e.g. 1441 for Google, 1035 for Microsoft)'),
-  start: z.number().optional().describe('Starting offset for the query.'),
-  skip: z.number().optional().describe('Number of results to skip from the query response.'),
-  take: z.number().optional().describe('Number of results to take from the query response (after skip).'),
+  start: z.number().int().nonnegative().optional().describe('Starting offset for the query.'),
+  skip: z.number().int().nonnegative().optional().describe('Number of results to skip from the query response.'),
+  take: z.number().int().nonnegative().optional().describe('Number of results to take from the query response (after skip).'),
 });
 
 /**
@@ -47,7 +47,7 @@ export const SearchInputSchema = z.object({
  * validation in the handler.
  */
 export const JobDetailsBaseSchema = z.object({
-  jobUrl: z.string().optional().describe('The LinkedIn job posting URL'),
+  jobUrl: z.url().optional().describe('The LinkedIn job posting URL'),
   jobId: z.string().min(1).optional().describe('The LinkedIn job ID'),
 });
 

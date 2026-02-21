@@ -6,8 +6,8 @@ beforeAll(() => {
   registerDefaultFormatters();
 });
 
-vi.mock('node:fs', () => ({
-  writeFileSync: vi.fn(),
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn(),
 }));
 
 vi.mock('cli-highlight', () => ({
@@ -16,7 +16,7 @@ vi.mock('cli-highlight', () => ({
 
 vi.mock('jobby-client', () => createJobbyMock());
 
-import { writeFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 
 import { JobbyClient } from 'jobby-client';
 import { queryForJobDetails } from './details.js';
@@ -175,14 +175,14 @@ describe('queryForJobDetails - details command handler', () => {
     });
 
     it('should skip syntax highlighting when --no-color is set', async () => {
-      await queryForJobDetails(testUrl, { noColor: true });
+      await queryForJobDetails(testUrl, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\x1b[highlighted]');
     });
 
     it('should output null when response is null', async () => {
       mockClientInstance.jobs.queryForJobDetailsByUrl.mockResolvedValue(null);
-      await queryForJobDetails(testUrl, { noColor: true });
+      await queryForJobDetails(testUrl, { color: false });
       expect(consoleSpy).toHaveBeenCalledWith('null');
     });
   });
@@ -206,7 +206,7 @@ describe('queryForJobDetails - details command handler', () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue(
         '<div>  <p>  hello  </p>  <!-- comment -->  </div>'
       );
-      await queryForJobDetails(testUrl, { format: 'rawHtml', noColor: true });
+      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('<div><p>hello</p></div>');
     });
@@ -215,7 +215,7 @@ describe('queryForJobDetails - details command handler', () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue(
         '<div><p>hello</p></div>'
       );
-      await queryForJobDetails(testUrl, { format: 'rawHtml', pretty: true, noColor: true });
+      await queryForJobDetails(testUrl, { format: 'rawHtml', pretty: true, color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('\n');
       expect(output).toContain('  <p>');
@@ -237,18 +237,18 @@ describe('queryForJobDetails - details command handler', () => {
 
     afterEach(() => {
       infoSpy.mockRestore();
-      vi.mocked(writeFileSync).mockClear();
+      vi.mocked(writeFile).mockClear();
     });
 
     it('should write to file when --file is set', async () => {
       await queryForJobDetails(testUrl, { file: 'details.json' });
-      expect(writeFileSync).toHaveBeenCalledWith('details.json', expect.any(String), 'utf-8');
+      expect(writeFile).toHaveBeenCalledWith('details.json', expect.any(String), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('should write HTML to file when --file and --format rawHtml are set', async () => {
       await queryForJobDetails(testUrl, { format: 'rawHtml', file: 'details.html' });
-      expect(writeFileSync).toHaveBeenCalledWith('details.html', expect.stringContaining('<html>'), 'utf-8');
+      expect(writeFile).toHaveBeenCalledWith('details.html', expect.stringContaining('<html>'), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
   });
@@ -263,13 +263,13 @@ describe('queryForJobDetails - details command handler', () => {
 
   describe('rawHtml format with URL and ID', () => {
     it('should call queryForJobDetailsRawHtmlByUrl when --format rawHtml and URL is provided', async () => {
-      await queryForJobDetails(testUrl, { format: 'rawHtml', noColor: true });
+      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl).toHaveBeenCalledWith(testUrl);
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlById).not.toHaveBeenCalled();
     });
 
     it('should call queryForJobDetailsRawHtmlById when --format rawHtml and ID is provided', async () => {
-      await queryForJobDetails(testId, { format: 'rawHtml', noColor: true });
+      await queryForJobDetails(testId, { format: 'rawHtml', color: false });
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlById).toHaveBeenCalledWith(testId);
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl).not.toHaveBeenCalled();
     });
@@ -294,7 +294,7 @@ describe('queryForJobDetails - details command handler', () => {
         },
       });
 
-      await queryForJobDetails(testUrl, { noColor: true });
+      await queryForJobDetails(testUrl, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output);
       expect(parsed.details.benefitsInfo).toBe('Benefits Eligible: Yes');
@@ -317,7 +317,7 @@ describe('queryForJobDetails - details command handler', () => {
         },
       });
 
-      await queryForJobDetails(testUrl, { noColor: true, pretty: true });
+      await queryForJobDetails(testUrl, { color: false, pretty: true });
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output);
       // JSON.stringify omits undefined values, so these keys should not be present

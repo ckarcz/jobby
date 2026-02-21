@@ -11,7 +11,7 @@ import type { SearchInputSchema, JobDetailsInputSchema } from './schemas.js';
 const client = new JobbyClient({ timeout: 30000 });
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- must be `type` for MCP SDK index signature compatibility
-type ToolResponse = {
+export type ToolResponse = {
   content: { type: 'text'; text: string }[];
   isError?: true;
 };
@@ -44,20 +44,11 @@ export async function handleSearchJobs(
   args: z.infer<typeof SearchInputSchema>,
 ): Promise<ToolResponse> {
   try {
+    const { keyword, location, jobType, experienceLevel, minimumSalary, workplaceType, listingAge, geoId, companyId, start, skip, take } = args;
     const response = await client.jobs.queryForJobs({
-      keyword: args.keyword,
-      location: args.location,
-      jobType: args.jobType,
-      experienceLevel: args.experienceLevel,
-      minimumSalary: args.minimumSalary,
-      workplaceType: args.workplaceType,
-      listingAge: args.listingAge,
-      geoId: args.geoId,
-      companyId: args.companyId,
+      keyword, location, jobType, experienceLevel, minimumSalary, workplaceType, listingAge, geoId, companyId,
     }, {
-      start: args.start,
-      skip: args.skip,
-      take: args.take,
+      start, skip, take,
     });
 
     return {
@@ -76,7 +67,6 @@ export async function handleSearchJobs(
  *
  * Fetches detailed information for a single job posting identified by URL or
  * ID.  When both `jobUrl` and `jobId` are supplied, `jobUrl` takes precedence.
- * Returns an error response if neither identifier is provided.
  */
 export async function handleGetJobDetails(
   args: z.infer<typeof JobDetailsInputSchema>,

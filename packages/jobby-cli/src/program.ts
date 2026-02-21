@@ -1,4 +1,3 @@
-import type { Help} from 'commander';
 import { Command, Option } from 'commander';
 import chalk from 'chalk';
 import { createRequire } from 'node:module';
@@ -6,39 +5,11 @@ import { createSearchCommand } from './commands/search.js';
 import { createDetailsCommand } from './commands/details.js';
 import { createUiCommand } from './commands/ui.js';
 import type { ActiveCliArgsRef } from './types.js';
-import {
-  styleTitle,
-  styleCommandText,
-  styleOptionText,
-  styleSubcommandText,
-  styleArgumentText,
-  styleDescriptionText,
-} from './utils/color.js';
+import { helpConfig } from './help-config.js';
+export { helpConfig };
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version: string };
-
-/** Help formatting configuration for Commander.js with colored output. */
-export const helpConfig: Partial<Help> = {
-  optionDescription(option: Option): string {
-    const parts: string[] = [option.description];
-    if (option.argChoices) {
-      const choices = option.argChoices.map((c: string) => `"${c}"`).join(', ');
-      parts.push(`${chalk.yellow('choices:')} ${chalk.cyan(`[${choices}]`)}`);
-    }
-    if (option.defaultValue !== undefined) {
-      const defaultStr = option.defaultValueDescription ?? JSON.stringify(option.defaultValue);
-      parts.push(`${chalk.yellow('default:')} ${chalk.magenta(defaultStr)}`);
-    }
-    return parts.join(' ');
-  },
-  styleTitle,
-  styleCommandText,
-  styleOptionText,
-  styleSubcommandText,
-  styleArgumentText,
-  styleDescriptionText,
-};
 
 /** Creates the root Commander.js program with all subcommands registered. */
 export function createProgram(activeCliArgsRef: ActiveCliArgsRef = { current: {} }): Command {

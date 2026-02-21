@@ -125,11 +125,10 @@ Both query files call `axios.get<string>(url, config)` on the module-level axios
 
 Raw `ClientConfig | undefined` is stored on both `JobbyClient` and `JobsResource` and re-resolved per query call. Fix by resolving once at construction.
 
-#### 3.3.2 `queries/index.ts` Dead Barrel
+#### 3.3.2 `queries/index.ts` Dead Barrel — **FIXED**
 
 **File:** `src/queries/index.ts`
-
-No file in the codebase imports from this barrel. Delete or document.
+**Status: FIXED** — Deleted dead `queries/index.ts` barrel file.
 
 #### 3.3.3 `job-details-query.ts` is a 602-Line God File
 
@@ -152,19 +151,18 @@ The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. 
 
 `level: string` and `silent: boolean` are Winston-specific properties in the `Logger` interface.
 
-#### 3.3.6 `extractCriteriaValue` Does Not Short-Circuit on Match
+#### 3.3.6 `extractCriteriaValue` Does Not Short-Circuit on Match — **FIXED**
 
-Visits every criteria item even after finding a match; recomputes `label.toLowerCase()` on every iteration.
+**Status: FIXED** — Added `return false;` after match in `.each()` loop to short-circuit, plus explicit `return;` on non-match path for TypeScript compliance.
 
 #### 3.3.7 `parseJobs` Uses Overly Broad `$('li')` Selector
 
 Should use `$('li.base-card')` or `$('li[data-entity-urn]')` for precision.
 
-#### 3.3.8 `appendStringParam` Truthy Check Drops `'0'`
+#### 3.3.8 `appendStringParam` Truthy Check Drops `'0'` — **FIXED**
 
 **File:** `src/queries/jobs-query.ts:251-255`
-
-`if (value)` silently drops empty strings and `'0'`. Should use `if (value !== undefined && value !== '')`.
+**Status: FIXED** — Changed `if (value)` to `if (value !== undefined)` in `jobs-query.ts:252`. Slightly different from recommendation (uses `!== undefined` rather than also checking `!== ''`), which is appropriate since empty strings may be valid in some contexts.
 
 ---
 
@@ -266,10 +264,10 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 
 ### Phase 1 — Quick Wins (no API changes)
 
-1. Fix `extractCriteriaValue` early-exit and `toLowerCase()` caching
-2. Fix `appendStringParam` truthy check
+1. ~~Fix `extractCriteriaValue` early-exit and `toLowerCase()` caching~~ **DONE** (early-exit added; `toLowerCase()` caching not addressed)
+2. ~~Fix `appendStringParam` truthy check~~ **DONE**
 3. Simplify `scrapeShortDescription` / `scrapeSharingImageUrl` verbose guards
-4. Delete `queries/index.ts` dead barrel
+4. ~~Delete `queries/index.ts` dead barrel~~ **DONE**
 5. Fix timing-dependent test in `logging.test.ts` (use `vi.waitFor`)
 6. Add direct unit test for `mergeJobDetailsData` merge contract
 7. Remove `logger.http`/`logger.silly` assertions from `logging.test.ts`

@@ -249,7 +249,7 @@ function appendSingleParam<T extends ParamMap>(
  * @param value - The string value, or undefined to skip
  */
 function appendStringParam(params: URLSearchParams, key: string, value: string | undefined): void {
-  if (value) {
+  if (value !== undefined) {
     params.append(key, value);
   }
 }

@@ -16,7 +16,7 @@ import { logLevelChoices, formatChoices } from '../constants.js';
 import { outputResult } from '../utils/output.js';
 import { readFromStream } from '../utils/stream.js';
 import { parseNumber } from '../utils/parse.js';
-import { helpConfig } from '../program.js';
+import { helpConfig } from '../help-config.js';
 
 /** Executes a job search using the provided CLI arguments and outputs the results. */
 export async function queryForJobs(args: JobSearchQueryCliArgs): Promise<void> {

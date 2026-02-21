@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react';
 import { useInput } from 'ink';
 import { useSearchState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
-import { useSearch } from './useSearch.js';
+import { useSearchActions } from '../state/searchActions.js';
 import { toggleCheckboxOption, toggleRadioOption } from '../state/filterHelpers.js';
 import { SECTION_ORDER, getFilterSection } from '../state/filterTypes.js';
 import type { FilterSectionKey } from '../state/filterTypes.js';
@@ -122,7 +122,7 @@ export function useFilterKeyboard(
 ): void {
   const searchState = useSearchState();
   const dispatch = useAppDispatch();
-  const { search } = useSearch();
+  const { search } = useSearchActions();
   const focused = usePanelFocus('filters');
 
   // Capture all values in refs so the stable handler always reads current state

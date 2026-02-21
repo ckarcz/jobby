@@ -25,9 +25,6 @@ jobby search [keyword] [options]
 | `--minimum-salary <salary>` | `40,000` through `200,000` | Minimum salary |
 | `--workplace-type <type>` | `on-site`, `remote`, `hybrid` | Workplace arrangement |
 | `--listing-age <age>` | `past-24-hours`, `past-week`, `past-month` | Posting recency |
-| `--under-10-applicants` | Boolean flag | Only low-applicant jobs |
-| `--easy-apply-only` | Boolean flag | Only Easy Apply listings |
-
 ### Pagination
 
 | Option | Default | Description |
@@ -122,9 +119,6 @@ All filter options set the starting filter values in the UI. They can be changed
 | `--minimum-salary <salary>` | `40,000` through `200,000` | Initial minimum salary filter |
 | `--workplace-type <type>` | `on-site`, `remote`, `hybrid` | Initial workplace type filter |
 | `--listing-age <age>` | `past-24-hours`, `past-week`, `past-month` | Initial listing age filter |
-| `--easy-apply-only` | Boolean flag | Initial easy apply filter |
-| `--under-10-applicants` | Boolean flag | Initial under 10 applicants filter |
-
 ### Keyboard Shortcuts
 
 **List view:**

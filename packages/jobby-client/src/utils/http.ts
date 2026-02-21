@@ -31,7 +31,7 @@ export function handleHttpError(error: unknown, logger: Logger): never {
       throw new RateLimitError('Rate limit reached', Number.isNaN(retryAfter) ? undefined : retryAfter);
     }
     logger.error(`HTTP error: ${error.response?.status ?? '???'}.`, { message: error.message });
-    throw new NetworkError(`HTTP-${error.response?.status ?? '???'}: ${error.message}`, error);
+    throw new NetworkError(`HTTP-${error.response?.status ?? '???'}: ${error.message}`, error, error.response?.status);
   }
   logger.error('Unknown error occurred.');
   throw new NetworkError('Unknown error occurred', error);

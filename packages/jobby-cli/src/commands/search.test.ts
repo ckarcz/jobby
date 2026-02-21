@@ -6,8 +6,8 @@ beforeAll(() => {
   registerDefaultFormatters();
 });
 
-vi.mock('node:fs', () => ({
-  writeFileSync: vi.fn(),
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn(),
 }));
 
 vi.mock('cli-highlight', () => ({
@@ -16,7 +16,7 @@ vi.mock('cli-highlight', () => ({
 
 vi.mock('jobby-client', () => createJobbyMock());
 
-import { writeFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 
 import { JobbyClient, ValidationError } from 'jobby-client';
 import { queryForJobs } from './search.js';
@@ -94,13 +94,13 @@ describe('queryForJobs - search command handler', () => {
       await queryForJobs({
         keyword: 'React',
         jobType: ['full-time', 'contract'],
-        experienceLevel: ['senior', 'mid-senior'],
+        experienceLevel: ['senior', 'director'],
       });
 
       expect(mockClientInstance.jobs.queryForJobs).toHaveBeenCalledWith(
         expect.objectContaining({
           jobType: ['full-time', 'contract'],
-          experienceLevel: ['senior', 'mid-senior'],
+          experienceLevel: ['senior', 'director'],
         }),
         expect.any(Object)
       );
@@ -233,14 +233,14 @@ describe('queryForJobs - search command handler', () => {
     });
 
     it('should skip syntax highlighting when --no-color is set', async () => {
-      await queryForJobs({ noColor: true });
+      await queryForJobs({ color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\x1b[highlighted]');
     });
 
     it('should output null when response is null', async () => {
       mockClientInstance.jobs.queryForJobs.mockResolvedValue(null);
-      await queryForJobs({ noColor: true });
+      await queryForJobs({ color: false });
       expect(consoleSpy).toHaveBeenCalledWith('null');
     });
   });
@@ -254,7 +254,7 @@ describe('queryForJobs - search command handler', () => {
     });
 
     it('should output HTML string when --format rawHtml is set', async () => {
-      await queryForJobs({ format: 'rawHtml', noColor: true });
+      await queryForJobs({ format: 'rawHtml', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('<html>');
       expect(output).toContain('Raw HTML');
@@ -285,18 +285,18 @@ describe('queryForJobs - search command handler', () => {
 
     afterEach(() => {
       infoSpy.mockRestore();
-      vi.mocked(writeFileSync).mockClear();
+      vi.mocked(writeFile).mockClear();
     });
 
     it('should write to file when --file is set', async () => {
       await queryForJobs({ file: 'results.json' });
-      expect(writeFileSync).toHaveBeenCalledWith('results.json', expect.any(String), 'utf-8');
+      expect(writeFile).toHaveBeenCalledWith('results.json', expect.any(String), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('should write HTML to file when --file and --format rawHtml are set', async () => {
       await queryForJobs({ format: 'rawHtml', file: 'results.html' });
-      expect(writeFileSync).toHaveBeenCalledWith('results.html', expect.stringContaining('<html>'), 'utf-8');
+      expect(writeFile).toHaveBeenCalledWith('results.html', expect.stringContaining('<html>'), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
   });
@@ -330,7 +330,7 @@ describe('queryForJobs - search command handler', () => {
       mockClientInstance.jobs.queryForJobs.mockResolvedValue(searchResponse);
       mockClientInstance.jobs.queryForJobDetailsById.mockResolvedValue(mockJobDetails);
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith('111');
       expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith('222');
@@ -341,7 +341,7 @@ describe('queryForJobs - search command handler', () => {
     it('should NOT fetch details when --detailed is absent', async () => {
       mockClientInstance.jobs.queryForJobs.mockResolvedValue(searchResponse);
 
-      await queryForJobs({ noColor: true });
+      await queryForJobs({ color: false });
 
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
     });
@@ -357,7 +357,7 @@ describe('queryForJobs - search command handler', () => {
         .mockResolvedValueOnce(mockJobDetails)
         .mockRejectedValueOnce(new Error('rate limited'));
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output) as { results: Array<{ details: unknown }> };
@@ -369,7 +369,7 @@ describe('queryForJobs - search command handler', () => {
       mockClientInstance.jobs.queryForJobs.mockResolvedValue(searchResponse);
       mockClientInstance.jobs.queryForJobDetailsById.mockResolvedValue(mockJobDetails);
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith('111');
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalledWith('https://linkedin.com/jobs/view/111');
@@ -387,7 +387,7 @@ describe('queryForJobs - search command handler', () => {
       mockClientInstance.jobs.queryForJobs.mockResolvedValue(searchResponse);
       mockClientInstance.jobs.queryForJobDetailsById.mockResolvedValue(detailsWithNewFields);
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output) as { results: Array<{ details: Record<string, unknown> }> };
@@ -401,7 +401,7 @@ describe('queryForJobs - search command handler', () => {
         results: [],
       });
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
     });
@@ -423,7 +423,7 @@ describe('queryForJobs - search command handler', () => {
         pagination: { start: 0, count: 0 },
       });
 
-      await queryForJobs({ detailed: true, noColor: true });
+      await queryForJobs({ detailed: true, color: false });
 
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
     });

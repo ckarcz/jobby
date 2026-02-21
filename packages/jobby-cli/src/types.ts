@@ -24,7 +24,7 @@ export interface JobbyCliArgs {
   format?: OutputFormat | undefined;
   pretty?: boolean | undefined;
   logLevel?: LogLevel | undefined;
-  noColor?: boolean | undefined;
+  color?: boolean | undefined;
   debug?: boolean | undefined;
   file?: string | undefined;
 }

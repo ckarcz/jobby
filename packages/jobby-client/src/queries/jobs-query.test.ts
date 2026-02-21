@@ -154,6 +154,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
     expect(url).toContain('geoId=103644278');
   });
 
+  it('should not drop geoId when value is "0"', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobsQuery({ geoId: '0' });
+
+    const url = mockedAxios.get.mock.calls[0][0] as string;
+    expect(url).toContain('geoId=0');
+  });
+
   it('should include companyId in URL', async () => {
     mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
 

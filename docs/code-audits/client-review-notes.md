@@ -8,14 +8,11 @@
 
 ## Critical Issues
 
-### 1. `NetworkError` marks all HTTP errors as retryable, including permanent failures
+### 1. `NetworkError` marks all HTTP errors as retryable, including permanent failures — **FIXED**
 
 **Confidence: 95**
 **File:** `packages/jobby-client/src/types/errors.ts`, line 68
-
-`NetworkError` is thrown for all non-429 HTTP errors by `handleHttpError` in `utils/http.ts`. This includes permanent failures: 404 Not Found, 401 Unauthorized, 403 Forbidden. When a user configures `maxRetries: 3`, these permanent errors will be retried three times before failing — wasting time and making three unnecessary HTTP requests.
-
-**Fix:** Pass the HTTP status code to `NetworkError` and set `retryable` based on whether the failure is transient (e.g., status >= 500 or undefined) versus permanent (4xx). At minimum, modify `handleHttpError` to pass `retryable: false` for 4xx responses other than 429.
+**Status: FIXED** — Added optional `status` param to `NetworkError` constructor. `retryable` is now `status === undefined || status >= 500` (transient failures and unknown errors are retryable, 4xx permanent failures are not). Updated `http.ts` to pass status. Added tests. Fix matched the recommended approach.
 
 ---
 
@@ -86,12 +83,11 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 
 **Fix:** Add a direct unit test for `executeJobsQuery` using the fixture HTML.
 
-### 9. `test.log` artifact file present in source tree
+### 9. `test.log` artifact file present in source tree — **FIXED**
 
 **Confidence: 92**
 **File:** `packages/jobby-client/test.log`
-
-**Fix:** Add `*.log` to `.gitignore` and delete the committed file.
+**Status: FIXED** — Deleted `test.log` artifact from the source tree.
 
 ---
 
@@ -111,16 +107,16 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 
 ## Summary Table
 
-| # | Severity | File | Issue | Confidence |
-|---|----------|------|-------|------------|
-| 1 | Critical | `types/errors.ts:68` | `NetworkError.retryable=true` causes 404/401/403 to be retried | 95 |
-| 2 | Important | `utils/url.ts:37` | `extractJobIdFromUrl` regex fragile — no path anchor | 85 |
-| 3 | Important | `queries/jobs-query.ts:56` | `resolveConfig` called per-query, re-reads env vars each time | 82 |
-| 4 | Important | `queries/job-details-query.ts:453` | `parseSalaryText` silently ignores 3rd+ numbers | 83 |
-| 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 |
-| 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 |
-| 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 |
-| 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 |
-| 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 |
-| 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 |
-| 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 |
+| # | Severity | File | Issue | Confidence | Status |
+|---|----------|------|-------|------------|--------|
+| 1 | Critical | `types/errors.ts:68` | `NetworkError.retryable=true` causes 404/401/403 to be retried | 95 | **Fixed** |
+| 2 | Important | `utils/url.ts:37` | `extractJobIdFromUrl` regex fragile — no path anchor | 85 | Open |
+| 3 | Important | `queries/jobs-query.ts:56` | `resolveConfig` called per-query, re-reads env vars each time | 82 | Open |
+| 4 | Important | `queries/job-details-query.ts:453` | `parseSalaryText` silently ignores 3rd+ numbers | 83 | Open |
+| 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 | Open |
+| 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 | Open |
+| 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 | Open |
+| 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 | Open |
+| 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 | **Fixed** |
+| 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | Open |
+| 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | Open |

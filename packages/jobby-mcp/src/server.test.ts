@@ -48,7 +48,7 @@ vi.mock('jobby-client', async (importOriginal) => {
     })),
     JobbyError: class JobbyError extends Error {
       code: string;
-      constructor(message: string, code: string) {
+      constructor(code: string, message: string) {
         super(message);
         this.code = code;
       }
@@ -56,10 +56,14 @@ vi.mock('jobby-client', async (importOriginal) => {
   };
 });
 
+import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { JobbyError } from 'jobby-client';
 import { createServer, main } from './server.js';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
 
 /**
  * Tests for the MCP server that exposes Jobby job search and detail
@@ -104,7 +108,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
     it('should create server with version from package.json', () => {
       const constructorCall = (McpServer as unknown as Mock).mock.calls[0] as [Record<string, unknown>];
-      expect(constructorCall[0].version).toBe('1.0.0');
+      expect(constructorCall[0].version).toBe(packageJson.version);
     });
 
     it('should register search_jobs tool with correct config', () => {
@@ -122,7 +126,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       const detailsCall = registerToolCalls.find((c) => c[0] === 'get_job_details');
 
       expect(detailsCall).toBeDefined();
-      expect(detailsCall[1].description).toContain('Get detailed information');
+      expect(detailsCall[1].description).toContain('Requires at least one of jobUrl or jobId');
       expect(detailsCall[1].inputSchema).toBeDefined();
       expect(detailsCall[1].inputSchema.jobUrl).toBeDefined();
       expect(detailsCall[1].inputSchema.jobId).toBeDefined();
@@ -261,10 +265,10 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       expect(parsed.details.incentiveInfo).toBe('Bonus Eligible: Yes');
     });
 
-    it('should throw ZodError when neither jobUrl nor jobId provided (refine rejects at schema level)', async () => {
-      await expect(async () => {
-        await getJobDetailsHandler({}, {});
-      }).rejects.toThrow();
+    it('should return isError when neither jobUrl nor jobId provided (safeParse rejects)', async () => {
+      const result = await getJobDetailsHandler({}, {});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid input');
     });
   });
 
@@ -344,47 +348,40 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
   describe('search_jobs schema validation via server handler', () => {
     it('should reject invalid jobType in search_jobs', async () => {
-      await expect(async () => {
-        await searchJobsHandler({ jobType: 'invalid-type' }, {});
-      }).rejects.toThrow();
+      const result = await searchJobsHandler({ jobType: 'invalid-type' }, {});
+      expect(result.isError).toBe(true);
     });
 
     it('should reject non-string keyword', async () => {
-      await expect(async () => {
-        await searchJobsHandler({ keyword: 123 }, {});
-      }).rejects.toThrow();
+      const result = await searchJobsHandler({ keyword: 123 }, {});
+      expect(result.isError).toBe(true);
     });
 
     it('should reject non-string location', async () => {
-      await expect(async () => {
-        await searchJobsHandler({ location: 456 }, {});
-      }).rejects.toThrow();
+      const result = await searchJobsHandler({ location: 456 }, {});
+      expect(result.isError).toBe(true);
     });
 
     it('should reject non-number start', async () => {
-      await expect(async () => {
-        await searchJobsHandler({ start: 'abc' }, {});
-      }).rejects.toThrow();
+      const result = await searchJobsHandler({ start: 'abc' }, {});
+      expect(result.isError).toBe(true);
     });
   });
 
   describe('get_job_details schema validation via server handler', () => {
     it('should reject non-string jobUrl', async () => {
-      await expect(async () => {
-        await getJobDetailsHandler({ jobUrl: 123 }, {});
-      }).rejects.toThrow();
+      const result = await getJobDetailsHandler({ jobUrl: 123 }, {});
+      expect(result.isError).toBe(true);
     });
 
     it('should reject non-string jobId', async () => {
-      await expect(async () => {
-        await getJobDetailsHandler({ jobId: true }, {});
-      }).rejects.toThrow();
+      const result = await getJobDetailsHandler({ jobId: true }, {});
+      expect(result.isError).toBe(true);
     });
 
     it('should reject empty string jobId (min length 1)', async () => {
-      await expect(async () => {
-        await getJobDetailsHandler({ jobId: '' }, {});
-      }).rejects.toThrow();
+      const result = await getJobDetailsHandler({ jobId: '' }, {});
+      expect(result.isError).toBe(true);
     });
   });
 });

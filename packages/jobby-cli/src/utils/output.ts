@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import { highlight } from 'cli-highlight';
 import type { OutputFormat } from '../types.js';
 import { getFormatter } from '../formatters/index.js';
@@ -8,7 +8,7 @@ export interface OutputOptions {
   format?: OutputFormat | undefined;
   pretty?: boolean | undefined;
   file?: string | undefined;
-  noColor?: boolean | undefined;
+  color?: boolean | undefined;
 }
 
 const highlightLanguageMap: Partial<Record<OutputFormat, string>> = {
@@ -36,13 +36,13 @@ export async function outputResult(data: unknown, opts: OutputOptions): Promise<
   const output = await formatter.format(data, { pretty: opts.pretty });
 
   if (opts.file) {
-    writeFileSync(opts.file, output + '\n', 'utf-8');
+    await writeFile(opts.file, output + '\n', 'utf-8');
     console.info(`Output written to ${opts.file}.`);
     return;
   }
 
   const language = highlightLanguageMap[format];
-  if (opts.noColor || !language) {
+  if (opts.color === false || !language) {
     console.log(output);
   } else {
     console.log(highlight(output, { language }));

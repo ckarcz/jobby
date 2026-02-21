@@ -38,64 +38,34 @@ The codebase does significantly more right than wrong. The issues identified are
 
 ### 3.1 Critical
 
-#### BUG: `--no-color` Flag Does Not Suppress Syntax Highlighting on Data Output
+#### BUG: `--no-color` Flag Does Not Suppress Syntax Highlighting on Data Output — **FIXED**
 
 **Severity:** Critical — Functional regression visible to all users.
-
-**Files:** `src/commands/search.ts:120-123`, `src/commands/details.ts:79-86`, `src/utils/output.ts:45`, `src/types.ts:27`
-
-Commander's `--no-color` negatable option resolves to `opts.color = false` (Commander internally names negatable booleans by their positive form). The command action handlers spread `opts` directly into `queryForJobs` / `queryForJobDetails`, which then pass the object to `outputResult`. The `outputResult` function checks `opts.noColor`, not `opts.color`.
-
-Because `noColor` is never set by Commander, `opts.noColor` is always `undefined` in real CLI execution, meaning syntax highlighting is **never suppressed** by `--no-color` on data output.
-
-The `configureOutput` path does work (ANSI is suppressed on Commander's own help/error text), but actual job results output via `cli-highlight` is always highlighted regardless of `--no-color`.
-
-**Why tests do not catch this:** Unit tests pass `noColor: true` directly, bypassing Commander's option translation. Integration tests only check help output and Commander error messages, not data output.
-
-**Fix:** Map `opts.color` to `noColor` in the action handler before forwarding:
-
-```typescript
-// src/commands/search.ts, inside action handler
-await queryForJobs({ ...opts, keyword, noColor: opts.noColor ?? (opts.color === false) });
-```
-
-Apply the same fix in `src/commands/details.ts`.
+**Status: FIXED** — Renamed `noColor` to `color` throughout the codebase. `output.ts:45` now checks `opts.color === false`. Updated all test files (~32 occurrences). This is a different approach from the recommended mapping fix -- instead of mapping between the two names, the implementation was unified to use Commander's native `color` naming consistently.
 
 ---
 
 ### 3.2 Medium
 
-#### Circular Import: `program.ts` and Command Modules
+#### Circular Import: `program.ts` and Command Modules — **FIXED**
 
 **Files:** `src/program.ts:5-7`, `src/commands/search.ts:19`, `src/commands/details.ts:9`, `src/commands/ui.ts:5`
+**Status: FIXED** — Created `src/help-config.ts` extracting `helpConfig` from `program.ts`. Updated imports in all command files and `index.ts`. Slightly different location from recommendation (`src/help-config.ts` rather than `src/utils/help-config.ts`).
 
-`program.ts` imports from all three command modules. Each command module imports `helpConfig` back from `program.ts`. This creates a circular dependency graph that currently works due to ESM live bindings but is fragile.
-
-**Fix:** Extract `helpConfig` to `src/utils/help-config.ts`. Both `program.ts` and command modules import from there.
-
-#### `details` Command Has Direct `process.exit(1)` That Bypasses Main Error Handler
+#### `details` Command Has Direct `process.exit(1)` That Bypasses Main Error Handler — **FIXED**
 
 **File:** `src/commands/details.ts:82-85`
+**Status: FIXED** — Replaced `console.error + process.exit(1)` with `throw new ValidationError(...)` in `details.ts`. Fix matched the recommended approach.
 
-The details command action handler has a raw `console.error` + `process.exit(1)` for the missing-URL case. This bypasses the unified error handling in `main.ts`.
-
-**Fix:** Throw a `ValidationError` instead and let `main.ts` catch it.
-
-#### `outputResult` Uses Synchronous `writeFileSync` in an Async Function
+#### `outputResult` Uses Synchronous `writeFileSync` in an Async Function — **FIXED**
 
 **File:** `src/utils/output.ts:38-40`
+**Status: FIXED** — Replaced `writeFileSync` with `await writeFile` from `node:fs/promises`. Fix matched the recommended approach.
 
-The function is declared `async` but uses synchronous `writeFileSync` for the file output path. For large formatted outputs, this blocks the event loop.
-
-**Fix:** Replace with `fs.promises.writeFile`.
-
-#### `package.json` `exports` Field Points to CLI Entry Point Instead of Library Barrel
+#### `package.json` `exports` Field Points to CLI Entry Point Instead of Library Barrel — **FIXED**
 
 **File:** `packages/jobby-cli/package.json:11-16`
-
-The `exports` field points to `dist/main.js` which immediately executes `void main()` on import. It should point to `dist/index.js`.
-
-**Fix:** Change exports to `dist/index.js` / `dist/index.d.ts`.
+**Status: FIXED** — Created `src/bin.ts` as the new entry point (same pattern as MCP). Moved `void main()` and shebang from `main.ts` to `bin.ts`. Updated `package.json` bin, start, and watch scripts to point to `bin.ts`. This also fixed a pre-existing test crash where `void main()` auto-executed when vitest imported the module.
 
 ---
 
@@ -131,7 +101,7 @@ A user passing `--format yaml --pretty` gets the same output as without `--prett
 
 ## 4. Code Quality Issues
 
-- **`search.test.ts` uses invalid `'mid-senior'` ExperienceLevel value** (`src/commands/search.test.ts:97,103`). Replace with a valid value like `'associate'`.
+- ~~**`search.test.ts` uses invalid `'mid-senior'` ExperienceLevel value** (`src/commands/search.test.ts:97,103`).~~ **FIXED** — Changed invalid `'mid-senior'` to `'director'` in search.test.ts.
 - **Redundant duplicate test cases in `parse.test.ts`** — identical assertions across describe blocks for zero parsing, negative numbers, and empty strings.
 - **`formatter.test.ts` mutates shared default registry** without guaranteed cleanup via `afterEach`.
 - **`details.ts` `isUrl` helper is overly permissive** — accepts `ftp://`, `data:`, etc. Should narrow to `http:` and `https:`.
@@ -143,12 +113,12 @@ A user passing `--format yaml --pretty` gets the same output as without `--prett
 
 ### 5.1 Tests That Are False Positives or Stale
 
-| Test | File | Issue |
-|------|------|-------|
-| `--easy-apply-only` / `--under-10-applicants` assertions | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Options not implemented in CLI |
-| `[url]` argument assertion | `cli-help.test.ts:135` | Passes incidentally (`[url]` is substring of `[id-or-url]`) |
-| Signal handler spies on `process.on` | `main.test.ts:237,260` | Code uses `process.once`, spy should target `.once` |
-| `details.test.ts` empty rawHtml assertion | `details.test.ts:224-228` | Only checks `consoleSpy` was called, not what with |
+| Test | File | Issue | Status |
+|------|------|-------|--------|
+| `--easy-apply-only` / `--under-10-applicants` assertions | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Options not implemented in CLI | **Fixed** |
+| `[url]` argument assertion | `cli-help.test.ts:135` | Passes incidentally (`[url]` is substring of `[id-or-url]`) | Open |
+| Signal handler spies on `process.on` | `main.test.ts:237,260` | Code uses `process.once`, spy should target `.once` | **Fixed** |
+| `details.test.ts` empty rawHtml assertion | `details.test.ts:224-228` | Only checks `consoleSpy` was called, not what with | Open |
 
 ### 5.2 Important Untested Code Paths
 
@@ -177,30 +147,30 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 
 ### Priority 1 — Fix Immediately (Bugs)
 
-1. **Fix `--no-color` flag** not suppressing data output highlighting
-2. **Remove or implement** `--easy-apply-only` and `--under-10-applicants` (update tests and docs)
+1. ~~**Fix `--no-color` flag** not suppressing data output highlighting~~ **DONE**
+2. ~~**Remove or implement** `--easy-apply-only` and `--under-10-applicants` (update tests and docs)~~ **DONE** — Removed assertions from integration tests. Updated `docs/commands.md`.
 3. **Fix `[url]` vs `[id-or-url]`** integration test assertion
 
 ### Priority 2 — Address Before Next Release
 
-4. **Eliminate circular import** — extract `helpConfig` to `src/utils/help-config.ts`
-5. **Replace `process.exit(1)`** in details handler with thrown `ValidationError`
-6. **Fix `process.on` spy** in signal handler tests to spy on `process.once`
-7. **Fix `exports` field** in `package.json` to point to `dist/index.js`
+4. ~~**Eliminate circular import** — extract `helpConfig` to `src/help-config.ts`~~ **DONE**
+5. ~~**Replace `process.exit(1)`** in details handler with thrown `ValidationError`~~ **DONE**
+6. ~~**Fix `process.on` spy** in signal handler tests to spy on `process.once`~~ **DONE**
+7. ~~**Fix `exports` field** in `package.json` — created `bin.ts` entry point~~ **DONE**
 
 ### Priority 3 — Code Quality
 
-8. Replace `writeFileSync` with `fs.promises.writeFile` in `outputResult`
+8. ~~Replace `writeFileSync` with `fs.promises.writeFile` in `outputResult`~~ **DONE**
 9. Narrow `isUrl` to `http:` and `https:` schemes only
 10. Remove `export` from `swapScreenBuffer`/`restoreScreenBuffer`
 11. Remove `helpConfig` from `index.ts` exports
-12. Fix invalid `'mid-senior'` value in `search.test.ts`
+12. ~~Fix invalid `'mid-senior'` value in `search.test.ts`~~ **DONE**
 13. Deduplicate redundant test cases in `parse.test.ts`
 14. Improve `formatter.test.ts` test isolation
 
 ### Priority 4 — Documentation
 
-15. Update `docs/commands.md` to match actual implementation
+15. ~~Update `docs/commands.md` to match actual implementation~~ **DONE**
 16. Add JSDoc note to `yamlFormatter` about `--pretty` having no effect
 17. Add integration test coverage for `--no-color` on data output
 

@@ -78,12 +78,6 @@ describe('CLI help output - search command', () => {
       expect(stdout).toContain('--listing-age');
     });
 
-    it('should list boolean filter options', async () => {
-      const { stdout } = await runCli(['search', '--help']);
-      expect(stdout).toContain('--easy-apply-only');
-      expect(stdout).toContain('--under-10-applicants');
-    });
-
     it('should list pagination options', async () => {
       const { stdout } = await runCli(['search', '--help']);
       expect(stdout).toContain('--start');

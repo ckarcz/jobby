@@ -27,8 +27,8 @@ The TUI architecture is in very good shape after four rounds of audit fixes. The
 
 **Key new findings:**
 
-- **2 medium issues** — `useResultsKeyboard` still uses an inline `useInput` handler (inconsistent with the ref-based pattern established elsewhere), and `useContainerHeight` is called in `SearchResults` but its return value is discarded (dead work)
-- **3 low-medium issues** — `JobbyClient` instantiated via `useMemo` rather than `useRef`, `useKeyboardNavigation` passes an inline handler to `useInput`, and `FilterDrawer.sectionElements` memo invalidates on every navigation keystroke due to `cursors` object reference
+- ~~**2 medium issues** — `useResultsKeyboard` still uses an inline `useInput` handler (inconsistent with the ref-based pattern established elsewhere)~~ **FIXED**, and `useContainerHeight` is called in `SearchResults` but its return value is discarded (dead work)
+- ~~**1 low-medium issue** — `JobbyClient` instantiated via `useMemo` rather than `useRef`~~ **FIXED**, **2 low-medium issues remaining** — `useKeyboardNavigation` passes an inline handler to `useInput`, and `FilterDrawer.sectionElements` memo invalidates on every navigation keystroke due to `cursors` object reference
 - All previously-audited items confirmed fixed
 
 ---
@@ -66,48 +66,11 @@ The two-level filter state (local `useReducer` draft committed on Enter) is arch
 
 ## 3. Medium Issues
 
-### 3.1 `useResultsKeyboard` Uses Inline `useInput` Handler — Re-Registers on Every Arrow-Key Press
+### 3.1 `useResultsKeyboard` Uses Inline `useInput` Handler — Re-Registers on Every Arrow-Key Press — **FIXED**
 
 **File:** `packages/jobby-cli/src/ui/hooks/useResultsKeyboard.ts:46`
 **Severity:** Medium
-
-The prior audit fixed this exact pattern in `useDetailsKeyboard` (audit 4.7) and `useFilterKeyboard` — but `useResultsKeyboard` still passes an inline function to `useInput`:
-
-```typescript
-// useResultsKeyboard.ts:46 — inline handler, re-created on every render
-useInput((_input, key) => {
-  if (key.downArrow) {
-    if (isOnLastItem) {
-      loadMore();
-    } else {
-      dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: Math.min(selectedJobIndex + 1, maxIndex) });
-    }
-    return;
-  }
-  // ...
-}, { isActive: panelFocused });
-```
-
-`SearchResults` re-renders on every arrow-key press (because `selectedJobIndex` changes via `useSelectionState()`), so Ink removes and re-adds the input handler on every keypress. This is the same issue that was fixed in `useDetailsKeyboard` (audit item 4.7).
-
-**Fix:** Apply the same "latest ref + stable `useCallback`" pattern:
-
-```typescript
-const stateRef = useRef({ selectedJobIndex, maxIndex, isOnLastItem, totalResults, loadMoreStatus, viewport });
-stateRef.current = { selectedJobIndex, maxIndex, isOnLastItem, totalResults, loadMoreStatus, viewport };
-
-const handler = useCallback((_input: string, key: Key) => {
-  const s = stateRef.current;
-  if (key.downArrow) {
-    if (s.isOnLastItem) { loadMore(); }
-    else { dispatch({ type: 'SET_SELECTED_JOB_INDEX', index: Math.min(s.selectedJobIndex + 1, s.maxIndex) }); }
-    return;
-  }
-  // ... use s.* for all state reads
-}, [dispatch, loadMore]);
-
-useInput(handler, { isActive: panelFocused });
-```
+**Status: FIXED** — Rewrote with ref-based stable handler pattern (matching useFilterKeyboard/useDetailsKeyboard). All state values stored in refs, `useCallback` with empty deps. Fix matched the recommended approach.
 
 ### 3.2 `useContainerHeight` Called in `SearchResults` with Return Value Discarded
 
@@ -129,26 +92,11 @@ The hook still runs its effect (measuring the element, calling `setMeasuredHeigh
 
 ## 4. Low-Medium Issues
 
-### 4.1 `JobbyClient` Instantiated via `useMemo` Instead of `useRef`
+### 4.1 `JobbyClient` Instantiated via `useMemo` Instead of `useRef` — **FIXED**
 
 **File:** `packages/jobby-cli/src/ui/hooks/useSearch.ts:17`
 **Severity:** Low-Medium
-
-```typescript
-const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
-```
-
-`useMemo` is a performance optimization hint — React explicitly states it may discard memoized values and recompute them. For a stateful object like `JobbyClient` that must persist for the component's lifetime, `useRef` is the semantically correct hook:
-
-```typescript
-const clientRef = useRef<JobbyClient | null>(null);
-if (!clientRef.current) {
-  clientRef.current = new JobbyClient({ logging: { level: 'silent' } });
-}
-const client = clientRef.current;
-```
-
-In practice, `useMemo` with `[]` deps works today, but React 19's compiler or future Strict Mode changes could discard and recreate the value, creating a second `JobbyClient` instance with a different HTTP session.
+**Status: FIXED** — Changed `useMemo(() => new JobbyClient(...), [])` to `useRef(new JobbyClient(...)).current` in `useSearch.ts`. Slightly simpler than the recommended null-check pattern, but achieves the same stable-reference semantics.
 
 ### 4.2 `useKeyboardNavigation` Passes Inline Handler to `useInput`
 
@@ -228,9 +176,9 @@ The `SET_TERMINAL_SIZE` reducer case always sets `maxWidth = action.width, maxHe
 |---|---|---|---|---|
 | `useDetailsKeyboard` | Yes | Yes | Yes | Correctly implemented |
 | `useFilterKeyboard` | Yes | Yes | Yes | Correctly implemented |
-| `useResultsKeyboard` | **No** | Yes | No | **Needs fix (3.1)** |
+| `useResultsKeyboard` | Yes | Yes | Yes | **Fixed (3.1)** |
 | `useKeyboardNavigation` | **No** | N/A (global) | Partial (textInputActiveRef only) | **Needs fix (4.2)** |
-| `useSearch` | N/A | N/A | `useMemo` client | **Semantic issue (4.1)** |
+| `useSearch` | N/A | N/A | `useRef` client | **Fixed (4.1)** |
 | `useJobDetails` | N/A | N/A | Yes (statusRef, abortRef) | Correctly implemented |
 | `useContainerHeight` | N/A | N/A | N/A | **Dead call in SearchResults (3.2)** |
 | `usePanelFocus` | N/A | N/A | N/A | Simple derived value — correct |
@@ -265,12 +213,12 @@ When the user presses an arrow key in the results list:
 
 1. `dispatch({ type: 'SET_SELECTED_JOB_INDEX' })` fires
 2. `SelectionContext` value changes → `SearchResults` re-renders
-3. `useResultsKeyboard`'s inline handler is recreated → Ink re-registers it **(3.1)**
+3. ~~`useResultsKeyboard`'s inline handler is recreated → Ink re-registers it~~ **(3.1 — FIXED)**
 4. `useContainerHeight` effect runs (re-measures element) **(3.2 — unnecessary)**
 5. `VirtualList` receives new `selectedIndex` → renders visible items
 6. `JobDetailsPanel` receives new selection → debounced fetch
 
-Steps 3 and 4 are avoidable overhead.
+Step 4 is avoidable overhead (step 3 is now fixed).
 
 ### FilterDrawer Re-Render Analysis
 
@@ -290,13 +238,13 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 
 ### Priority 1 — Consistency Fixes (follow established patterns)
 
-1. **Apply ref-based stable handler to `useResultsKeyboard`** (3.1) — same pattern as `useDetailsKeyboard`
+1. ~~**Apply ref-based stable handler to `useResultsKeyboard`** (3.1) — same pattern as `useDetailsKeyboard`~~ **DONE**
 2. **Apply ref-based stable handler to `useKeyboardNavigation`** (4.2) — same pattern
 
 ### Priority 2 — Dead Code and Semantic Fixes
 
 3. **Remove or utilize `useContainerHeight` call in `SearchResults`** (3.2)
-4. **Use `useRef` for `JobbyClient` in `useSearch`** (4.1)
+4. ~~**Use `useRef` for `JobbyClient` in `useSearch`** (4.1)~~ **DONE**
 
 ### Priority 3 — Optimization
 
@@ -321,15 +269,15 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 
 ## Summary Table
 
-| # | Severity | Issue | File(s) |
-|---|---|---|---|
-| 3.1 | Medium | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts:46` |
-| 3.2 | Medium | `useContainerHeight` called in `SearchResults` with return value discarded | `SearchResults.tsx:24` |
-| 4.1 | Low-Medium | `JobbyClient` via `useMemo` instead of `useRef` | `useSearch.ts:17` |
-| 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` |
-| 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` |
-| 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` |
-| 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` |
+| # | Severity | Issue | File(s) | Status |
+|---|---|---|---|---|
+| 3.1 | Medium | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts:46` | **Fixed** |
+| 3.2 | Medium | `useContainerHeight` called in `SearchResults` with return value discarded | `SearchResults.tsx:24` | Open |
+| 4.1 | Low-Medium | `JobbyClient` via `useMemo` instead of `useRef` | `useSearch.ts:17` | **Fixed** |
+| 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | Open |
+| 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Open |
+| 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | Open |
+| 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | Open |
 
 ---
 

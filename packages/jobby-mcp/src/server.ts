@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -36,20 +34,32 @@ export function createServer(): McpServer {
       inputSchema: SearchInputSchema.shape,
     },
     async (rawArgs) => {
-      const args = SearchInputSchema.parse(rawArgs);
-      return handleSearchJobs(args);
+      const parsed = SearchInputSchema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: Invalid input: ${parsed.error.issues.map(i => i.message).join(', ')}` }],
+          isError: true,
+        };
+      }
+      return handleSearchJobs(parsed.data);
     }
   );
 
   server.registerTool(
     'get_job_details',
     {
-      description: 'Get detailed information about a specific job posting by URL or job ID.',
+      description: 'Get detailed information about a specific job posting. Requires at least one of jobUrl or jobId.',
       inputSchema: JobDetailsBaseSchema.shape,
     },
     async (rawArgs) => {
-      const args = JobDetailsInputSchema.parse(rawArgs);
-      return handleGetJobDetails(args);
+      const parsed = JobDetailsInputSchema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: Invalid input: ${parsed.error.issues.map(i => i.message).join(', ')}` }],
+          isError: true,
+        };
+      }
+      return handleGetJobDetails(parsed.data);
     }
   );
 

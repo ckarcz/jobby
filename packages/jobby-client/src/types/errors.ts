@@ -63,10 +63,10 @@ export class RateLimitError extends JobbyError {
 
 /** A network error. Thrown when an HTTP error aside from HTTP 429 occurs. */
 export class NetworkError extends JobbyError {
-  constructor(message: string, originalError?: unknown) {
+  constructor(message: string, originalError?: unknown, status?: number) {
     super(ErrorCode.NETWORK, message, {
       originalError,
-      retryable: true,
+      retryable: status === undefined || status >= 500,
     });
     this.name = 'NetworkError';
   }

@@ -6,7 +6,7 @@
   "author": "ckarcz",
   "type": "module",
   "bin": {
-    "jobby": "./dist/main.js"
+    "jobby": "./dist/bin.js"
   },
   "exports": {
     ".": {
@@ -35,15 +35,15 @@
     "test:integration": "vitest run --project integration",
     "test:coverage": "vitest run --project unit --coverage",
     "test:coverage:ui": "vitest --project unit --ui --coverage.enabled",
-    "start": "tsx src/main.ts",
-    "start:ui": "tsx src/main.ts ui",
-    "start:search": "tsx src/main.ts search \"C#\" --pretty",
-    "start:details": "tsx src/main.ts details 4368607271 --pretty",
-    "start:example": "tsx src/main.ts search --keyword C# --take 1",
-    "watch": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts\"",
-    "watch:search": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts search C# --pretty\"",
-    "watch:details": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/main.ts details 4368607271 --pretty\"",
-    "watch:ui": "nodemon --no-stdin --watch src --watch ../jobby-client/src --ext ts,tsx --exec \"tsx src/main.ts ui\""
+    "start": "tsx src/bin.ts",
+    "start:ui": "tsx src/bin.ts ui",
+    "start:search": "tsx src/bin.ts search \"C#\" --pretty",
+    "start:details": "tsx src/bin.ts details 4368607271 --pretty",
+    "start:example": "tsx src/bin.ts search --keyword C# --take 1",
+    "watch": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts\"",
+    "watch:search": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts search C# --pretty\"",
+    "watch:details": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts details 4368607271 --pretty\"",
+    "watch:ui": "nodemon --no-stdin --watch src --watch ../jobby-client/src --ext ts,tsx --exec \"tsx src/bin.ts ui\""
   },
   "dependencies": {
     "@inkjs/ui": "^2.0.0",

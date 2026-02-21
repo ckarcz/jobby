@@ -9,47 +9,19 @@
 
 ## Critical
 
-### C1. `useSearch` Called at Three Independent Sites — Each Gets Its Own `JobbyClient` and `abortRef`
+### C1. `useSearch` Called at Three Independent Sites — Each Gets Its Own `JobbyClient` and `abortRef` — **FIXED**
 
 **Confidence: 95**
-
-**Files affected:**
-- `packages/jobby-cli/src/ui/hooks/useSearch.ts` lines 16-17
-- `packages/jobby-cli/src/ui/hooks/useResultsKeyboard.ts` line 17
-- `packages/jobby-cli/src/ui/hooks/useFilterKeyboard.ts` line 125
-- `packages/jobby-cli/src/ui/components/SearchBar.tsx` line 13
-
-`useSearch()` is consumed in three separate component trees simultaneously. Each call executes the full hook body, creating an isolated `abortRef` and a `useMemo`-owned `JobbyClient`:
-
-```typescript
-// useSearch.ts — runs independently at each call site
-const abortRef = useRef<AbortController | null>(null);
-const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
-```
-
-Three concrete problems:
-
-1. **Abort does not cross call sites.** `SearchBar` calls `search()` using its own instance's `abortRef`. When `useFilterKeyboard` subsequently calls `search()`, it only aborts its own prior requests — not `SearchBar`'s in-flight request. Both requests can be alive and racing to dispatch `SEARCH_SUCCESS`.
-
-2. **Three `JobbyClient` instances exist simultaneously** (`SearchBar` is mounted, `FilterDrawer` hosts `useFilterKeyboard`, and `SearchResults` hosts `useResultsKeyboard`).
-
-3. **`loadMore`'s in-flight request cannot be aborted by a concurrent `search()` call** if they originate from different call sites.
-
-**Fix:** Call `useSearch()` once in `AppInner` alongside the other orchestrating hooks (`useJobDetails`, `useKeyboardNavigation`, etc.), then expose `search` and `loadMore` via a `SearchActionsContext` or thread them as props.
+**Status: FIXED** — Called `useSearch()` once in `AppInner`. Created `SearchActionsContext` in `state/searchActions.ts`. Updated `SearchBar.tsx`, `useFilterKeyboard.ts`, `useResultsKeyboard.ts` to consume `useSearchActions()` from context instead of calling `useSearch()` directly. Fix matched the recommended approach.
 
 ---
 
 ## Important
 
-### I1. `useResultsKeyboard` Uses an Inline `useInput` Handler — Re-Registers on Every Arrow-Key Press
+### I1. `useResultsKeyboard` Uses an Inline `useInput` Handler — Re-Registers on Every Arrow-Key Press — **FIXED**
 
 **Confidence: 90**
-
-**File:** `packages/jobby-cli/src/ui/hooks/useResultsKeyboard.ts` line 46
-
-The prior audit fixed this exact pattern in `useDetailsKeyboard` (audit 4.7) and `useFilterKeyboard` — but `useResultsKeyboard` still passes an inline function to `useInput`. `SearchResults` re-renders on every arrow-key press (because `selectedJobIndex` changes), so Ink re-registers the handler on every keypress.
-
-**Fix:** Apply the same "latest ref + stable `useCallback`" pattern used in `useDetailsKeyboard` and `useFilterKeyboard`.
+**Status: FIXED** — Rewrote with ref-based stable handler pattern (matching useFilterKeyboard/useDetailsKeyboard). All state values stored in refs, `useCallback` with empty deps. Fix matched the recommended approach.
 
 ### I2. `useContainerHeight` Has a Stale Closure on `measuredHeight` Inside the Effect Body
 
@@ -121,11 +93,11 @@ The `SET_TERMINAL_SIZE` case always sets `maxWidth = action.width, maxHeight = a
 
 ## Summary Table
 
-| # | Confidence | Severity | Issue | File(s) |
-|---|---|---|---|---|
-| C1 | 95 | Critical | Three independent `useSearch()` call sites with siloed abort/client | `useSearch.ts`, `useResultsKeyboard.ts`, `useFilterKeyboard.ts`, `SearchBar.tsx` |
-| I1 | 90 | Important | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts` |
-| I2 | 85 | Important | `useContainerHeight` stale closure on `measuredHeight` in effect | `useContainerHeight.ts` |
-| M1 | 82 | Minor | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts`, `App.tsx` |
-| M2 | 80 | Minor | `getFilterSection` O(n) linear scan 5-6x per keypress | `filterTypes.ts` |
-| N1 | 60 | Informational | `SearchBar` dual `useInput` registration — fragile if extended | `SearchBar.tsx` |
+| # | Confidence | Severity | Issue | File(s) | Status |
+|---|---|---|---|---|---|
+| C1 | 95 | Critical | Three independent `useSearch()` call sites with siloed abort/client | `useSearch.ts`, `useResultsKeyboard.ts`, `useFilterKeyboard.ts`, `SearchBar.tsx` | **Fixed** |
+| I1 | 90 | Important | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts` | **Fixed** |
+| I2 | 85 | Important | `useContainerHeight` stale closure on `measuredHeight` in effect | `useContainerHeight.ts` | Open |
+| M1 | 82 | Minor | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts`, `App.tsx` | Open |
+| M2 | 80 | Minor | `getFilterSection` O(n) linear scan 5-6x per keypress | `filterTypes.ts` | Open |
+| N1 | 60 | Informational | `SearchBar` dual `useInput` registration — fragile if extended | `SearchBar.tsx` | Open |

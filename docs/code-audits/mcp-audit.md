@@ -83,82 +83,19 @@ All exported functions and schema exports carry JSDoc comments explaining their 
 
 ## 3. Critical Issues
 
-### 3.1 `main()` Is Never Called — Server Silently Exits
+### 3.1 `main()` Is Never Called — Server Silently Exits — **FIXED**
 
 **Files:** `src/index.ts:1`, `package.json:10-12`, `package.json:41`
 **Severity:** Critical (Runtime — server never starts)
-
-`index.ts` re-exports `createServer` and `main` but never invokes either:
-
-```typescript
-// src/index.ts — current state
-export { createServer, main } from './server.js';
-```
-
-The `start` script (`tsx src/index.ts`) loads this module, re-exports two functions, and exits. The MCP server never connects to stdio transport. The `bin` entry in `package.json` points to `dist/server.js` which also only exports functions. Running `npx jobby-mcp` also silently starts and exits.
-
-**Fix:** Create a dedicated bin entry file:
-
-```typescript
-// src/bin.ts (new file)
-#!/usr/bin/env node
-import { main } from './server.js';
-
-await main();
-```
-
-Update `package.json`:
-
-```json
-{
-  "bin": { "jobby-mcp": "./dist/bin.js" },
-  "scripts": { "start": "tsx src/bin.ts" }
-}
-```
+**Status: FIXED** — Created `src/bin.ts` as a dedicated entry point that calls `main()`. Updated `package.json` bin to `./dist/bin.js` and start script to `tsx src/bin.ts`. Removed shebang from `server.ts`. Fix matched the recommended approach.
 
 ---
 
-### 3.2 `get_job_details` Registered with Permissive Schema, Validated with Refined Schema
+### 3.2 `get_job_details` Registered with Permissive Schema, Validated with Refined Schema — **FIXED**
 
 **File:** `src/server.ts:44-53`
 **Severity:** Critical (MCP Protocol Correctness)
-
-The tool is registered with `JobDetailsBaseSchema.shape` (which accepts an empty object) but the handler validates with `JobDetailsInputSchema.parse()` (which rejects an empty object via `.refine()`):
-
-```typescript
-server.registerTool(
-  'get_job_details',
-  {
-    description: '...',
-    inputSchema: JobDetailsBaseSchema.shape,  // accepts {} — no constraint visible to AI
-  },
-  async (rawArgs) => {
-    const args = JobDetailsInputSchema.parse(rawArgs); // throws ZodError for {}
-    return handleGetJobDetails(args);
-  }
-);
-```
-
-**Problem 1:** The AI sees a schema where both fields are optional, with no indication that at least one must be supplied.
-
-**Problem 2:** When the AI passes neither field, `ZodError` escapes the handler rather than returning a graceful `{ isError: true }` response — a protocol violation.
-
-**Fix (both parts):**
-
-Part A: Update the description to state the constraint.
-
-Part B: Use `safeParse` in the handler:
-
-```typescript
-async (rawArgs) => {
-  const parseResult = JobDetailsInputSchema.safeParse(rawArgs);
-  if (!parseResult.success) {
-    const message = parseResult.error.issues[0]?.message ?? 'Invalid input';
-    return { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true };
-  }
-  return handleGetJobDetails(parseResult.data);
-}
-```
+**Status: FIXED** — Both parts addressed. Replaced `parse()` with `safeParse()` in both tool handlers in `server.ts`. Returns `{ isError: true }` on validation failure instead of throwing `ZodError`. Updated `get_job_details` description to state the required-identifier constraint. Fix matched the recommended approach.
 
 ---
 
@@ -184,59 +121,45 @@ export function createHandlers(client: JobbyClient = new JobbyClient({
 })) { ... }
 ```
 
-### 4.2 `zod` Classified as `peerDependency` for a Binary Server
+### 4.2 `zod` Classified as `peerDependency` for a Binary Server — **FIXED**
 
 **File:** `package.json:47-49`
 **Severity:** Medium (Deployment)
+**Status: FIXED** — Moved zod from peerDependencies to dependencies in `package.json`. Fix matched the recommended approach.
 
-`peerDependencies` are for libraries that share instances with consumers. `jobby-mcp` is a server binary with no consumers. Global install or `npx` will not install Zod automatically.
-
-**Fix:** Move `zod` to `dependencies`. Remove the `peerDependencies` section.
-
-### 4.3 Documentation States the Wrong Default Timeout
+### 4.3 Documentation States the Wrong Default Timeout — **FIXED**
 
 **Files:** `src/handlers.ts:11`, `docs/setup.md:89`
 **Severity:** Medium
-
-`setup.md:89` states "The default timeout is 10 seconds" but the actual configured timeout is 30 seconds.
-
-**Fix:** Update `setup.md:89` to "The default timeout is 30 seconds."
+**Status: FIXED** — Changed docs timeout from "10 seconds" to "30 seconds". Fix matched the recommended approach.
 
 ---
 
 ## 5. Code Quality Issues
 
-### 5.1 `ToolResponse` Type Is Unexported and Duplicated
+### 5.1 `ToolResponse` Type Is Unexported and Duplicated — **FIXED**
 
 **Files:** `src/handlers.ts:14-17`, `src/server.test.ts:5-8`
 **Severity:** Low
+**Status: FIXED** — Exported `ToolResponse` type from `handlers.ts`. Fix matched the recommended approach.
 
-The handler defines a `ToolResponse` type that is never exported. The test file redeclares it with weaker types (`type: string` instead of `type: 'text'`, `isError?: boolean` instead of `isError?: true`).
-
-**Fix:** Export `ToolResponse` from `handlers.ts` and import it in tests.
-
-### 5.2 No Pagination Boundary Validation
+### 5.2 No Pagination Boundary Validation — **FIXED**
 
 **File:** `src/schemas.ts:36-38`
 **Severity:** Low
+**Status: FIXED** — Added `.int().nonnegative()` to `start`, `skip`, `take`. Updated `schemas.test.ts`. Slightly different from recommendation (used `.nonnegative()` instead of `.min(0)`, did not add `.max(100)` to `take`).
 
-`start`, `skip`, and `take` accept any number including negatives and non-integers.
-
-**Fix:** Add `.int().min(0)` to `start`/`skip`, `.int().min(1).max(100)` to `take`.
-
-### 5.3 Empty Strings Accepted for `keyword` and `location`
+### 5.3 Empty Strings Accepted for `keyword` and `location` — **FIXED**
 
 **File:** `src/schemas.ts:18-19`
 **Severity:** Low
+**Status: FIXED** — Added `.min(1)` to `keyword` and `location`. Fix matched the recommended approach.
 
-**Fix:** Add `.min(1)` to both.
-
-### 5.4 `jobUrl` Not Validated as a URL
+### 5.4 `jobUrl` Not Validated as a URL — **FIXED**
 
 **File:** `src/schemas.ts:50`
 **Severity:** Low
-
-**Fix:** Use `z.string().url()`.
+**Status: FIXED** — Used `z.url()` for `jobUrl`. Slightly different from recommendation (used `z.url()` instead of `z.string().url()`).
 
 ### 5.5 No Retry Configuration on the Client
 
@@ -258,30 +181,23 @@ The test suite is comprehensive for a package of this size. Three test files cov
 - `handlers.test.ts` — 38 cases (parameter forwarding, error formatting, all branches)
 - `server.test.ts` — 16 cases (registration, dispatch, schema validation, startup)
 
-### 6.2 False Positive: `server.test.ts` Mock Has Inverted `JobbyError` Constructor
+### 6.2 False Positive: `server.test.ts` Mock Has Inverted `JobbyError` Constructor — **FIXED**
 
 **File:** `src/server.test.ts:49-55, 272-273`
 **Severity:** Medium
+**Status: FIXED** — Fixed mock `JobbyError` constructor order from `(message, code)` to `(code, message)`. Fix corrected the argument order rather than switching to `importOriginal` pattern.
 
-Mock defines `constructor(message, code)` but real class is `constructor(code, message, options)`. Tests pass coincidentally. `handlers.test.ts` correctly uses `importOriginal`.
-
-**Fix:** Use the `importOriginal` pattern in `server.test.ts`.
-
-### 6.3 `ZodError` Thrown Rather Than Returned as `isError` Response
+### 6.3 `ZodError` Thrown Rather Than Returned as `isError` Response — **FIXED**
 
 **File:** `src/server.test.ts:264-268`
 **Severity:** Low
+**Status: FIXED** — Changed throw tests to expect `isError` responses, consistent with the `safeParse` fix in 3.2. Fix matched the recommended approach.
 
-Test documents a protocol violation (thrown exception) as expected behavior. After fixing 3.2, update to assert graceful error response.
-
-### 6.4 Version Test Hardcodes `"1.0.0"`
+### 6.4 Version Test Hardcodes `"1.0.0"` — **FIXED**
 
 **File:** `src/server.test.ts:107`
 **Severity:** Low
-
-The test name says "from package.json" but asserts a literal. When the version is bumped, the test fails misleadingly.
-
-**Fix:** Dynamically read version from `package.json`.
+**Status: FIXED** — Read version dynamically from `package.json` in the test. Fix matched the recommended approach.
 
 ### 6.5 No Integration Tests
 
@@ -316,9 +232,10 @@ Minor SRP concern — could extract version reading to a utility.
 
 The current `search_jobs` description is generic. The AI benefits from seeing available filters and valid values inline in the description.
 
-### 8.2 `get_job_details` Description Should State the Required-Identifier Constraint
+### 8.2 `get_job_details` Description Should State the Required-Identifier Constraint — **FIXED**
 
 Must state that at least one of `jobUrl` or `jobId` is required, and that `jobUrl` takes precedence. Directly related to 3.2.
+**Status: FIXED** — Updated `get_job_details` description to state the constraint.
 
 ### 8.3 Add a Root-Level `start:mcp` Orchestration Script
 
@@ -334,50 +251,60 @@ For parity with CLI convenience scripts in root `package.json`.
 
 | # | Issue | Severity | Category | Status |
 |---|---|---|---|---|
-| 3.1 | `main()` is never called — server silently exits | Critical | Runtime | Open |
-| 3.2 | `get_job_details` schema/handler mismatch; ZodError escapes | Critical | MCP Protocol | Open |
+| 3.1 | `main()` is never called — server silently exits | Critical | Runtime | **Fixed** |
+| 3.2 | `get_job_details` schema/handler mismatch; ZodError escapes | Critical | MCP Protocol | **Fixed** |
 | 4.1 | Module-level singleton client; no DI, no retry | Medium | Architecture | Open |
-| 4.2 | `zod` as `peerDependency` — fails on global install | Medium | Deployment | Open |
-| 4.3 | `setup.md` timeout wrong (says 10s, actual 30s) | Medium | Documentation | Open |
-| 5.1 | `ToolResponse` unexported; duplicated with weaker types | Low | Code Quality | Open |
-| 5.2 | Pagination accepts negatives and non-integers | Low | Validation | Open |
-| 5.3 | Empty string accepted for keyword/location | Low | Validation | Open |
-| 5.4 | `jobUrl` not validated as a URL | Low | Validation | Open |
+| 4.2 | `zod` as `peerDependency` — fails on global install | Medium | Deployment | **Fixed** |
+| 4.3 | `setup.md` timeout wrong (says 10s, actual 30s) | Medium | Documentation | **Fixed** |
+| 5.1 | `ToolResponse` unexported; duplicated with weaker types | Low | Code Quality | **Fixed** |
+| 5.2 | Pagination accepts negatives and non-integers | Low | Validation | **Fixed** |
+| 5.3 | Empty string accepted for keyword/location | Low | Validation | **Fixed** |
+| 5.4 | `jobUrl` not validated as a URL | Low | Validation | **Fixed** |
 | 5.5 | No retry configuration | Low | Resilience | Open |
-| 6.2 | Mock `JobbyError` has inverted constructor args | Medium | Test Fidelity | Open |
-| 6.3 | Test enshrines ZodError escape as expected behavior | Low | MCP Protocol | Open |
-| 6.4 | Version test hardcodes `"1.0.0"` | Low | Test Quality | Open |
+| 6.2 | Mock `JobbyError` has inverted constructor args | Medium | Test Fidelity | **Fixed** |
+| 6.3 | Test enshrines ZodError escape as expected behavior | Low | MCP Protocol | **Fixed** |
+| 6.4 | Version test hardcodes `"1.0.0"` | Low | Test Quality | **Fixed** |
 | 6.5 | No integration tests | Low | Testing | Open |
 | 7.1 | Handlers depend on concrete `JobbyClient` | Medium | SOLID | Open |
 | 8.1 | Tool descriptions should enumerate enum values | Recommendation | MCP UX | Open |
-| 8.2 | `get_job_details` description needs constraint note | Recommendation | MCP UX | Open |
+| 8.2 | `get_job_details` description needs constraint note | Recommendation | MCP UX | **Fixed** |
 | 8.3 | Missing `start:mcp` root script | Recommendation | DX | Open |
 | 8.4 | Startup log should include version | Recommendation | Observability | Open |
 
 ### Priority Recommendations
 
 **P0 — Fix before any use (server non-functional):**
-1. Create `src/bin.ts` calling `main()`, update `package.json` (3.1)
+1. ~~Create `src/bin.ts` calling `main()`, update `package.json` (3.1)~~ **DONE**
 
 **P1 — Fix before first real-world use (protocol correctness):**
-2. Update `get_job_details` description; use `safeParse` in handler (3.2)
-3. Move `zod` to `dependencies` (4.2)
+2. ~~Update `get_job_details` description; use `safeParse` in handler (3.2)~~ **DONE**
+3. ~~Move `zod` to `dependencies` (4.2)~~ **DONE**
 
 **P2 — Fix for robustness:**
-4. Fix `server.test.ts` mock to use `importOriginal` pattern (6.2)
+4. ~~Fix `server.test.ts` mock constructor arg order (6.2)~~ **DONE**
 5. Add retry config; inject client as dependency (4.1, 5.5, 7.1)
-6. Add `.int().min(0)` to pagination fields (5.2)
-7. Add `.min(1)` to keyword/location (5.3)
-8. Add `.url()` to jobUrl (5.4)
-9. Update ZodError test to assert graceful response (6.3)
-10. Fix version test to read dynamically (6.4)
+6. ~~Add `.int().nonnegative()` to pagination fields (5.2)~~ **DONE**
+7. ~~Add `.min(1)` to keyword/location (5.3)~~ **DONE**
+8. ~~Add `.url()` to jobUrl (5.4)~~ **DONE**
+9. ~~Update ZodError test to assert graceful response (6.3)~~ **DONE**
+10. ~~Fix version test to read dynamically (6.4)~~ **DONE**
 
 **P3 — Polish:**
-11. Correct `setup.md` timeout documentation (4.3)
-12. Export `ToolResponse`; remove duplicate (5.1)
-13. Improve tool descriptions (8.1, 8.2)
+11. ~~Correct `setup.md` timeout documentation (4.3)~~ **DONE**
+12. ~~Export `ToolResponse`; remove duplicate (5.1)~~ **DONE**
+13. ~~Improve `get_job_details` description (8.2)~~ **DONE** — Improve tool descriptions for enum values (8.1) still open
 14. Add `start:mcp` to root `package.json` (8.3)
 15. Add version to startup log (8.4)
+
+---
+
+## Additional Fixes (Not Specifically Audited)
+
+The following fixes were made during the remediation pass but were not called out as standalone audit items:
+
+- **Removed unreachable "neither field" branch** in `handlers.ts` — dead code that was guarded by the schema refine (related to I1 in review notes).
+- **Used destructuring in `handleSearchJobs`** to avoid index-signature issues in TypeScript.
+- **Added explicit `else if` guard for `jobId`** in `handleGetJobDetails` to avoid non-null assertion.
 
 ---
 

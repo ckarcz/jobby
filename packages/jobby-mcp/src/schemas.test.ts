@@ -186,9 +186,9 @@ describe('SearchInputSchema - search tool input validation', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should accept negative numbers (no min validation at schema level)', () => {
+    it('should reject negative numbers for pagination fields', () => {
       const result = SearchInputSchema.safeParse({ start: -1, skip: -5, take: -10 });
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it('should accept zero values for pagination', () => {
@@ -220,9 +220,9 @@ describe('SearchInputSchema - search tool input validation', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should accept empty strings for keyword and location', () => {
+    it('should reject empty strings for keyword and location', () => {
       const result = SearchInputSchema.safeParse({ keyword: '', location: '' });
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -302,10 +302,15 @@ describe('JobDetailsBaseSchema - base object schema validation', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept jobUrl only', () => {
+  it('should accept valid jobUrl only', () => {
     const result = JobDetailsBaseSchema.safeParse({ jobUrl: 'https://linkedin.com/jobs/view/123' });
     expect(result.success).toBe(true);
     expect(result.data?.jobUrl).toBe('https://linkedin.com/jobs/view/123');
+  });
+
+  it('should reject non-URL string for jobUrl', () => {
+    const result = JobDetailsBaseSchema.safeParse({ jobUrl: 'not-a-real-url' });
+    expect(result.success).toBe(false);
   });
 
   it('should accept jobId only', () => {
@@ -386,9 +391,9 @@ describe('JobDetailsInputSchema - refined job details tool input validation', ()
     expect(result.success).toBe(false);
   });
 
-  it('should accept any string as jobUrl (validation happens in handler)', () => {
+  it('should reject non-URL strings for jobUrl', () => {
     const result = JobDetailsInputSchema.safeParse({ jobUrl: 'not-a-real-url' });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('should reject empty string for jobId (min length 1)', () => {

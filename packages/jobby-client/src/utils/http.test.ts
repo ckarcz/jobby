@@ -193,6 +193,26 @@ describe('HTTP utilities - request headers and user agent management', () => {
         expect((e as NetworkError).message).toContain('???');
       }
     });
+
+    it('should throw non-retryable NetworkError for 4xx HTTP errors', () => {
+      const error = createAxiosError(403);
+      try {
+        handleHttpError(error, mockLogger);
+      } catch (e: unknown) {
+        expect(e).toBeInstanceOf(NetworkError);
+        expect((e as NetworkError).retryable).toBe(false);
+      }
+    });
+
+    it('should throw retryable NetworkError for 5xx HTTP errors', () => {
+      const error = createAxiosError(500);
+      try {
+        handleHttpError(error, mockLogger);
+      } catch (e: unknown) {
+        expect(e).toBeInstanceOf(NetworkError);
+        expect((e as NetworkError).retryable).toBe(true);
+      }
+    });
   });
 
   describe('createDetailsRequestHeaders', () => {

@@ -414,7 +414,7 @@ describe('search command option parsing', () => {
       expect(cmd.opts().debug).toBe(true);
     });
 
-    it('should set noColor to true when --no-color is present', () => {
+    it('should set color to false when --no-color is present', () => {
       const cmd = getSearchCommand();
       cmd.parse(['node', 'search', '--no-color'], { from: 'node' });
       expect(cmd.opts().color).toBe(false);
@@ -645,7 +645,7 @@ describe('details command option parsing', () => {
       expect(cmd.opts().pretty).toBe(true);
     });
 
-    it('should set noColor to true when --no-color is present', () => {
+    it('should set color to false when --no-color is present', () => {
       const cmd = getDetailsCommand();
       cmd.parse(['node', 'details', 'https://example.com', '--no-color'], { from: 'node' });
       expect(cmd.opts().color).toBe(false);
