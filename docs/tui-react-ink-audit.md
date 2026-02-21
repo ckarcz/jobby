@@ -435,25 +435,19 @@ This distributed handling is correct but could benefit from a single, documented
 
 ## 9. Dead Code
 
-### 9.1 `useSlideAnimation` Hook
+### 9.1 ~~`useSlideAnimation` Hook~~ **REMOVED**
 
-**File:** `src/ui/hooks/useSlideAnimation.ts`
-**Severity:** Low (cleanup)
+**File:** `src/ui/hooks/useSlideAnimation.ts` (deleted)
+**Severity:** Low — **Resolved**
 
-This hook implements a frame-by-frame easing animation for a width value, with multiple easing functions (`linear`, `easeOutCubic`, `easeInCubic`, `easeInOutCubic`, `easeOutBounce`). It is fully implemented but **not used anywhere** in the codebase.
+Removed the unused `useSlideAnimation` hook and its related constants (`SLIDE_ANIMATION_FRAMES`, `SLIDE_ANIMATION_INTERVAL_MS`) from `constants.ts`.
 
-The related constants (`SLIDE_ANIMATION_FRAMES`, `SLIDE_ANIMATION_INTERVAL_MS`) in `constants.ts` are also unused.
+### 9.2 ~~`Modal` Component~~ **REMOVED**
 
-**Recommendation:** Remove the hook and its unused constants. If slide animations are desired in the future, it can be re-implemented or retrieved from version control.
+**File:** `src/ui/components/Modal.tsx` (deleted)
+**Severity:** Low — **Resolved**
 
-### 9.2 `Modal` Component
-
-**File:** `src/ui/components/Modal.tsx`
-**Severity:** Low (cleanup)
-
-A fully implemented modal overlay component using Ink's `position="absolute"`. It is never imported or rendered by any other component.
-
-**Recommendation:** Remove the component. If modal functionality is needed later, it can be re-implemented or retrieved from version control.
+Removed the unused `Modal` component.
 
 ---
 
@@ -583,8 +577,8 @@ process.once('SIGTERM', () => process.exit(143));
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
 | 7.1 | 21-field flat state object | Medium | Maintainability | **Addressed** |
 | 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | **Fixed** |
-| 9.1 | useSlideAnimation dead code | Low | Cleanup | Open |
-| 9.2 | Modal dead code | Low | Cleanup | Open |
+| 9.1 | useSlideAnimation dead code | Low | Cleanup | **Removed** |
+| 9.2 | Modal dead code | Low | Cleanup | **Removed** |
 | 10.1 | Fixed filter drawer width | Low | UX | Open |
 | 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | Open |
 | 10.6 | Process signal handlers don't clean up | Low | Robustness | Open |
@@ -611,8 +605,8 @@ process.once('SIGTERM', () => process.exit(143));
 13. ~~Sync `draftRef` in SearchBar (5.1)~~ — **Done**
 14. ~~Replace panel-based text input check with ref-based registration (6.2, 8.1)~~ — **Done** (TextInputActiveContext + useTextInputRegistration)
 
-**Remaining quick wins:**
-1. Remove dead code (9.1, 9.2)
+**Completed (Round 4 — Cleanup):**
+15. ~~Remove dead code (9.1, 9.2)~~ — **Done** (useSlideAnimation, Modal, unused constants)
 
 **Addressed (no code change needed):**
 - ~~Restructure AppState into sub-objects (7.1)~~ — **Addressed** by context split; flat reducer state is idiomatic
