@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { TextInput } from '@inkjs/ui';
+import { useTextInputRegistration } from '../state/context.js';
 import { glyphs, colors } from '../theme.js';
 
 interface FilterTextInputProps {
@@ -11,6 +12,9 @@ interface FilterTextInputProps {
 
 /** Renders a text input field for free-form filter values. */
 export const FilterTextInput = React.memo(function FilterTextInput({ value, focused, onChange }: FilterTextInputProps): React.ReactElement {
+  // Register that a text input is active when this filter section is focused
+  useTextInputRegistration(focused);
+
   if (focused) {
     return (
       <Box>

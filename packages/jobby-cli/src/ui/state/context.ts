@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import type { Job, JobDetails, PaginationInfo, SearchMetadata, JobSearchParams } from 'jobby-client';
 import type { AppAction, PanelId, SearchStatus, LoadMoreStatus, JobDetailsStatus } from './types.js';
 import type { SearchFilters } from './filterTypes.js';
@@ -84,6 +84,14 @@ export const SelectionContext = createContext<SelectionState>(defaultSelection);
 export const JobDetailsContext = createContext<JobDetailsState>(defaultJobDetails);
 export const DispatchContext = createContext<React.Dispatch<AppAction>>(() => undefined);
 
+/**
+ * Shared ref for tracking whether any text input is currently active.
+ * Uses a ref (not state) to avoid re-renders — this is read synchronously
+ * inside useInput handlers. Components that mount a TextInput call
+ * useTextInputRegistration(true) to signal they have an active text input.
+ */
+export const TextInputActiveContext = createContext<React.RefObject<number>>({ current: 0 });
+
 // --- Consumer hooks ---
 
 /** Layout state: terminal size, focused panel, drawer visibility. */
@@ -114,4 +122,25 @@ export function useAppDispatch(): React.Dispatch<AppAction> {
 /** Returns the currently focused panel ID (or null). */
 export function useFocusedPanel(): PanelId | null {
   return useContext(LayoutContext).focusedPanel;
+}
+
+/**
+ * Register/unregister a text input as active. Call with `true` when a TextInput
+ * is mounted and focused, `false` otherwise. Uses a counter ref so multiple
+ * text inputs can coexist without conflict.
+ */
+export function useTextInputRegistration(active: boolean): void {
+  const counterRef = useContext(TextInputActiveContext);
+  useEffect(() => {
+    if (active) {
+      counterRef.current += 1;
+      return () => { counterRef.current -= 1; };
+    }
+    return undefined;
+  }, [active, counterRef]);
+}
+
+/** Returns true if any text input is currently active (synchronous ref read). */
+export function useIsTextInputActive(): React.RefObject<number> {
+  return useContext(TextInputActiveContext);
 }

@@ -1,6 +1,6 @@
-import React, { useMemo, useReducer } from 'react';
+import React, { useMemo, useReducer, useRef } from 'react';
 import {
-  LayoutContext, SearchContext, SelectionContext, JobDetailsContext, DispatchContext,
+  LayoutContext, SearchContext, SelectionContext, JobDetailsContext, DispatchContext, TextInputActiveContext,
   type LayoutState, type SearchState, type SelectionState, type JobDetailsState,
 } from './state/context.js';
 import { appReducer, initialState } from './state/reducer.js';
@@ -22,6 +22,7 @@ function AppInner(): React.ReactElement {
 /** Root application component for the interactive terminal UI. */
 export function App(): React.ReactElement {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const textInputActiveRef = useRef(0);
 
   const layoutState = useMemo<LayoutState>(() => ({
     terminalWidth: state.terminalWidth,
@@ -58,15 +59,17 @@ export function App(): React.ReactElement {
 
   return (
     <DispatchContext.Provider value={dispatch}>
-      <LayoutContext.Provider value={layoutState}>
-        <SearchContext.Provider value={searchState}>
-          <SelectionContext.Provider value={selectionState}>
-            <JobDetailsContext.Provider value={jobDetailsState}>
-              <AppInner />
-            </JobDetailsContext.Provider>
-          </SelectionContext.Provider>
-        </SearchContext.Provider>
-      </LayoutContext.Provider>
+      <TextInputActiveContext.Provider value={textInputActiveRef}>
+        <LayoutContext.Provider value={layoutState}>
+          <SearchContext.Provider value={searchState}>
+            <SelectionContext.Provider value={selectionState}>
+              <JobDetailsContext.Provider value={jobDetailsState}>
+                <AppInner />
+              </JobDetailsContext.Provider>
+            </SelectionContext.Provider>
+          </SearchContext.Provider>
+        </LayoutContext.Provider>
+      </TextInputActiveContext.Provider>
     </DispatchContext.Provider>
   );
 }

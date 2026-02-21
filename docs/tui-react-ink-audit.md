@@ -317,39 +317,37 @@ The current TUI doesn't have an obvious use case for `<Static>` since all conten
 </Static>
 ```
 
-### 6.2 Ink Has No `stopPropagation` for `useInput`
+### 6.2 ~~Ink Has No `stopPropagation` for `useInput`~~ **FIXED**
 
 **File:** `src/ui/hooks/useKeyboardNavigation.ts`
-**Severity:** Medium (correctly documented in code, but could be improved)
+**Severity:** Medium — **Resolved**
 
-The codebase correctly notes that Ink has no `stopPropagation` mechanism — all `useInput` handlers receive every keypress. The current mitigation uses an `inTextInput` check:
-
-```typescript
-const inTextInput = focusedPanel === 'search' || focusedPanel === 'filters';
-```
-
-This prevents `/` and `\` from leaking into TextInput components. However, this is a fragile pattern because:
-
-1. Adding a new text input requires updating the `inTextInput` check
-2. The check is a heuristic — it doesn't know if a TextInput is actually *mounted and active*
-
-**Recommended improvement:** Instead of checking panel identity, use a shared ref or context value that TextInput components set when they mount:
+The fragile panel-based `inTextInput` check has been replaced with a ref-based registration mechanism. Text input components now directly signal when they're active via a shared `TextInputActiveContext`:
 
 ```typescript
-// In a shared context or ref
-const textInputActiveRef = useRef(false);
+// context.ts — shared counter ref (not state, so no re-renders)
+export const TextInputActiveContext = createContext<React.RefObject<number>>({ current: 0 });
 
-// In TextInput wrapper
-useEffect(() => {
-  textInputActiveRef.current = true;
-  return () => { textInputActiveRef.current = false; };
-}, []);
+// useTextInputRegistration — called by components that mount a TextInput
+export function useTextInputRegistration(active: boolean): void {
+  const counterRef = useContext(TextInputActiveContext);
+  useEffect(() => {
+    if (active) {
+      counterRef.current += 1;
+      return () => { counterRef.current -= 1; };
+    }
+  }, [active, counterRef]);
+}
 
-// In useKeyboardNavigation
-if (textInputActiveRef.current) return; // Skip all shortcuts
+// useKeyboardNavigation — reads the ref synchronously
+const textInputActiveRef = useIsTextInputActive();
+const inTextInput = textInputActiveRef.current > 0;
 ```
 
-Or more simply, have each panel that contains text inputs set an `isTextInputActive` flag in the global state.
+Components that register: `SearchBar` (when focused) and `FilterTextInput` (when its section is active). This means:
+- On checkbox/radio filter sections, `/` and `\` shortcuts now work correctly
+- Adding a new text input anywhere just requires calling `useTextInputRegistration(focused)`
+- No panel identity enumeration needed
 
 ### 6.3 `useInput` Missing `isActive` on Global Handler
 
@@ -447,45 +445,15 @@ The `dispatch` function now has its own dedicated `DispatchContext`, separate fr
 
 ## 8. Input Handling Issues
 
-### 8.1 Keyboard Shortcut Conflicts with TextInput
+### 8.1 ~~Keyboard Shortcut Conflicts with TextInput~~ **FIXED**
 
 **File:** `src/ui/hooks/useKeyboardNavigation.ts`
-**Severity:** Low (mitigated but fragile)
+**Severity:** Low — **Resolved**
 
-The `\` (backslash) and `/` (slash) shortcuts conflict with text input. The current mitigation:
-
-```typescript
-const inTextInput = focusedPanel === 'search' || focusedPanel === 'filters';
-
-if (!inTextInput) {
-  if (input === '\\') { /* open filters */ }
-  if (input === '/') { /* focus search */ }
-}
-```
-
-This works today but has two fragility concerns:
-
-1. **Filter drawer text inputs are only active for text-type filter sections.** When the cursor is on a checkbox/radio section within the filters panel, the user might expect `\` and `/` to work, but they're suppressed because `focusedPanel === 'filters'`.
-
-2. **New panels with text inputs require updating this check.** If a new panel is added that contains text inputs, forgetting to add it to the `inTextInput` check will cause character leakage.
-
-**Recommended improvement:** Track text input focus state directly rather than inferring it from panel identity:
-
-```typescript
-// Add to AppState
-textInputFocused: boolean;
-
-// In SearchBar, when TextInput mounts:
-dispatch({ type: 'SET_TEXT_INPUT_FOCUSED', value: true });
-// On unmount or blur:
-dispatch({ type: 'SET_TEXT_INPUT_FOCUSED', value: false });
-
-// In useKeyboardNavigation:
-const { textInputFocused } = useAppState();
-if (!textInputFocused) {
-  // Handle shortcuts
-}
-```
+Resolved by the same `TextInputActiveContext` mechanism described in 6.2. The `\` and `/` shortcuts are now suppressed only when a TextInput is actually mounted and active, not when the panel merely contains text inputs. This means:
+- On checkbox/radio filter sections, shortcuts work as expected
+- On text filter sections and the search bar, shortcuts are correctly suppressed
+- New text inputs just need `useTextInputRegistration(focused)` — no global checks to update
 
 ### 8.2 Escape Key Handling Across Panels
 
@@ -646,10 +614,10 @@ process.once('SIGTERM', () => process.exit(143));
 | 10.4 | Markdown re-parsed on every render | Low | Performance | **Fixed** |
 | 10.5 | Metadata lines rebuilt on every render | Low | Performance | **Fixed** |
 | 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | **Fixed** |
-| 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | Open |
+| 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | **Fixed** |
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
 | 7.1 | 21-field flat state object | Medium | Maintainability | Open |
-| 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | Open |
+| 8.1 | Keyboard shortcut conflicts with TextInput | Low | Input | **Fixed** |
 | 9.1 | useSlideAnimation dead code | Low | Cleanup | Open |
 | 9.2 | Modal dead code | Low | Cleanup | Open |
 | 10.1 | Fixed filter drawer width | Low | UX | Open |
@@ -674,17 +642,15 @@ process.once('SIGTERM', () => process.exit(143));
 11. ~~Memoize markdown parsing (10.4)~~ — **Done**
 12. ~~Memoize summary/metadata lines independently (10.5)~~ — **Done**
 
-**Completed (Round 3 — Anti-Patterns):**
+**Completed (Round 3 — Anti-Patterns & Ink Issues):**
 13. ~~Sync `draftRef` in SearchBar (5.1)~~ — **Done**
+14. ~~Replace panel-based text input check with ref-based registration (6.2, 8.1)~~ — **Done** (TextInputActiveContext + useTextInputRegistration)
 
 **Remaining quick wins:**
 1. Remove dead code (9.1, 9.2)
 
-**Remaining medium-term improvements:**
-3. Make text input focus tracking explicit (6.2, 8.1)
-
 **Remaining larger refactors:**
-4. Restructure AppState into sub-objects (7.1)
+2. Restructure AppState into sub-objects (7.1)
 
 ---
 

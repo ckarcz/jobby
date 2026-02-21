@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { TextInput } from '@inkjs/ui';
-import { useSearchState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useAppDispatch, useTextInputRegistration } from '../state/context.js';
 import { useSearch } from '../hooks/useSearch.js';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
 import { colors, icons } from '../theme.js';
@@ -12,6 +12,9 @@ export function SearchBar(): React.ReactElement {
   const dispatch = useAppDispatch();
   const { search } = useSearch();
   const focused = usePanelFocus('search');
+
+  // Register that a text input is active when search bar is focused
+  useTextInputRegistration(focused);
 
   // Persist typed text across TextInput mount/unmount cycles
   const draftRef = useRef(searchKeyword);

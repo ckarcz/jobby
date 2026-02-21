@@ -1,23 +1,21 @@
 import { useInput } from 'ink';
-import { useLayoutState, useAppDispatch } from '../state/context.js';
+import { useLayoutState, useAppDispatch, useIsTextInputActive } from '../state/context.js';
 
 /**
  * Global keyboard handler — routes shortcuts based on current panel focus.
  *
  * Printable character shortcuts (`\`, `/`) are only handled when no
- * text input is active (i.e. not in search or filters panel). This prevents
- * shortcut characters from leaking into TextInput components, since Ink
- * fires all useInput handlers with no stopPropagation mechanism.
- *
- * Filter-specific shortcuts (`\`, `/`) are handled locally in FilterDrawer
- * where they only fire when the active section is not a text input.
+ * text input is active. Text input components register themselves via the
+ * TextInputActiveContext ref, so this check works regardless of which panel
+ * contains the text input — no need to enumerate panels by name.
  */
 export function useKeyboardNavigation(): void {
   const { focusedPanel, filterDrawerOpen } = useLayoutState();
   const dispatch = useAppDispatch();
+  const textInputActiveRef = useIsTextInputActive();
 
   useInput((input, key) => {
-    const inTextInput = focusedPanel === 'search' || focusedPanel === 'filters';
+    const inTextInput = textInputActiveRef.current > 0;
 
     if (input === '\\' && !inTextInput) {
       if (filterDrawerOpen) {
