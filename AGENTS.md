@@ -100,6 +100,12 @@
 |---|---|---|
 | `start` | `tsx src/index.ts` | Starts the MCP server (stdio transport for Claude integration) |
 
+## Shell Command Guidelines
+
+- Do not chain shell commands with `&&` or `;` or `|` unless absolutely necessary
+- Issue each command as a separate tool call (e.g., run `cd`, then `git add`, then `git commit`, then `git push` individually)
+- This ensures each command is evaluated independently by the permission system
+
 ## Cleanup
 - Always remove any `nul` files created
 - Always remove any temporary scripts and files YOU created while doing investigation and testing
