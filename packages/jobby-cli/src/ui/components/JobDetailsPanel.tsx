@@ -121,38 +121,38 @@ export function JobDetailsPanel(): React.ReactElement {
     return rendered.split('\n');
   }, [description]);
 
-  // Build metadata lines (scrollable line-by-line)
-  const metadataLines: ContentLine[] = [];
+  // Build all content lines, memoized to avoid reconstructing on scroll changes
+  const allLines = useMemo(() => {
+    const lines: ContentLine[] = [];
 
-  if (selectedJob) {
-    metadataLines.push(...buildSummaryLines(selectedJob));
+    if (selectedJob) {
+      lines.push(...buildSummaryLines(selectedJob));
 
-    if (jobDetailsStatus === 'loading') {
-      metadataLines.push({ key: 'loading-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
-      metadataLines.push({ key: 'loading', element: <Spinner label="Loading details..." /> });
+      if (jobDetailsStatus === 'loading') {
+        lines.push({ key: 'loading-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
+        lines.push({ key: 'loading', element: <Spinner label="Loading details..." /> });
+      }
+
+      if (jobDetailsStatus === 'error') {
+        lines.push({ key: 'error-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
+        lines.push({ key: 'error', element: <Text color="red">{jobDetailsError ?? 'Failed to load details'}</Text> });
+      }
+
+      if (jobDetailsStatus === 'loaded' && jobDetails) {
+        lines.push(...buildDetailsMetadataLines(jobDetails));
+      }
     }
 
-    if (jobDetailsStatus === 'error') {
-      metadataLines.push({ key: 'error-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
-      metadataLines.push({ key: 'error', element: <Text color="red">{jobDetailsError ?? 'Failed to load details'}</Text> });
+    if (descriptionLines.length > 0) {
+      lines.push({ key: 'desc-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
+      for (let i = 0; i < descriptionLines.length; i++) {
+        const line = descriptionLines[i] ?? '';
+        lines.push({ key: `desc-${String(i)}`, element: <Text>{line || ' '}</Text> });
+      }
     }
 
-    if (jobDetailsStatus === 'loaded' && jobDetails) {
-      metadataLines.push(...buildDetailsMetadataLines(jobDetails));
-    }
-  }
-
-  // Build description content lines from pre-rendered markdown
-  const descContentLines: ContentLine[] = [];
-  if (descriptionLines.length > 0) {
-    descContentLines.push({ key: 'desc-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
-    for (let i = 0; i < descriptionLines.length; i++) {
-      const line = descriptionLines[i] ?? '';
-      descContentLines.push({ key: `desc-${String(i)}`, element: <Text>{line || ' '}</Text> });
-    }
-  }
-
-  const allLines = [...metadataLines, ...descContentLines];
+    return lines;
+  }, [selectedJob, jobDetailsStatus, jobDetails, jobDetailsError, descriptionLines]);
   const maxOffset = Math.max(0, allLines.length - Math.max(1, containerHeight));
 
   useDetailsKeyboard(scrollOffset, setScrollOffset, maxOffset);

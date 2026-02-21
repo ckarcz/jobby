@@ -5,6 +5,8 @@ import { usePanelFocus } from './usePanelFocus.js';
 import { useSearch } from './useSearch.js';
 import type { FilterDrawerState, FilterDrawerAction } from '../state/filterReducer.js';
 
+interface InputKey { escape: boolean; return: boolean; tab: boolean; shift: boolean; upArrow: boolean; downArrow: boolean }
+
 /** Keyboard handling for the filter drawer panel. */
 export function useFilterKeyboard(
   draft: FilterDrawerState,
@@ -15,49 +17,56 @@ export function useFilterKeyboard(
   const { search } = useSearch();
   const focused = usePanelFocus('filters');
 
-  // Use ref-based handler pattern to prevent useInput from re-subscribing on every render.
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const handlerRef = useRef((_input: string, _key: { escape: boolean; return: boolean; tab: boolean; shift: boolean; upArrow: boolean; downArrow: boolean }): void => { });
-  handlerRef.current = (_input, key): void => {
-    const activeSection = draft.sections[draft.activeSectionIndex];
+  // Capture all values in refs so the stable handler always reads current state
+  // without forcing useInput to re-subscribe.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const draftDispatchRef = useRef(draftDispatch);
+  draftDispatchRef.current = draftDispatch;
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+  const searchRef = useRef(search);
+  searchRef.current = search;
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const stableHandler = useCallback((_input: string, key: InputKey): void => {
+    const d = draftRef.current;
+    const activeSection = d.sections[d.activeSectionIndex];
     const isTextSection = activeSection?.type === 'text';
 
     if (key.return) {
-      dispatch({ type: 'APPLY_FILTERS', filters: draft.selections });
-      dispatch({ type: 'CLOSE_FILTER_DRAWER' });
-      search(state.searchKeyword, draft.selections);
+      dispatchRef.current({ type: 'APPLY_FILTERS', filters: d.selections });
+      dispatchRef.current({ type: 'CLOSE_FILTER_DRAWER' });
+      searchRef.current(stateRef.current.searchKeyword, d.selections);
       return;
     }
 
     if (key.tab) {
       if (key.shift) {
-        draftDispatch({ type: 'PREV_SECTION' });
+        draftDispatchRef.current({ type: 'PREV_SECTION' });
       } else {
-        draftDispatch({ type: 'NEXT_SECTION' });
+        draftDispatchRef.current({ type: 'NEXT_SECTION' });
       }
       return;
     }
 
     if (key.upArrow && !isTextSection) {
-      draftDispatch({ type: 'MOVE_UP' });
+      draftDispatchRef.current({ type: 'MOVE_UP' });
       return;
     }
 
     if (key.downArrow && !isTextSection) {
-      draftDispatch({ type: 'MOVE_DOWN' });
+      draftDispatchRef.current({ type: 'MOVE_DOWN' });
       return;
     }
 
     if (_input === ' ') {
       if (activeSection && !isTextSection) {
-        draftDispatch({ type: 'TOGGLE_OPTION' });
+        draftDispatchRef.current({ type: 'TOGGLE_OPTION' });
       }
       return;
     }
-  };
-
-  const stableHandler = useCallback((input: string, key: Parameters<typeof handlerRef.current>[1]) => {
-    handlerRef.current(input, key);
   }, []);
 
   useInput(stableHandler, { isActive: focused });

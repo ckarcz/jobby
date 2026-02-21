@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Box, Text } from 'ink';
 import { TextInput } from '@inkjs/ui';
 import { glyphs, colors } from '../theme.js';
+import type { TextFilterKey } from '../state/filterTypes.js';
 
 interface BaseProps {
   title: string;
@@ -25,7 +26,8 @@ interface RadioFilterSectionProps extends BaseProps {
 interface TextFilterSectionProps extends BaseProps {
   type: 'text';
   textValue: string;
-  onTextChange: (value: string) => void;
+  textKey: TextFilterKey;
+  onTextChange: (key: TextFilterKey, value: string) => void;
 }
 
 type FilterSectionProps = CheckboxFilterSectionProps | RadioFilterSectionProps | TextFilterSectionProps;
@@ -58,7 +60,11 @@ function OptionsList({ type, options, selected, focused, cursorIndex }: Checkbox
 }
 
 /** Renders a text input field for filter values using @inkjs/ui TextInput. */
-function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
+function TextFilterInput({ textValue, textKey, focused, onTextChange }: TextFilterSectionProps): React.ReactElement {
+  const handleChange = useCallback((value: string) => {
+    onTextChange(textKey, value);
+  }, [onTextChange, textKey]);
+
   if (focused) {
     return (
       <Box>
@@ -66,7 +72,7 @@ function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSection
         <TextInput
           defaultValue={textValue}
           placeholder="(none)"
-          onChange={onTextChange}
+          onChange={handleChange}
         />
       </Box>
     );
@@ -80,7 +86,7 @@ function TextFilterInput({ textValue, focused, onTextChange }: TextFilterSection
 }
 
 /** A single filter section: checkbox list, radio list, or text input. */
-export function FilterSection(props: FilterSectionProps): React.ReactElement {
+export const FilterSection = React.memo(function FilterSection(props: FilterSectionProps): React.ReactElement {
   const { title, focused, type } = props;
 
   return (
@@ -94,4 +100,4 @@ export function FilterSection(props: FilterSectionProps): React.ReactElement {
       }
     </Box>
   );
-}
+});

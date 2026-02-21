@@ -12,7 +12,7 @@ interface JobCardProps {
 export const JOBCARD_HEIGHT = 5; // top border, three content rows, bottom border
 
 /** Compact bordered card displaying a single job listing. */
-export function JobCard({ job, focused }: JobCardProps): React.ReactElement {
+export const JobCard = React.memo(function JobCard({ job, focused }: JobCardProps): React.ReactElement {
   return (
     <Box flexDirection="row" flexGrow={1}>
       <Box
@@ -61,4 +61,4 @@ export function JobCard({ job, focused }: JobCardProps): React.ReactElement {
       </Box>
     </Box>
   );
-}
+});

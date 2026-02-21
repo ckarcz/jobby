@@ -12,7 +12,7 @@ interface ResultsHeaderProps {
 }
 
 /** Viewport info and load duration display above the results list. */
-export function ResultsHeader({ viewport, totalCount, showLoadDuration, loadDurationSec, fetchedCount }: ResultsHeaderProps): React.ReactElement {
+export const ResultsHeader = React.memo(function ResultsHeader({ viewport, totalCount, showLoadDuration, loadDurationSec, fetchedCount }: ResultsHeaderProps): React.ReactElement {
   return (
     <Box height={1}>
       <Box position="absolute" width="100%" justifyContent="center">
@@ -29,4 +29,4 @@ export function ResultsHeader({ viewport, totalCount, showLoadDuration, loadDura
       )}
     </Box>
   );
-}
+});

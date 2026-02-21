@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { TextInput } from '@inkjs/ui';
 import { useAppState, useAppDispatch } from '../state/context.js';
@@ -16,6 +16,14 @@ export function SearchBar(): React.ReactElement {
   // Persist typed text across TextInput mount/unmount cycles
   const draftRef = useRef(searchKeyword);
 
+  // Stable refs for callbacks that need current values
+  const searchFiltersRef = useRef(searchFilters);
+  searchFiltersRef.current = searchFilters;
+  const searchRef = useRef(search);
+  searchRef.current = search;
+  const dispatchRef = useRef(dispatch);
+  dispatchRef.current = dispatch;
+
   useInput((_input, key) => {
     if (key.escape) {
       if (totalResults.length > 0) {
@@ -26,6 +34,18 @@ export function SearchBar(): React.ReactElement {
     }
   }, { isActive: focused });
 
+  const handleChange = useCallback((value: string) => {
+    draftRef.current = value;
+  }, []);
+
+  const handleSubmit = useCallback((value: string) => {
+    const keyword = value.trim();
+    draftRef.current = keyword;
+    dispatchRef.current({ type: 'BLUR_ALL' });
+    dispatchRef.current({ type: 'SET_SEARCH_KEYWORD', keyword });
+    searchRef.current(keyword, searchFiltersRef.current);
+  }, []);
+
   if (focused) {
     return (
       <Box>
@@ -33,16 +53,8 @@ export function SearchBar(): React.ReactElement {
         <TextInput
           defaultValue={draftRef.current}
           placeholder="Enter job keyword..."
-          onChange={(value) => {
-            draftRef.current = value;
-          }}
-          onSubmit={(value) => {
-            const keyword = value.trim();
-            draftRef.current = keyword;
-            dispatch({ type: 'BLUR_ALL' });
-            dispatch({ type: 'SET_SEARCH_KEYWORD', keyword });
-            search(keyword, searchFilters);
-          }}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
         />
       </Box>
     );

@@ -11,7 +11,7 @@ interface ResultsFooterProps {
 }
 
 /** Load-more status messages below the results list. */
-export function ResultsFooter({ isOnLastItem, loadMoreStatus, loadMoreError, hasResults }: ResultsFooterProps): React.ReactElement | null {
+export const ResultsFooter = React.memo(function ResultsFooter({ isOnLastItem, loadMoreStatus, loadMoreError, hasResults }: ResultsFooterProps): React.ReactElement | null {
   if (!hasResults || !isOnLastItem) {
     return null;
   }
@@ -32,4 +32,4 @@ export function ResultsFooter({ isOnLastItem, loadMoreStatus, loadMoreError, has
       <Text dimColor>{text}</Text>
     </Box>
   );
-}
+});
