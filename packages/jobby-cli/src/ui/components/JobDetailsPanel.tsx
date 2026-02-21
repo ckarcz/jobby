@@ -4,7 +4,7 @@ import { Spinner } from '@inkjs/ui';
 import { Marked } from 'marked';
 import { markedTerminal } from 'marked-terminal';
 import type { Job, JobDetails } from 'jobby-client';
-import { useSearchState, useNavigationState } from '../state/context.js';
+import { useSearchState, useSelectionState, useJobDetailsState } from '../state/context.js';
 import { useContainerHeight } from '../hooks/useContainerHeight.js';
 import { useDetailsKeyboard } from '../hooks/useDetailsKeyboard.js';
 import { icons } from '../theme.js';
@@ -105,7 +105,8 @@ function buildDetailsMetadataLines(details: JobDetails): ContentLine[] {
 /** Panel displaying job details for the currently selected search result. */
 export function JobDetailsPanel(): React.ReactElement {
   const { totalResults } = useSearchState();
-  const { selectedJobIndex, jobDetails, jobDetailsStatus, jobDetailsError } = useNavigationState();
+  const { selectedJobIndex } = useSelectionState();
+  const { jobDetails, jobDetailsStatus, jobDetailsError } = useJobDetailsState();
   const containerRef = useRef<DOMElement>(null);
   const containerHeight = useContainerHeight(containerRef);
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -122,27 +123,27 @@ export function JobDetailsPanel(): React.ReactElement {
     return rendered.split('\n');
   }, [description]);
 
-  // Build all content lines, memoized to avoid reconstructing on scroll changes
+  // Memoize summary lines separately so they don't rebuild when details change
+  const summaryLines = useMemo(() => {
+    return selectedJob ? buildSummaryLines(selectedJob) : [];
+  }, [selectedJob]);
+
+  // Memoize metadata lines separately so they don't rebuild when summary changes
+  const metadataLines = useMemo(() => {
+    return jobDetailsStatus === 'loaded' && jobDetails ? buildDetailsMetadataLines(jobDetails) : [];
+  }, [jobDetailsStatus, jobDetails]);
+
+  // Build all content lines. Spinner/error rendered outside this array to avoid
+  // the Spinner's ~80ms setInterval tick invalidating the entire memo.
   const allLines = useMemo(() => {
-    const lines: ContentLine[] = [];
+    const lines: ContentLine[] = [...summaryLines];
 
-    if (selectedJob) {
-      lines.push(...buildSummaryLines(selectedJob));
-
-      if (jobDetailsStatus === 'loading') {
-        lines.push({ key: 'loading-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
-        lines.push({ key: 'loading', element: <Spinner label="Loading details..." /> });
-      }
-
-      if (jobDetailsStatus === 'error') {
-        lines.push({ key: 'error-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
-        lines.push({ key: 'error', element: <Text color="red">{jobDetailsError ?? 'Failed to load details'}</Text> });
-      }
-
-      if (jobDetailsStatus === 'loaded' && jobDetails) {
-        lines.push(...buildDetailsMetadataLines(jobDetails));
-      }
+    if (jobDetailsStatus === 'error') {
+      lines.push({ key: 'error-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
+      lines.push({ key: 'error', element: <Text color="red">{jobDetailsError ?? 'Failed to load details'}</Text> });
     }
+
+    lines.push(...metadataLines);
 
     if (descriptionLines.length > 0) {
       lines.push({ key: 'desc-sep', element: <Text dimColor>{'─'.repeat(40)}</Text> });
@@ -153,7 +154,7 @@ export function JobDetailsPanel(): React.ReactElement {
     }
 
     return lines;
-  }, [selectedJob, jobDetailsStatus, jobDetails, jobDetailsError, descriptionLines]);
+  }, [summaryLines, metadataLines, jobDetailsStatus, jobDetailsError, descriptionLines]);
   const maxOffset = Math.max(0, allLines.length - Math.max(1, containerHeight));
 
   useDetailsKeyboard(scrollOffset, setScrollOffset, maxOffset);
@@ -171,7 +172,9 @@ export function JobDetailsPanel(): React.ReactElement {
     );
   }
 
-  const visibleCount = Math.max(1, containerHeight);
+  // Reserve one line for the Spinner when loading so content lines don't shift
+  const spinnerVisible = jobDetailsStatus === 'loading';
+  const visibleCount = Math.max(1, spinnerVisible ? containerHeight - 1 : containerHeight);
   const visibleLines = allLines.slice(scrollOffset, scrollOffset + visibleCount);
 
   return (
@@ -181,6 +184,7 @@ export function JobDetailsPanel(): React.ReactElement {
           {line.element}
         </Box>
       ))}
+      {spinnerVisible && <Spinner label="Loading details..." />}
     </Box>
   );
 }

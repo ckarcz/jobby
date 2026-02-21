@@ -1,7 +1,7 @@
 import React, { useMemo, useReducer } from 'react';
 import {
-  LayoutContext, SearchContext, NavigationContext, DispatchContext,
-  type LayoutState, type SearchState, type NavigationState,
+  LayoutContext, SearchContext, SelectionContext, JobDetailsContext, DispatchContext,
+  type LayoutState, type SearchState, type SelectionState, type JobDetailsState,
 } from './state/context.js';
 import { appReducer, initialState } from './state/reducer.js';
 import { Layout } from './components/Layout.js';
@@ -46,20 +46,25 @@ export function App(): React.ReactElement {
     loadMoreError: state.loadMoreError,
   }), [state.searchKeyword, state.searchStatus, state.totalResults, state.searchResults, state.searchPagination, state.searchMetadata, state.searchQuery, state.searchError, state.searchFilters, state.loadMoreStatus, state.loadMoreError]);
 
-  const navigationState = useMemo<NavigationState>(() => ({
+  const selectionState = useMemo<SelectionState>(() => ({
     selectedJobIndex: state.selectedJobIndex,
+  }), [state.selectedJobIndex]);
+
+  const jobDetailsState = useMemo<JobDetailsState>(() => ({
     jobDetails: state.jobDetails,
     jobDetailsStatus: state.jobDetailsStatus,
     jobDetailsError: state.jobDetailsError,
-  }), [state.selectedJobIndex, state.jobDetails, state.jobDetailsStatus, state.jobDetailsError]);
+  }), [state.jobDetails, state.jobDetailsStatus, state.jobDetailsError]);
 
   return (
     <DispatchContext.Provider value={dispatch}>
       <LayoutContext.Provider value={layoutState}>
         <SearchContext.Provider value={searchState}>
-          <NavigationContext.Provider value={navigationState}>
-            <AppInner />
-          </NavigationContext.Provider>
+          <SelectionContext.Provider value={selectionState}>
+            <JobDetailsContext.Provider value={jobDetailsState}>
+              <AppInner />
+            </JobDetailsContext.Provider>
+          </SelectionContext.Provider>
         </SearchContext.Provider>
       </LayoutContext.Provider>
     </DispatchContext.Provider>

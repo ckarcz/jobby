@@ -1,6 +1,6 @@
 # TUI Application Audit: React & Ink Best Practices Review
 
-> **Date:** 2026-02-20 (updated 2026-02-21)
+> **Date:** 2026-02-20 (updated 2026-02-21, round 2)
 > **Scope:** `packages/jobby-cli/src/ui/` — the interactive TUI (Ink/React terminal UI)
 > **Methodology:** Cross-referenced against React documentation, Ink library source code & documentation, `@inkjs/ui` API, and community Ink component libraries.
 
@@ -28,7 +28,8 @@ The jobby-cli TUI is a well-structured application that follows many best practi
 
 **Key findings:**
 - ~~**1 critical issue** — `JobDetailsPanel` renders all off-screen content (no virtualization)~~ **Fixed** — proper windowing implemented
-- ~~**4 performance issues** — context structure causing unnecessary re-renders, missing memoization, measurement on every render, unmount/remount pattern~~ **All fixed** — context split into 4 (Layout, Search, Navigation, Dispatch), `useContainerHeight` dependency array added, FilterDrawer uses `display="none"`, leaf components memoized
+- ~~**4 performance issues** — context structure causing unnecessary re-renders, missing memoization, measurement on every render, unmount/remount pattern~~ **All fixed** — context split into 5 (Layout, Search, Selection, JobDetails, Dispatch), `useContainerHeight` dependency array added, FilterDrawer uses `display="none"`, leaf components memoized
+- ~~**4 job-details performance issues** — Spinner in allLines driving 80ms re-renders, NavigationContext coupling, stale closure in useDetailsKeyboard, unnecessary CLEAR_JOB_DETAILS dispatches~~ **All fixed** — Spinner moved outside scrollable content, Selection/JobDetails contexts split, ref-based stable handler, conditional dispatch
 - **3 React anti-patterns** — stale ref, missing `isActive` on `useInput`, derived state opportunities
 - **3 Ink-specific issues** — no use of `<Static>`, keyboard event propagation, custom vs @inkjs/ui filter inputs (resolved — kept custom with dedicated memoized components)
 - **2 dead code items** — `useSlideAnimation` hook, `Modal` component
@@ -41,7 +42,7 @@ The jobby-cli TUI is a well-structured application that follows many best practi
 Before listing issues, it's important to acknowledge the strong patterns already in place:
 
 ### 2.1 Redux-Style Architecture with `useReducer` + Split Contexts
-The `App` → providers → `AppInner` split is textbook. State is managed by a single `useReducer` but exposed through four split contexts (`LayoutContext`, `SearchContext`, `NavigationContext`, `DispatchContext`) via `useMemo` slicing. This ensures components only re-render when their specific state slice changes. Hooks that consume context are correctly placed *inside* the providers (in `AppInner`), avoiding the classic mistake of calling context hooks at the provider level.
+The `App` → providers → `AppInner` split is textbook. State is managed by a single `useReducer` but exposed through five split contexts (`LayoutContext`, `SearchContext`, `SelectionContext`, `JobDetailsContext`, `DispatchContext`) via `useMemo` slicing. This ensures components only re-render when their specific state slice changes — in particular, selection changes (arrow keys) don't re-render job details consumers, and job details loading/Spinner ticks don't re-render the results list. Hooks that consume context are correctly placed *inside* the providers (in `AppInner`), avoiding the classic mistake of calling context hooks at the provider level.
 
 ### 2.2 Two-Level Filter State (Draft Pattern)
 The filter drawer maintains a local `useReducer` (draft state) that is only committed to global state on Enter. This "controlled draft" pattern prevents intermediate edits from triggering searches and is exactly the right approach for form-like UIs. The reducer is intentionally minimal (3 actions: `NAVIGATE_FILTERS`, `SET_FILTERS`, `RESET_FILTERS`) — navigation computation lives in the keyboard hook, and the reducer just applies the result.
@@ -59,7 +60,7 @@ const stableHandler = useCallback((_input, key) => {
 }, []);
 useInput(stableHandler, { isActive: focused });
 ```
-This avoids stale closures while maintaining a stable `useInput` registration. This is the "latest ref" pattern — a sophisticated and correct approach. Used consistently across `useFilterKeyboard`, `SearchBar`, and other keyboard hooks.
+This avoids stale closures while maintaining a stable `useInput` registration. This is the "latest ref" pattern — a sophisticated and correct approach. Used consistently across `useFilterKeyboard`, `useDetailsKeyboard`, `SearchBar`, and other keyboard hooks.
 
 ### 2.5 Exhaustive `never` Check
 `ContentArea.tsx` uses the TypeScript `never` trick in the default case for compile-time exhaustiveness checking on `searchStatus`. This catches missing cases at build time.
@@ -100,18 +101,19 @@ React now only manages the lines actually visible in the viewport, eliminating t
 **File:** `src/ui/state/context.ts`
 **Severity:** Medium — **Resolved**
 
-The single `AppContext` has been split into four focused contexts:
+The single `AppContext` has been split into five focused contexts:
 
 ```typescript
 const LayoutContext = createContext<LayoutState>(...);      // terminal size, focusedPanel, filterDrawerOpen
 const SearchContext = createContext<SearchState>(...);      // keyword, status, results, pagination, filters
-const NavigationContext = createContext<NavigationState>(...); // selectedJobIndex, jobDetails
+const SelectionContext = createContext<SelectionState>(...); // selectedJobIndex
+const JobDetailsContext = createContext<JobDetailsState>(...); // jobDetails, jobDetailsStatus, jobDetailsError
 const DispatchContext = createContext<Dispatch<AppAction>>(...); // stable dispatch
 ```
 
-`App.tsx` derives each context value via `useMemo`, so context objects only change when their specific fields change. All consumers have been migrated from `useAppState()` to the specific hooks: `useLayoutState()`, `useSearchState()`, `useNavigationState()`, `useAppDispatch()`.
+`App.tsx` derives each context value via `useMemo`, so context objects only change when their specific fields change. All consumers use the specific hooks: `useLayoutState()`, `useSearchState()`, `useSelectionState()`, `useJobDetailsState()`, `useAppDispatch()`.
 
-This eliminates the cascade where navigation changes re-rendered search components and vice versa.
+The Selection/JobDetails split is particularly important: arrow-key navigation (which changes `selectedJobIndex`) no longer re-renders the details panel's content lines, and job details status changes (loading/error/loaded) no longer re-render the results list.
 
 ### 4.2 ~~`useContainerHeight` Runs Measurement on Every Render~~ **FIXED**
 
@@ -169,6 +171,77 @@ All leaf components are now wrapped in `React.memo`:
 - `SearchingSpinner` — search progress indicator
 - `SearchError` — error display with retry hint
 - `NoSearchResults` — empty results display
+
+### 4.5 ~~Spinner Inside `allLines` Drives 80ms Re-Render Cycle~~ **FIXED**
+
+**File:** `src/ui/components/JobDetailsPanel.tsx`
+**Severity:** Medium — **Resolved**
+
+The `<Spinner>` from `@inkjs/ui` uses an internal `setInterval` (~80ms) to animate. When embedded inside the `allLines` useMemo array, every tick invalidated the memo and caused the entire panel to rebuild its content line array and re-reconcile all visible elements.
+
+The fix moves the Spinner outside the scrollable content. `allLines` now contains only static content (summary, metadata, description), while the Spinner is rendered below the visible lines as a separate element:
+
+```tsx
+{visibleLines.map((line) => (
+  <Box key={line.key}>{line.element}</Box>
+))}
+{spinnerVisible && <Spinner label="Loading details..." />}
+```
+
+The `allLines` memo is no longer invalidated by the Spinner's animation ticks.
+
+### 4.6 ~~`NavigationContext` Coupled Selection and JobDetails~~ **FIXED**
+
+**File:** `src/ui/state/context.ts`
+**Severity:** Medium — **Resolved**
+
+The original `NavigationContext` bundled `selectedJobIndex` with `jobDetails`/`jobDetailsStatus`/`jobDetailsError`. This meant:
+- Arrow-key navigation (changing `selectedJobIndex`) re-rendered `JobDetailsPanel`'s content even though the details hadn't changed yet
+- Job details loading/completion re-rendered `SearchResults` even though selection hadn't changed
+
+The fix splits `NavigationContext` into `SelectionContext` (just `selectedJobIndex`) and `JobDetailsContext` (details, status, error). Components now subscribe to only the slice they need.
+
+### 4.7 ~~`useDetailsKeyboard` Stale Closure Pattern~~ **FIXED**
+
+**File:** `src/ui/hooks/useDetailsKeyboard.ts`
+**Severity:** Low-Medium — **Resolved**
+
+The keyboard handler captured `scrollOffset` and `maxOffset` as direct closure values. Every time these changed (on every scroll or Spinner tick), Ink's `useInput` re-registered the handler.
+
+The fix uses the "latest ref" pattern: values are stored in refs that are updated on every render, while the `useCallback` handler reads from refs. This keeps the handler identity stable, so `useInput` never re-registers:
+
+```typescript
+const scrollRef = useRef(scrollOffset);
+scrollRef.current = scrollOffset;
+const maxRef = useRef(maxOffset);
+maxRef.current = maxOffset;
+
+const handler = useCallback((_input, key) => {
+  if (key.downArrow) {
+    setScrollOffset(Math.min(scrollRef.current + 1, maxRef.current));
+  }
+  // ...
+}, [setScrollOffset]);
+```
+
+### 4.8 ~~Unconditional `CLEAR_JOB_DETAILS` Dispatch~~ **FIXED**
+
+**File:** `src/ui/hooks/useJobDetails.ts`
+**Severity:** Low — **Resolved**
+
+`useJobDetails` dispatched `CLEAR_JOB_DETAILS` on every selection change, even when the job details state was already idle. This caused an unnecessary re-render of all `JobDetailsContext` consumers.
+
+The fix tracks `jobDetailsStatus` in a ref and only dispatches the clear action when the status isn't already `'idle'`:
+
+```typescript
+const statusRef = useRef(jobDetailsStatus);
+statusRef.current = jobDetailsStatus;
+
+// Inside useEffect:
+if (statusRef.current !== 'idle') {
+  dispatch({ type: 'CLEAR_JOB_DETAILS' });
+}
+```
 
 ---
 
@@ -513,41 +586,39 @@ This reserves 5 lines for header/footer content in the virtual list. If the head
 
 **Recommendation:** Calculate this dynamically based on actual header/footer measurement, or document the exact breakdown (e.g., "1 header + 1 border top + 1 footer + 1 border bottom + 1 margin = 5").
 
-### 10.4 Markdown Processing on Every Render
+### 10.4 ~~Markdown Processing on Every Render~~ **FIXED**
 
 **File:** `src/ui/components/JobDetailsPanel.tsx`
+**Status:** Resolved
 
-The markdown-to-ANSI conversion:
+The markdown-to-ANSI conversion is now wrapped in `useMemo` with `description` as the dependency:
+
 ```typescript
-const rendered = md.parse(description) as string;
-const descLines = rendered.split('\n');
-```
-
-This runs during render. If the component re-renders but `description` hasn't changed, the markdown is re-parsed unnecessarily.
-
-**Recommendation:** Wrap in `useMemo`:
-```typescript
-const descLines = useMemo(() => {
+const descriptionLines = useMemo(() => {
   if (!description) return [];
-  const normalized = description.replace(/<br\s*\/?>/gi, '\n');
-  const rendered = md.parse(normalized) as string;
+  const rendered = renderMarkdown(description);
   return rendered.split('\n');
 }, [description]);
 ```
 
-### 10.5 `buildSummaryLines` and `buildDetailsMetadataLines` Called Every Render
+### 10.5 ~~`buildSummaryLines` and `buildDetailsMetadataLines` Called Every Render~~ **FIXED**
 
 **File:** `src/ui/components/JobDetailsPanel.tsx`
+**Status:** Resolved
 
-These helper functions build JSX element arrays from `jobDetails` data on every render. If the details haven't changed, this is wasted work.
+Summary and metadata lines are now independently memoized:
 
-**Recommendation:** Memoize:
 ```typescript
-const metadataLines = useMemo(
-  () => [...buildSummaryLines(selectedJob), ...buildDetailsMetadataLines(jobDetails)],
-  [selectedJob, jobDetails]
-);
+const summaryLines = useMemo(() => {
+  return selectedJob ? buildSummaryLines(selectedJob) : [];
+}, [selectedJob]);
+
+const metadataLines = useMemo(() => {
+  return jobDetailsStatus === 'loaded' && jobDetails ? buildDetailsMetadataLines(jobDetails) : [];
+}, [jobDetailsStatus, jobDetails]);
 ```
+
+The `allLines` useMemo composes these memoized arrays, so summary lines don't rebuild when details change and vice versa.
 
 ### 10.6 Process Signal Handlers Don't Clean Up
 
@@ -577,7 +648,13 @@ process.once('SIGTERM', () => process.exit(143));
 | 4.2 | useContainerHeight measures on every render | Low-Medium | Performance | **Fixed** |
 | 4.3 | FilterDrawer unmounts/remounts on toggle | Low-Medium | Performance | **Fixed** |
 | 4.4 | Missing React.memo on leaf components | Low-Medium | Performance | **Fixed** |
+| 4.5 | Spinner in allLines drives 80ms re-render cycle | Medium | Performance | **Fixed** |
+| 4.6 | NavigationContext coupled Selection and JobDetails | Medium | Performance | **Fixed** |
+| 4.7 | useDetailsKeyboard stale closure re-registration | Low-Medium | Performance | **Fixed** |
+| 4.8 | Unconditional CLEAR_JOB_DETAILS dispatch | Low | Performance | **Fixed** |
 | 7.2 | Dispatch bundled with state context | Informational | Performance | **Fixed** |
+| 10.4 | Markdown re-parsed on every render | Low | Performance | **Fixed** |
+| 10.5 | Metadata lines rebuilt on every render | Low | Performance | **Fixed** |
 | 5.1 | Stale draftRef in SearchBar | Low | Anti-pattern | Open |
 | 6.2 | No stopPropagation — fragile text input check | Medium | Ink-specific | Open |
 | 6.4 | Custom filter input components vs @inkjs/ui (kept custom) | Low | Ink-specific | Done |
@@ -587,30 +664,35 @@ process.once('SIGTERM', () => process.exit(143));
 | 9.2 | Modal dead code | Low | Cleanup | Open |
 | 10.1 | Fixed filter drawer width | Low | UX | Open |
 | 10.2 | Manual scroll reset vs key prop pattern | Low | React pattern | Open |
-| 10.4 | Markdown re-parsed on every render | Low | Performance | Open |
-| 10.5 | Metadata lines rebuilt on every render | Low | Performance | Open |
 | 10.6 | Process signal handlers don't clean up | Low | Robustness | Open |
 
 ### Priority Recommendations
 
-**Completed:**
+**Completed (Round 1):**
 1. ~~Fix `JobDetailsPanel` windowing (3.1)~~ — **Done**
-2. ~~Split AppContext by update frequency (4.1)~~ — **Done** (4-context split with useMemo slicing)
+2. ~~Split AppContext by update frequency (4.1)~~ — **Done** (5-context split with useMemo slicing)
 3. ~~Add dependency array to `useContainerHeight` (4.2)~~ — **Done**
 4. ~~Use `display="none"` for FilterDrawer instead of unmounting (4.3)~~ — **Done**
 5. ~~Add `React.memo` to all leaf components (4.4)~~ — **Done**
 6. ~~Separate dispatch into its own context (7.2)~~ — **Done**
 
+**Completed (Round 2 — Job Details Performance):**
+7. ~~Move Spinner outside allLines (4.5)~~ — **Done** (eliminates 80ms re-render tick from memo)
+8. ~~Split Selection/JobDetails contexts (4.6)~~ — **Done** (arrow keys don't re-render details, details don't re-render results)
+9. ~~Convert useDetailsKeyboard to ref-based stable handler (4.7)~~ — **Done** (stops handler re-registration)
+10. ~~Conditional CLEAR_JOB_DETAILS dispatch (4.8)~~ — **Done** (skips no-op re-render when already idle)
+11. ~~Memoize markdown parsing (10.4)~~ — **Done**
+12. ~~Memoize summary/metadata lines independently (10.5)~~ — **Done**
+
 **Remaining quick wins:**
-1. Memoize markdown parsing and metadata lines (10.4, 10.5)
-2. Remove dead code (9.1, 9.2)
-3. Sync `draftRef` in SearchBar (5.1)
+1. Remove dead code (9.1, 9.2)
+2. Sync `draftRef` in SearchBar (5.1)
 
 **Remaining medium-term improvements:**
-4. Make text input focus tracking explicit (6.2, 8.1)
+3. Make text input focus tracking explicit (6.2, 8.1)
 
 **Remaining larger refactors:**
-5. Restructure AppState into sub-objects (7.1)
+4. Restructure AppState into sub-objects (7.1)
 
 ---
 

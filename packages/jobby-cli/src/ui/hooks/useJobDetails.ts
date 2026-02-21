@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { JobbyClient } from 'jobby-client';
-import { useSearchState, useNavigationState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useSelectionState, useJobDetailsState, useAppDispatch } from '../state/context.js';
 import { JOB_DETAILS_DEBOUNCE_MS } from '../constants.js';
 
 /** Fetches job details for the selected job with debounce and cancellation. */
 export function useJobDetails(): void {
   const { totalResults, searchStatus } = useSearchState();
-  const { selectedJobIndex } = useNavigationState();
+  const { selectedJobIndex } = useSelectionState();
+  const { jobDetailsStatus } = useJobDetailsState();
   const dispatch = useAppDispatch();
   const client = useMemo(() => new JobbyClient({ logging: { level: 'silent' } }), []);
   const abortRef = useRef<AbortController | null>(null);
@@ -14,6 +15,10 @@ export function useJobDetails(): void {
 
   const selectedJob = searchStatus === 'results' ? (totalResults[selectedJobIndex] ?? null) : null;
   const selectedJobId = selectedJob?.id ?? null;
+
+  // Track status in a ref so the effect can read it without re-triggering
+  const statusRef = useRef(jobDetailsStatus);
+  statusRef.current = jobDetailsStatus;
 
   useEffect(() => {
     // Clear any pending debounce timer
@@ -26,8 +31,10 @@ export function useJobDetails(): void {
     abortRef.current?.abort();
     abortRef.current = null;
 
-    // Reset details when selection changes
-    dispatch({ type: 'CLEAR_JOB_DETAILS' });
+    // Only dispatch CLEAR if details aren't already idle (avoids a no-op re-render)
+    if (statusRef.current !== 'idle') {
+      dispatch({ type: 'CLEAR_JOB_DETAILS' });
+    }
 
     if (!selectedJobId) {
       return;

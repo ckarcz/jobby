@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import { useInput } from 'ink';
 import { usePanelFocus } from './usePanelFocus.js';
 
@@ -9,24 +10,31 @@ export function useDetailsKeyboard(
 ): void {
   const panelFocused = usePanelFocus('details');
 
-  useInput((_input, key) => {
+  // Use refs so the useInput callback identity stays stable across renders.
+  // This avoids re-registering the input handler on every Spinner tick / scroll change.
+  const scrollRef = useRef(scrollOffset);
+  scrollRef.current = scrollOffset;
+  const maxRef = useRef(maxOffset);
+  maxRef.current = maxOffset;
+
+  const handler = useCallback((_input: string, key: { downArrow?: boolean; upArrow?: boolean; pageDown?: boolean; pageUp?: boolean; home?: boolean; end?: boolean }) => {
     if (key.downArrow) {
-      setScrollOffset(Math.min(scrollOffset + 1, maxOffset));
+      setScrollOffset(Math.min(scrollRef.current + 1, maxRef.current));
       return;
     }
 
     if (key.upArrow) {
-      setScrollOffset(Math.max(scrollOffset - 1, 0));
+      setScrollOffset(Math.max(scrollRef.current - 1, 0));
       return;
     }
 
     if (key.pageDown) {
-      setScrollOffset(Math.min(scrollOffset + 10, maxOffset));
+      setScrollOffset(Math.min(scrollRef.current + 10, maxRef.current));
       return;
     }
 
     if (key.pageUp) {
-      setScrollOffset(Math.max(scrollOffset - 10, 0));
+      setScrollOffset(Math.max(scrollRef.current - 10, 0));
       return;
     }
 
@@ -36,8 +44,10 @@ export function useDetailsKeyboard(
     }
 
     if (key.end) {
-      setScrollOffset(maxOffset);
+      setScrollOffset(maxRef.current);
       return;
     }
-  }, { isActive: panelFocused });
+  }, [setScrollOffset]);
+
+  useInput(handler, { isActive: panelFocused });
 }

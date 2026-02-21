@@ -29,9 +29,13 @@ export interface SearchState {
   loadMoreError: string | undefined;
 }
 
-/** Selection position and job details for the selected job. */
-export interface NavigationState {
+/** Current selection index in the results list. */
+export interface SelectionState {
   selectedJobIndex: number;
+}
+
+/** Job details for the selected job. */
+export interface JobDetailsState {
   jobDetails: JobDetails | null;
   jobDetailsStatus: JobDetailsStatus;
   jobDetailsError: string | undefined;
@@ -62,8 +66,11 @@ const defaultSearch: SearchState = {
   loadMoreError: undefined,
 };
 
-const defaultNavigation: NavigationState = {
+const defaultSelection: SelectionState = {
   selectedJobIndex: 0,
+};
+
+const defaultJobDetails: JobDetailsState = {
   jobDetails: null,
   jobDetailsStatus: 'idle',
   jobDetailsError: undefined,
@@ -73,7 +80,8 @@ const defaultNavigation: NavigationState = {
 
 export const LayoutContext = createContext<LayoutState>(defaultLayout);
 export const SearchContext = createContext<SearchState>(defaultSearch);
-export const NavigationContext = createContext<NavigationState>(defaultNavigation);
+export const SelectionContext = createContext<SelectionState>(defaultSelection);
+export const JobDetailsContext = createContext<JobDetailsState>(defaultJobDetails);
 export const DispatchContext = createContext<React.Dispatch<AppAction>>(() => undefined);
 
 // --- Consumer hooks ---
@@ -88,9 +96,14 @@ export function useSearchState(): SearchState {
   return useContext(SearchContext);
 }
 
-/** Navigation state: selected index, job details. */
-export function useNavigationState(): NavigationState {
-  return useContext(NavigationContext);
+/** Selection state: selected index in results list. */
+export function useSelectionState(): SelectionState {
+  return useContext(SelectionContext);
+}
+
+/** Job details state: details, status, error for the selected job. */
+export function useJobDetailsState(): JobDetailsState {
+  return useContext(JobDetailsContext);
 }
 
 /** Stable dispatch function (identity never changes). */

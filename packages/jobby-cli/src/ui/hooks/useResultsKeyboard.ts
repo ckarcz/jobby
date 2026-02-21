@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useInput } from 'ink';
 import type { VirtualListRef, ViewportState } from 'ink-virtual-list';
-import { useSearchState, useNavigationState, useAppDispatch } from '../state/context.js';
+import { useSearchState, useSelectionState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
 import { useSearch } from './useSearch.js';
 
@@ -11,7 +11,7 @@ export function useResultsKeyboard(
   viewport: ViewportState,
 ): void {
   const { totalResults, loadMoreStatus } = useSearchState();
-  const { selectedJobIndex } = useNavigationState();
+  const { selectedJobIndex } = useSelectionState();
   const dispatch = useAppDispatch();
   const panelFocused = usePanelFocus('results');
   const { loadMore } = useSearch();
