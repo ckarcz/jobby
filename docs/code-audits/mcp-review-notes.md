@@ -74,3 +74,25 @@
 | T2 | Test | 85 | `server.test.ts:264-268` | Test enshrines unhandled-exception behavior as expected | **Fixed** |
 | T3 | Test | 85 | `handlers.test.ts:278-287` | Tests for dead code path give false assurance of error handling | **Fixed** |
 | T4 | Test | 80 | `server.test.ts:107` | Version test hardcodes `"1.0.0"` instead of reading dynamically | **Fixed** |
+
+---
+
+## Post-Audit Commit Review (078d85b, 18c6114)
+
+### All Changes Were Pragmatic
+
+The MCP package changes across both audit fix commits were clean and well-executed:
+
+- **`bin.ts` entry point** — Standard pattern, mirrors CLI split
+- **`safeParse` for MCP protocol compliance** — Critical fix; tools must return `{ isError: true }` not throw
+- **`zod` moved from peer to direct dependency** — Real deployment bug fix for standalone binaries
+- **Schema validation tightening** (`.min(1)`, `.int().nonnegative()`, `.url()`) — Correct boundary validation
+- **DI seam via `createServer(client?)` parameter** — Clean, enables testing, preserves default behavior
+- **Handler parameter injection** — Handlers became pure functions of inputs; test mocking simplified
+- **Enum values in tool descriptions** — Practical improvement for LLM tool call accuracy
+- **Mock constructor order fix** — Real test bug (`code, message` was swapped)
+- **Version in startup log** — Minor but standard server practice
+
+### No Issues Found
+
+The MCP package was the cleanest of the three packages across these commits. Every change was pragmatic and improved the code without adding unnecessary complexity.

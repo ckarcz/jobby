@@ -99,18 +99,3 @@
 | Script | Command | Description |
 |---|---|---|
 | `start` | `tsx src/index.ts` | Starts the MCP server (stdio transport for Claude integration) |
-
-## Agent Requirements
-
-You MUST follow the below requirements at ALL times.
-
-### Commands & Tool Use
-- Do not append `2>&1` to your commands.
-- Do not chain commands with `&&` or `;` or `|` unless *absolutely necessary* (i.e. for piping commands).
-- Issue each command as a separate tool call (e.g., run `cd`, then `git add`, then `git commit`, then `git push` individually)
-- Never manually edit code generated files.
-- Never manually edit packages such as but not limited to yarn, npm, nuget. Use the CLI to correctly manage these packages.
-
-### Cleanup
-- Always remove any `nul` files created
-- Always remove any temporary scripts and files YOU created while doing investigation and testing

@@ -120,3 +120,46 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 | 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 | **Fixed** |
 | 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | Open |
 | 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | Open |
+
+---
+
+## Post-Audit Commit Review (078d85b, 18c6114, fe732a3)
+
+> **Date:** 2026-02-22
+> **Scope:** Review of audit fix commits applied to `packages/jobby-client/`
+
+### Issues Introduced by Audit Fixes
+
+#### 1. `axiosInstance` on `ResolvedClientConfig` — Premature (18c6114)
+
+- The shared AxiosInstance only carries `{ timeout }`, which is already set per-request in every query function
+- Test mock setup went from 3 lines (`vi.mock('axios'); const mockedAxios = vi.mocked(axios);`) to 12 lines of nested factory pattern with `axios.create` returning a mock
+- ~200 lines of mechanical test churn across `jobs-query.test.ts` and `job-details-query.test.ts` with no functional benefit
+- **Recommendation:** Remove `axiosInstance` from `ResolvedClientConfig`. If centralized request config is needed in the future, add it then. YAGNI.
+
+#### 2. `job-search-builder.ts` unsafe double cast (18c6114)
+
+- `retryConfig !== undefined ? (config as unknown as ResolvedClientConfig) : resolveConfig(config)` — uses presence of one parameter to determine the type of another
+- `as unknown as` completely bypasses the type system
+- **Recommendation:** Use constructor overloads or a static factory method `JobSearchBuilder.fromResolved(config, retryConfig)` for the internal call path
+
+#### 3. `config: resolvedConfig` confusing alias (18c6114)
+
+- In both query files, the parameter `config: ResolvedClientConfig` is destructured with an alias `config: resolvedConfig` from the context object
+- The config IS already resolved — the alias implies a transformation that doesn't exist
+- **Recommendation:** Rename the field in the query context objects, or just use `config` directly
+
+#### 4. `jobs-query.test.ts` misleading test name (078d85b)
+
+- Test "should not drop geoId when value is '0'" — the string `"0"` is truthy in JS, so this already worked before the fix
+- The actual fix was changing `if (value)` to `if (value !== undefined)` to stop dropping empty strings `""`
+- The empty-string edge case is not tested
+- **Recommendation:** Add a test for `geoId: ""` (the actual bug) and rename the `"0"` test to reflect what it actually verifies
+
+### Changes That Were Good
+
+- Config consolidation (resolve once at construction, pass through) — eliminates redundant `resolveConfig` calls
+- `NetworkError` retryability by status code — clean and well-tested
+- `extractJobIdFromUrl` regex hardening — correct and simple
+- Logging test `vi.waitFor` — replaces flaky `setTimeout(200)` waits
+- `appendStringParam` `undefined` check — fixes empty string dropping

@@ -9,6 +9,7 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
+   - [1.1 Pragmatism Assessment](#11-pragmatism-assessment)
 2. [What the Codebase Does Well](#2-what-the-codebase-does-well)
 3. [Critical Issues](#3-critical-issues)
 4. [Performance Issues](#4-performance-issues)
@@ -35,6 +36,36 @@ The jobby-cli TUI is a well-structured application that follows many best practi
 - **3 Ink-specific issues** — no use of `<Static>`, keyboard event propagation, custom vs @inkjs/ui filter inputs (resolved — kept custom with dedicated memoized components)
 - **2 dead code items** — `useSlideAnimation` hook, `Modal` component
 - **Several minor improvements** — responsive filter width, key prop reset pattern, composition optimizations
+
+### 1.1 Pragmatism Assessment
+
+Not every audit finding carries equal weight. The table below classifies each recommendation so readers can triage effectively. **Pragmatic** items are worth doing in any project. **Nice-to-have** items are technically sound but most teams skip them. **Over-engineered** items add complexity without proportional benefit at this project's scale and are included for completeness only.
+
+| # | Finding | Rating | Rationale |
+|---|---|---|---|
+| 3.1 | `JobDetailsPanel` off-screen rendering | **Pragmatic** | Critical perf issue rendering unbounded content; fixed. |
+| 4.1 | Single context re-renders | **Pragmatic** | Real perf problem in Ink where every state change re-renders all consumers; fixed. |
+| 4.2 | `useContainerHeight` on every render | **Pragmatic** | `measureElement` triggers Yoga layout traversal on every render; fixed. |
+| 4.3 | `FilterDrawer` unmount/remount | **Pragmatic** | Loses draft state and triggers full subtree recreation; fixed. |
+| 4.4 | `React.memo` on 12 leaf components | **Nice-to-have** | About half barely re-render; the ones in VirtualList and on selection change matter, the rest are academic. |
+| 4.5 | Spinner in `allLines` | **Pragmatic** | 80ms re-render cycle on entire panel from Spinner animation ticks; fixed. |
+| 4.6 | `NavigationContext` coupling | **Pragmatic** | Arrow keys triggering details panel re-render unnecessarily; fixed. |
+| 4.7 | `useDetailsKeyboard` stale closure | **Pragmatic** | Fires on every scroll tick, causing handler re-registration; fixed. |
+| 4.8 | Unconditional `CLEAR_JOB_DETAILS` dispatch | **Nice-to-have** | Saves microseconds at best; React won't re-render if reducer returns same state reference. |
+| 5.1 | Stale `draftRef` in `SearchBar` | **Pragmatic** | Real bug showing wrong values after external state reset; fixed. |
+| 6.1 | No use of `<Static>` | **Over-engineered** | Recommends a pattern for features that don't exist yet. |
+| 6.2 | Ink has no `stopPropagation` | **Pragmatic** | Real keyboard conflict bug with clever ref-based fix; fixed. |
+| 6.3 | `useInput` missing `isActive` on global handler | **Nice-to-have** | Correctly documented as intentionally global. |
+| 7.1 | `AppState` 21 flat fields | **Pragmatic** | Correctly concluded flat + context slicing is the right call. |
+| 7.2 | Dispatch bundled with state context | **Pragmatic** | Standard React pattern; fixed. |
+| 8.1 | Keyboard shortcut conflicts | **Pragmatic** | Same root cause as 6.2; fixed. |
+| 8.2 | Escape key mapping table | **Nice-to-have** | `grep` works fine for 3 escape handlers at this scale. |
+| 9.1-9.2 | Dead code removal | **Pragmatic** | Dead code is dead code; removed. |
+| 10.1-10.2 | Fixed width / key prop reset | **Pragmatic** | Correctly kept as-is; intentional design decisions. |
+| 10.3 | `VIRTUAL_LIST_RESERVED_LINES` undocumented | **Pragmatic** | Magic numbers need comments; documented. |
+| 10.4 | Markdown processing on every render | **Pragmatic** | Genuinely expensive operation; memoized. |
+| 10.5 | `buildSummaryLines`/`buildDetailsMetadataLines` | **Nice-to-have** | Trivial cost per call, but helps `allLines` memo stability. |
+| 10.6 | Process signal handlers no cleanup | **Pragmatic** | `process.once` is the correct pattern; fixed. |
 
 ---
 

@@ -10,6 +10,7 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
+   - [1.1 Pragmatism Assessment](#11-pragmatism-assessment)
 2. [What the Architecture Does Well](#2-what-the-architecture-does-well)
 3. [Medium Issues](#3-medium-issues)
 4. [Low-Medium Issues](#4-low-medium-issues)
@@ -30,6 +31,24 @@ The TUI architecture is in very good shape after four rounds of audit fixes. The
 - ~~**2 medium issues** — `useResultsKeyboard` still uses an inline `useInput` handler (inconsistent with the ref-based pattern established elsewhere)~~ **FIXED**, and `useContainerHeight` is called in `SearchResults` but its return value is discarded (dead work)
 - ~~**1 low-medium issue** — `JobbyClient` instantiated via `useMemo` rather than `useRef`~~ **FIXED**, **2 low-medium issues remaining** — `useKeyboardNavigation` passes an inline handler to `useInput`, and `FilterDrawer.sectionElements` memo invalidates on every navigation keystroke due to `cursors` object reference
 - All previously-audited items confirmed fixed
+
+### 1.1 Pragmatism Assessment
+
+Not every audit finding carries equal weight. The table below classifies each recommendation so readers can triage effectively. **Pragmatic** items are worth doing in any project. **Nice-to-have** items are technically sound but most teams skip them. **Over-engineered** items add complexity without proportional benefit at this project's scale and are included for completeness only.
+
+| # | Finding | Rating | Rationale |
+|---|---|---|---|
+| 3.1 | `useResultsKeyboard` inline handler re-registration | **Pragmatic** | Real Ink re-registration bug on every keypress; fixed. |
+| 3.2 | `useContainerHeight` dead call in `SearchResults` | **Pragmatic** | Dead hook doing real work (Yoga measurement + state updates); easy removal. |
+| 4.1 | `JobbyClient` via `useMemo` instead of `useRef` | **Nice-to-have** | `useMemo` with `[]` deps has never re-run in any shipping React version; fixed anyway for semantic correctness. |
+| 4.2 | `useKeyboardNavigation` inline handler | **Nice-to-have** | Layout changes are infrequent user-initiated events; consistency is the only motivation. |
+| 4.3 | `sectionElements` memo invalidation | **Over-engineered** | Rebuilding 8 JSX elements per keypress is not a real bottleneck. |
+| 5.1 | `maxWidth`/`maxHeight` redundant state | **Pragmatic** | Bug waiting to happen (divergent values); fixed. |
+| 5.2 | `getFilterSection` O(n) linear scan | **Over-engineered** | `Array.find` over 8 items ~5-6 times is ~48 comparisons; a `Record` lookup saves unmeasurable time. |
+| Priority 1 | Ref-based handler for `useKeyboardNavigation` | **Nice-to-have** | Infrequent events; consistency-only motivation. |
+| Priority 2 | Remove `useContainerHeight` dead call | **Pragmatic** | Dead work with real side effects. |
+| Priority 3 | Optimize `sectionElements` memo / pre-build lookup map | **Over-engineered** | Micro-optimizations below any observable threshold. |
+| Testing | Focus on reducers and abort paths | **Pragmatic** | Right strategy -- highest value-to-effort ratio for TUI tests. |
 
 ---
 

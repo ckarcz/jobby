@@ -9,6 +9,7 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
+   - 1.1 [Pragmatism Assessment](#11-pragmatism-assessment)
 2. [What the Codebase Does Well](#2-what-the-codebase-does-well)
 3. [Critical Issues](#3-critical-issues)
 4. [Medium Issues](#4-medium-issues)
@@ -33,6 +34,39 @@ However, a critical runtime bug means **the server never actually starts** when 
 - **3 medium issues** — module-level singleton client blocks testability and retry config; `zod` classified as `peerDependency` rather than `dependency`; documented timeout is wrong
 - **3 low issues** — no pagination boundary validation; empty strings accepted for keyword/location; `jobUrl` not URL-validated
 - **2 test issues** — inverted constructor args in `server.test.ts` mock; no integration tests
+
+---
+
+### 1.1 Pragmatism Assessment
+
+Not every audit recommendation carries the same practical weight. The table below classifies each finding to help prioritize what is worth acting on versus what exists for thoroughness.
+
+- **Pragmatic** — Worth doing. Common practice in real projects.
+- **Nice-to-have** — Technically sound but most projects skip this. Do it if you're already in the file.
+- **Over-engineered** — Adds complexity without proportional benefit at this project scale. Included for completeness.
+
+| # | Issue | Rating | Notes |
+|---|---|---|---|
+| 3.1 | `main()` never called | Pragmatic | Server was broken |
+| 3.2 | Schema mismatch / ZodError escaping | Pragmatic | Real MCP protocol bug |
+| 4.1 | Module-level singleton client | Pragmatic | Standard testability improvement |
+| 4.2 | `zod` as `peerDependency` | Pragmatic | Real deployment bug |
+| 4.3 | Wrong default timeout in docs | Pragmatic | Factual error |
+| 5.1 | `ToolResponse` unexported/duplicated | Nice-to-have | 2-line fix, blast radius is zero for a single-dev project |
+| 5.2 | Pagination boundary validation (`.int().nonnegative()`) | Pragmatic | Gives clear MCP error instead of cryptic upstream failure |
+| 5.3 | Empty strings accepted for keyword/location | Pragmatic | Standard Zod `.min(1)` idiom |
+| 5.4 | `jobUrl` not validated as URL | Nice-to-have | axios will fail with a clear error anyway |
+| 5.5 | No retry configuration | Nice-to-have | MCP protocol has natural retry (model calls tool again) |
+| 6.2 | Mock `JobbyError` inverted constructor args | Pragmatic | Real test bug |
+| 6.3 | Test enshrines ZodError throw as expected | Pragmatic | Consequence of fixing the schema mismatch |
+| 6.4 | Version test hardcodes "1.0.0" | Nice-to-have | Breaks on version bump but trivial to fix |
+| 6.5 | No integration tests | Nice-to-have | 113 unit tests for 240 lines is thorough; integration test harness is significant work for diminishing returns |
+| 7.1 | DIP (handlers depend on concrete class) | Already covered | Resolved by singleton fix; framing it as a SOLID violation is academic padding |
+| 7.2 | SRP (`server.ts` reads package metadata) | Over-engineered | Extracting a 2-line `createRequire` to a utility module is pure ceremony for a 240-line package |
+| 8.1 | Tool descriptions enumerate valid enum values | Pragmatic | Significantly improves AI tool call accuracy |
+| 8.2 | `get_job_details` description states constraint | Pragmatic | Same reasoning as 8.1 |
+| 8.3 | Add root-level `start:mcp` script | Nice-to-have | 1-line change for consistency |
+| 8.4 | Include version in startup log | Nice-to-have | Standard server practice but MCP logs go to stderr |
 
 ---
 

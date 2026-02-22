@@ -14,6 +14,45 @@ The codebase does significantly more right than wrong. The issues identified are
 
 ---
 
+### 1.1 Pragmatism Assessment
+
+Not every audit finding carries equal weight in practice. The table below classifies each recommendation so readers can triage effectively.
+
+- **Pragmatic** — Worth doing. Common practice in real projects.
+- **Nice-to-have** — Technically sound but most projects skip this. Do it if you're already in the file.
+- **Over-engineered** — Adds complexity without proportional benefit at this project scale. Included for completeness.
+
+#### Fixed Items
+
+| Item | Rating | Note |
+|------|--------|------|
+| `--no-color` flag fix | Pragmatic | Real bug — flag was silently ignored |
+| Circular import fix | Pragmatic | Real ESM issue |
+| `process.exit(1)` bypass | Pragmatic | CLI best practice |
+| `exports` field / `bin.ts` | Pragmatic | Was breaking vitest |
+| Invalid enum in test | Pragmatic | Test was lying |
+| Formatter test isolation | Pragmatic | Shared mutable state |
+| `isUrl` narrowing | Pragmatic | Input validation |
+| Signal handler spy fix | Pragmatic | Test was vacuously passing |
+
+#### Remaining / Open Items
+
+| Item | Rating | Note |
+|------|--------|------|
+| `writeFileSync` to async | Nice-to-have | For a CLI writing one file, sync is fine in practice |
+| Unexport `swapScreenBuffer` / `restoreScreenBuffer` | Nice-to-have | Nobody is importing these accidentally |
+| Remove `helpConfig` from `index.ts` exports | Nice-to-have | Same reasoning |
+| Deduplicate `parse.test.ts` tests | Nice-to-have | Harmless duplication |
+| `[url]` assertion false positive | Nice-to-have | Weak assertion, not wrong |
+| `details.test.ts` empty `rawHtml` assertion | Nice-to-have | Strengthen when in the file |
+| `--file` path error tests | Over-engineered | Testing OS-level errors is fragile and platform-dependent |
+| `fetchDetailsInBatches` with `delayMs > 0` | Over-engineered | Testing `setTimeout` is testing Node.js, not the app |
+| Stdin piping end-to-end test | Nice-to-have | Painful to mock in CI; unit tests cover the logic |
+| SRP — `queryForJobDetails` does too much | Over-engineered | A 30-line CLI handler orchestrating "resolve, call, format" is standard and readable |
+| DIP — commands instantiate `JobbyClient` | Over-engineered | This is a CLI, not a framework. The client is created, used once, and discarded. DI for a one-shot CLI command is architecture astronautics. |
+
+---
+
 ## 2. What the Codebase Does Well
 
 **Formatter registry pattern.** `src/formatters/formatter.ts` implements a clean registry with an explicit `registerDefaultFormatters()` call at startup. Formatters are testable in isolation, the default registry is module-level state that is separate from the `createFormatterRegistry()` factory, and the `OutputFormatter` interface is minimal and correctly async. This is a good OCP implementation.

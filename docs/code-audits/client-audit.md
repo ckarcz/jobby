@@ -9,6 +9,7 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
+   1. [Pragmatism Assessment](#11-pragmatism-assessment)
 2. [What the Codebase Does Well](#2-what-the-codebase-does-well)
 3. [Architecture Issues](#3-architecture-issues)
 4. [Code Quality Issues](#4-code-quality-issues)
@@ -30,6 +31,46 @@ The issues identified are real but mostly in the medium-to-low severity range. T
 - **4 medium issues** — double `resolveConfig` on `byId` paths, no shared `AxiosInstance`, overly wide `Job.id`/`Job.url` types, private non-exported `JobsResource` with duplicate retry wrapping
 - **Several low issues** — raw config retained after resolution, dead barrel export, 602-line god file, abandoned `random-useragent` dependency
 - **Test suite is strong** — genuine behaviour tests with real HTML fixtures, no false positives found; one timing-dependent test is a flake risk; `mergeJobDetailsData` merge contract only implicitly covered
+
+---
+
+## 1.1 Pragmatism Assessment
+
+Not every recommendation deserves equal effort. The table below classifies every open item in this audit so you can triage accordingly.
+
+| Rating | Meaning |
+|---|---|
+| **Pragmatic** | Worth doing. Common practice in real projects. |
+| **Nice-to-have** | Technically sound but most projects skip this. Do it if you're already in the file. |
+| **Over-engineered** | Adds complexity without proportional benefit at this project scale. Included for completeness. |
+
+### Recommendations (Section 8 — open items only)
+
+| # | Item | Rating | Notes |
+|---|---|---|---|
+| 3 | Simplify verbose null guards | **Pragmatic** | Straightforward cleanup, fewer lines. |
+| 6 | Direct test for `mergeJobDetailsData` | **Pragmatic** | Closes an implicit-only coverage gap. |
+| 9 | Replace `random-useragent` | **Pragmatic** | Abandoned dependency; inline list is trivial. |
+| 11 | Slim `Logger` interface | **Over-engineered** | YAGNI — one logging impl, not worth abstracting further. |
+| 12 | Split `job-details-query.ts` | **Nice-to-have** | 600 lines of cohesive code; split when naturally adding features. |
+| 13 | Make `createTurndownService` injectable | **Over-engineered** | One consumer, no test benefit. |
+| 15 | Export `JobsResource` / `IJobsResource` | **Nice-to-have** | Only matters if external consumers need to mock it. |
+| 16 | Narrow `Job.id` / `Job.url` types | **Nice-to-have** | Correct observation, marginal practical impact. |
+
+### SOLID observations (Section 6)
+
+| Section | Observation | Rating | Notes |
+|---|---|---|---|
+| 6.2 | OCP — 5-6 files to add a param | **Over-engineered** | This is the natural shape of a type-safe API client, not an OCP violation. Making it "open for extension" would add abstraction for zero practical benefit. |
+| 6.3 | ISP — Logger interface | **Over-engineered** | Same rationale as item 11. |
+
+### Test coverage gaps (Section 5.3 — open items only)
+
+| # | Gap | Rating | Notes |
+|---|---|---|---|
+| 2 | `parseSalaryText` European formats | **Nice-to-have** | LinkedIn returns US-locale data; speculative unless going international. |
+| 4 | `validatePagination` all-three-invalid | **Over-engineered** | Combinatorial test completionism; individual field validation already tested. |
+| 6 | Integration tests bypass client | **Nice-to-have** | Narrow gap already covered by unit tests. |
 
 ---
 

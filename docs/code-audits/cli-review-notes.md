@@ -88,3 +88,39 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 | 6 | Important | `program.ts` / command files | Circular import of `helpConfig` | **Fixed** |
 | 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup | Open |
 | 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output | Open |
+
+---
+
+## Post-Audit Commit Review (078d85b, 18c6114, fe732a3)
+
+### Issues Introduced by Audit Fixes
+
+1. **`useResultsKeyboard` ref boilerplate — Missing `useLatest()` abstraction** (078d85b)
+   - The rewrite introduced 6 refs with 6 `.current =` sync lines, making the hook harder to read than the original
+   - `useFilterKeyboard` uses the identical pattern — two files with the same repetitive boilerplate
+   - **Recommendation:** Extract a shared `useLatest<T>(value: T)` hook (3 lines) that returns a ref synced to the latest value. Both hooks would become significantly more readable.
+
+2. **`SearchActionsContext` no-op default** (078d85b)
+   - Default value provides `() => undefined` for `search` and `loadMore`
+   - If a component renders outside the provider, it will silently do nothing instead of crashing
+   - **Recommendation:** Throw an error in the default: `throw new Error('useSearchActions must be used within SearchActionsContext.Provider')`
+
+3. **`main.test.ts` vitest 4 mock repetition** (fe732a3)
+   - 11 instances of `MockedJobbyClient.mockImplementation(function () { return { ... } as any; })` — all structurally identical with only the mock return values varying
+   - The arrow-to-function conversion was mandatory (vitest 4 breaking change), but 11 repetitions should have been extracted into a helper like `mockClient({ queryForJobs: vi.fn().mockResolvedValue(...) })`
+   - Formatting is inconsistent: `test-helpers.ts` uses proper multi-line formatting, `main.test.ts` crams everything onto single lines
+   - **Recommendation:** Extract a `createMockClient(overrides)` helper in `main.test.ts` or reuse the one in `test-helpers.ts`
+
+### Changes That Were Good
+
+- `bin.ts` / `main.ts` split — standard Node.js pattern, fixes real test side-effect issue
+- `noColor → color` rename — genuine Commander.js bug fix
+- `process.exit → throw ValidationError` — better error handling
+- `helpConfig` extraction — necessary to break circular import
+- `SearchActionsContext` (the idea itself) — solves real race condition cleanly, 19 lines
+- `useMemo → useRef` for JobbyClient — correct per React docs
+- `isUrl` narrowing to HTTP/HTTPS — real input validation fix
+- `maxWidth/maxHeight` removal — dead state cleanup
+- `useContainerHeight` stale closure fix — real bug fix
+- `nodemon → tsx watch` — excellent KISS improvement, removes a dependency
+- Removal of phantom flag assertions — tests were wrong
