@@ -60,7 +60,7 @@ describe('queryForJobs - search command handler', () => {
         queryForJobDetailsRawHtmlById: vi.fn(),
       },
     };
-    MockedJobbyClient.mockImplementation(() => mockClientInstance as unknown as InstanceType<typeof JobbyClient>);
+    MockedJobbyClient.mockImplementation(function () { return mockClientInstance as unknown as InstanceType<typeof JobbyClient>; });
   });
 
   afterEach(() => {

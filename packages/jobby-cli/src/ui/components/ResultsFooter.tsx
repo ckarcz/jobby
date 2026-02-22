@@ -16,7 +16,7 @@ export const ResultsFooter = React.memo(function ResultsFooter({ isOnLastItem, l
     return null;
   }
 
-  let text = '';
+  let text: string;
   if (loadMoreStatus === 'loading') {
     text = `${icons.lightning} Fetching more jobs...`;
   } else if (loadMoreStatus === 'exhausted') {

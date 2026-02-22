@@ -40,10 +40,10 @@
     "start:search": "tsx src/bin.ts search \"C#\" --pretty",
     "start:details": "tsx src/bin.ts details 4368607271 --pretty",
     "start:example": "tsx src/bin.ts search --keyword C# --take 1",
-    "watch": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts\"",
-    "watch:search": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts search C# --pretty\"",
-    "watch:details": "nodemon --no-stdin --watch src --watch ../ --ext ts --exec \"tsx src/bin.ts details 4368607271 --pretty\"",
-    "watch:ui": "nodemon --no-stdin --watch src --watch ../jobby-client/src --ext ts,tsx --exec \"tsx src/bin.ts ui\""
+    "watch": "tsx watch src/bin.ts",
+    "watch:search": "tsx watch src/bin.ts search C# --pretty",
+    "watch:details": "tsx watch src/bin.ts details 4368607271 --pretty",
+    "watch:ui": "tsx watch src/bin.ts ui"
   },
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
@@ -71,7 +71,6 @@
   "devDependencies": {
     "@types/html-minifier-terser": "^7.0.2",
     "@types/js-beautify": "^1.14.3",
-    "@types/react": "^19.2.13",
-    "nodemon": "^3.1.11"
+    "@types/react": "^19.2.13"
   }
 }

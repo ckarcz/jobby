@@ -12,15 +12,17 @@ export async function createJobbyMock(): Promise<Record<string, unknown>> {
 
   return {
     ...actual,
-    JobbyClient: vi.fn().mockImplementation(() => ({
-      jobs: {
-        queryForJobs: mockSearch,
-        queryForJobDetailsByUrl: mockGetDetails,
-        queryForJobDetailsById: mockGetDetailsById,
-        queryForJobsRawHtml: mockSearchRaw,
-        queryForJobDetailsRawHtmlByUrl: mockGetDetailsRaw,
-        queryForJobDetailsRawHtmlById: mockGetDetailsRawById,
-      },
-    })),
+    JobbyClient: vi.fn().mockImplementation(function () {
+      return {
+        jobs: {
+          queryForJobs: mockSearch,
+          queryForJobDetailsByUrl: mockGetDetails,
+          queryForJobDetailsById: mockGetDetailsById,
+          queryForJobsRawHtml: mockSearchRaw,
+          queryForJobDetailsRawHtmlByUrl: mockGetDetailsRaw,
+          queryForJobDetailsRawHtmlById: mockGetDetailsRawById,
+        },
+      };
+    }),
   };
 }

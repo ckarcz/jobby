@@ -85,27 +85,32 @@
 #### `jobby-cli`
 | Script | Command | Description |
 |---|---|---|
-| `start` | `tsx src/main.ts` | Starts the CLI (shows help) |
-| `start:ui` | `tsx src/main.ts ui` | Starts the interactive TUI (Ink-based terminal UI) |
-| `start:search` | `tsx src/main.ts search "C#" --pretty` | Runs a sample job search with pretty output |
-| `start:details` | `tsx src/main.ts details 4368607271 --pretty` | Fetches and displays a sample job's details |
-| `start:example` | `tsx src/main.ts search --keyword C# --take 1` | Runs a minimal example search (1 result) |
-| `watch` | `tsx watch src/main.ts` | File-watch mode: re-runs CLI on source changes |
-| `watch:ui` | `tsx watch src/main.ts ui` | File-watch mode: re-runs TUI on source changes |
-| `watch:search` | `tsx watch src/main.ts search "C#" --pretty` | File-watch mode: re-runs sample search on source changes |
-| `watch:details` | `tsx watch src/main.ts details 4368607271 --pretty` | File-watch mode: re-runs sample details on source changes |
+| `start` | `tsx src/bin.ts` | Starts the CLI (shows help) |
+| `start:ui` | `tsx src/bin.ts ui` | Starts the interactive TUI (Ink-based terminal UI) |
+| `start:search` | `tsx src/bin.ts search "C#" --pretty` | Runs a sample job search with pretty output |
+| `start:details` | `tsx src/bin.ts details 4368607271 --pretty` | Fetches and displays a sample job's details |
+| `start:example` | `tsx src/bin.ts search --keyword C# --take 1` | Runs a minimal example search (1 result) |
+| `watch` | `tsx watch src/bin.ts` | File-watch mode: re-runs CLI on source changes |
+| `watch:ui` | `tsx watch src/bin.ts ui` | File-watch mode: re-runs TUI on source changes |
+| `watch:search` | `tsx watch src/bin.ts search C# --pretty` | File-watch mode: re-runs sample search on source changes |
+| `watch:details` | `tsx watch src/bin.ts details 4368607271 --pretty` | File-watch mode: re-runs sample details on source changes |
 
 #### `jobby-mcp`
 | Script | Command | Description |
 |---|---|---|
 | `start` | `tsx src/index.ts` | Starts the MCP server (stdio transport for Claude integration) |
 
-## Shell Command Guidelines
+## Agent Requirements
 
-- Do not chain shell commands with `&&` or `;` or `|` unless absolutely necessary
+You MUST follow the below requirements at ALL times.
+
+### Commands & Tool Use
+- Do not append `2>&1` to your commands.
+- Do not chain commands with `&&` or `;` or `|` unless *absolutely necessary* (i.e. for piping commands).
 - Issue each command as a separate tool call (e.g., run `cd`, then `git add`, then `git commit`, then `git push` individually)
-- This ensures each command is evaluated independently by the permission system
+- Never manually edit code generated files.
+- Never manually edit packages such as but not limited to yarn, npm, nuget. Use the CLI to correctly manage these packages.
 
-## Cleanup
+### Cleanup
 - Always remove any `nul` files created
 - Always remove any temporary scripts and files YOU created while doing investigation and testing

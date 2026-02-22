@@ -19,12 +19,12 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
     registerTool: vi.fn(),
   };
   return {
-    McpServer: vi.fn(() => mockServer),
+    McpServer: vi.fn(function () { return mockServer; }),
   };
 });
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: vi.fn(),
+  StdioServerTransport: vi.fn(function () { return {}; }),
 }));
 
 vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -39,13 +39,15 @@ vi.mock('jobby-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('jobby-client')>();
   return {
     ...actual,
-    JobbyClient: vi.fn(() => ({
-      jobs: {
-        queryForJobs: mockSearch,
-        queryForJobDetailsByUrl: mockGetDetailsByUrl,
-        queryForJobDetailsById: mockGetDetailsById,
-      },
-    })),
+    JobbyClient: vi.fn(function () {
+      return {
+        jobs: {
+          queryForJobs: mockSearch,
+          queryForJobDetailsByUrl: mockGetDetailsByUrl,
+          queryForJobDetailsById: mockGetDetailsById,
+        },
+      };
+    }),
     JobbyError: class JobbyError extends Error {
       code: string;
       constructor(code: string, message: string) {
