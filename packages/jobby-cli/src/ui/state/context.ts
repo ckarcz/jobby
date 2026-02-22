@@ -8,8 +8,6 @@ import { emptyFilters } from './filterTypes.js';
 export interface LayoutState {
   terminalWidth: number;
   terminalHeight: number;
-  maxWidth: number;
-  maxHeight: number;
   focusedPanel: PanelId | null;
   filterDrawerOpen: boolean;
 }
@@ -46,8 +44,6 @@ export interface JobDetailsState {
 const defaultLayout: LayoutState = {
   terminalWidth: process.stdout.columns,
   terminalHeight: process.stdout.rows,
-  maxWidth: process.stdout.columns,
-  maxHeight: process.stdout.rows,
   focusedPanel: null,
   filterDrawerOpen: false,
 };

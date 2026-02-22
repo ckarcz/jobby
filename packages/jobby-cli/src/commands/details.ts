@@ -11,8 +11,8 @@ import { helpConfig } from '../help-config.js';
 /** Returns true when value is a valid absolute URL, false otherwise. */
 function isUrl(value: string): boolean {
   try {
-    new URL(value);
-    return true;
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
   } catch {
     return false;
   }

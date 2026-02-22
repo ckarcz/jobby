@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { getFormatter, registerFormatter, createFormatterRegistry } from './formatter.js';
 import { registerDefaultFormatters } from './index.js';
 import type { OutputFormatter } from './formatter.js';
 
 beforeAll(() => {
+  registerDefaultFormatters();
+});
+
+afterEach(() => {
   registerDefaultFormatters();
 });
 
@@ -40,9 +44,6 @@ describe('default formatter registry', () => {
     registerFormatter('json', customFormatter);
     const retrieved = getFormatter('json');
     expect(retrieved).toBe(customFormatter);
-
-    // Restore the default formatter
-    registerDefaultFormatters();
   });
 
   it('should return the most recently registered formatter for a format', () => {
@@ -56,9 +57,6 @@ describe('default formatter registry', () => {
     registerFormatter('json', second);
     const retrieved = getFormatter('json');
     expect(retrieved).toBe(second);
-
-    // Restore the default formatter
-    registerDefaultFormatters();
   });
 });
 

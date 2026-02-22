@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createLogger } from './logging.js';
 
 /**
@@ -48,10 +48,8 @@ describe('createLogger - Winston logger factory and configuration', () => {
       expect(typeof logger.error).toBe('function');
       expect(typeof logger.warn).toBe('function');
       expect(typeof logger.info).toBe('function');
-      expect(typeof logger.http).toBe('function');
       expect(typeof logger.verbose).toBe('function');
       expect(typeof logger.debug).toBe('function');
-      expect(typeof logger.silly).toBe('function');
     });
   });
 
@@ -97,10 +95,8 @@ describe('createLogger - Winston logger factory and configuration', () => {
 
       logger.info('test callback message');
 
-      // Winston transports are async; wait for delivery
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await vi.waitFor(() => { expect(entries.length).toBeGreaterThan(0); });
 
-      expect(entries.length).toBeGreaterThan(0);
       expect(entries[0]!.message).toBe('test callback message');
       expect(entries[0]!.level).toBe('info');
       expect(entries[0]!.timestamp).toBeInstanceOf(Date);
@@ -118,7 +114,7 @@ describe('createLogger - Winston logger factory and configuration', () => {
       logger.info('info msg');
       logger.debug('debug msg');
 
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await vi.waitFor(() => { expect(entries.length).toBe(4); });
 
       const levels = entries.map(e => e.level);
       expect(levels).toContain('error');

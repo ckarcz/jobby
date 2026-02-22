@@ -4,8 +4,6 @@ import { emptyFilters } from './filterTypes.js';
 export const initialState: AppState = {
   terminalWidth: process.stdout.columns,
   terminalHeight: process.stdout.rows,
-  maxWidth: process.stdout.columns,
-  maxHeight: process.stdout.rows,
   focusedPanel: null,
   searchKeyword: '',
   searchStatus: 'idle',
@@ -28,7 +26,7 @@ export const initialState: AppState = {
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_TERMINAL_SIZE':
-      return { ...state, terminalWidth: action.width, terminalHeight: action.height, maxWidth: action.width, maxHeight: action.height };
+      return { ...state, terminalWidth: action.width, terminalHeight: action.height };
     case 'FOCUS_PANEL':
       return { ...state, focusedPanel: action.panel };
     case 'BLUR_ALL':

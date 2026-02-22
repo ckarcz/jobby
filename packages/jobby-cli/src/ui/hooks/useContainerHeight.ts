@@ -1,4 +1,4 @@
-import { useState, useEffect, type RefObject } from 'react';
+import { useState, useEffect, useRef, type RefObject } from 'react';
 import { measureElement, type DOMElement } from 'ink';
 import { useLayoutState } from '../state/context.js';
 
@@ -11,14 +11,13 @@ import { useLayoutState } from '../state/context.js';
 export function useContainerHeight(ref: RefObject<DOMElement | null>): number {
   const { terminalWidth, terminalHeight, filterDrawerOpen } = useLayoutState();
   const [measuredHeight, setMeasuredHeight] = useState(0);
+  const measuredHeightRef = useRef(0);
 
-  // Note: measuredHeight is intentionally excluded from the dependency array.
-  // The internal guard `height !== measuredHeight` handles staleness; including it
-  // would cause a redundant extra render on every layout change.
   useEffect(() => {
     if (ref.current) {
       const { height } = measureElement(ref.current);
-      if (height !== measuredHeight) {
+      if (height !== measuredHeightRef.current) {
+        measuredHeightRef.current = height;
         setMeasuredHeight(height);
       }
     }

@@ -148,14 +148,11 @@ The `cursors` dependency is an object from the filter draft reducer. On every ar
 
 ## 5. Low Issues
 
-### 5.1 `maxWidth`/`maxHeight` Always Equal Terminal Dimensions
+### 5.1 `maxWidth`/`maxHeight` Always Equal Terminal Dimensions — **FIXED**
 
-**Files:** `src/ui/state/types.ts`, `src/ui/state/reducer.ts`, `src/ui/state/context.ts`, `src/ui/App.tsx`
+**Files:** `src/ui/state/types.ts`, `src/ui/state/reducer.ts`, `src/ui/state/context.ts`, `src/ui/App.tsx`, `src/ui/components/Layout.tsx`, `src/ui/components/FilterDrawer.tsx`
 **Severity:** Low
-
-The `SET_TERMINAL_SIZE` reducer case always sets `maxWidth = action.width, maxHeight = action.height`. No code path ever sets them differently. These fields add bulk to `AppState`, `LayoutState`, and the `useMemo` dependency array with no behavioral difference from `terminalWidth`/`terminalHeight`.
-
-**Fix:** Either implement the capping logic they were intended to support or remove them and use `terminalWidth`/`terminalHeight` directly.
+**Status: FIXED** — Removed `maxWidth` and `maxHeight` from `AppState`, `initialState`, `SET_TERMINAL_SIZE` reducer case, and `LayoutState`. Replaced all usages in `Layout.tsx` and `FilterDrawer.tsx` with `terminalWidth`/`terminalHeight` directly.
 
 ### 5.2 `getFilterSection` Uses `Array.find` — O(n) Linear Scan
 
@@ -249,7 +246,7 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 ### Priority 3 — Optimization
 
 5. **Optimize `sectionElements` memo** in `FilterDrawer` (4.3) — memoize per-section or stabilize `cursors` reference
-6. **Remove `maxWidth`/`maxHeight` redundant state** (5.1)
+6. ~~**Remove `maxWidth`/`maxHeight` redundant state** (5.1)~~ **DONE**
 7. **Pre-build `getFilterSection` lookup map** (5.2)
 
 ---
@@ -276,7 +273,7 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 | 4.1 | Low-Medium | `JobbyClient` via `useMemo` instead of `useRef` | `useSearch.ts:17` | **Fixed** |
 | 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | Open |
 | 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Open |
-| 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | Open |
+| 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | **Fixed** |
 | 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | Open |
 
 ---

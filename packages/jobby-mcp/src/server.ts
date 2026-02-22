@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { JobbyClient } from 'jobby-client';
 import { SearchInputSchema, JobDetailsBaseSchema, JobDetailsInputSchema } from './schemas.js';
 import { handleSearchJobs, handleGetJobDetails } from './handlers.js';
 
@@ -14,7 +15,9 @@ const packageJson = require('../package.json') as { version: string };
  * `get_job_details` tools with their schemas and handlers, and returns the
  * ready-to-connect server instance.
  */
-export function createServer(): McpServer {
+export function createServer(client?: JobbyClient): McpServer {
+  const resolvedClient = client ?? new JobbyClient({ timeout: 30_000 });
+
   const server = new McpServer(
     {
       name: 'jobby-mcp',
@@ -41,7 +44,7 @@ export function createServer(): McpServer {
           isError: true,
         };
       }
-      return handleSearchJobs(parsed.data);
+      return handleSearchJobs(parsed.data, resolvedClient);
     }
   );
 
@@ -59,7 +62,7 @@ export function createServer(): McpServer {
           isError: true,
         };
       }
-      return handleGetJobDetails(parsed.data);
+      return handleGetJobDetails(parsed.data, resolvedClient);
     }
   );
 
@@ -76,5 +79,5 @@ export async function main(): Promise<void> {
   const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Jobby MCP server started.');
+  console.error(`Jobby MCP server v${packageJson.version} started.`);
 }

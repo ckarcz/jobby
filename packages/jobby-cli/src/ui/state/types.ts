@@ -19,8 +19,6 @@ export type JobDetailsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 export interface AppState {
   terminalWidth: number;
   terminalHeight: number;
-  maxWidth: number;
-  maxHeight: number;
   focusedPanel: PanelId | null;
   searchKeyword: string;
   searchStatus: SearchStatus;

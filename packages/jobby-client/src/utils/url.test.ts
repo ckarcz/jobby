@@ -137,6 +137,14 @@ describe('extractJobIdFromUrl - additional edge cases', () => {
   it('should return undefined for URL with trailing whitespace', () => {
     expect(extractJobIdFromUrl('https://linkedin.com/jobs/view/123  ')).toBeUndefined();
   });
+
+  it('should return undefined for bare number without leading slash', () => {
+    expect(extractJobIdFromUrl('42')).toBeUndefined();
+  });
+
+  it('should return undefined for string ending with digits but no leading slash', () => {
+    expect(extractJobIdFromUrl('page42')).toBeUndefined();
+  });
 });
 
 describe('extractCompanySlug - extract company slug from LinkedIn company URLs', () => {

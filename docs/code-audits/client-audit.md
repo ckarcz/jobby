@@ -83,21 +83,15 @@ None. No correctness bugs, security vulnerabilities, or data corruption paths we
 
 ### 3.2 Medium Issues
 
-#### 3.2.1 `resolveConfig` Called Twice on `byId` Variants
+#### 3.2.1 `resolveConfig` Called Twice on `byId` Variants — **FIXED**
 
 **File:** `src/queries/job-details-query.ts:118` and `src/queries/job-details-query.ts:139`
+**Status: FIXED** — All query functions now accept `ResolvedClientConfig` instead of raw `ClientConfig`. Config is resolved once at `JobbyClient` construction time and passed through the entire call chain. The redundant `resolveConfig()` calls in all query functions have been removed.
 
-`executeJobDetailsQueryById` calls `resolveConfig(clientConfig)` at line 118 to construct the job URL (it needs `config.baseUrl`), then passes the resolved config into `fetchJobDetailsHtml`. The URL construction needs only `baseUrl` but currently triggers full config resolution, creating a redundant Winston Logger instantiation on every `byId` call.
-
-**Fix:** Derive `baseUrl` directly from `clientConfig?.baseUrl ?? env ?? DEFAULT_CLIENT_CONFIG.baseUrl` without constructing the full resolved config. Or better: have query functions accept `ResolvedClientConfig` so resolution happens once at client construction time.
-
-#### 3.2.2 No Shared `AxiosInstance`; Global Module State Used Per Request
+#### 3.2.2 No Shared `AxiosInstance`; Global Module State Used Per Request — **FIXED**
 
 **Files:** `src/queries/jobs-query.ts:91`, `src/queries/job-details-query.ts:73`
-
-Both query files call `axios.get<string>(url, config)` on the module-level axios export rather than on a configured `axios.create()` instance. This prevents interceptor injection, makes testing more heavyweight, and couples all requests to global axios state.
-
-**Fix:** Create an `AxiosInstance` from `ResolvedClientConfig` at client construction time.
+**Status: FIXED** — Added `axiosInstance: AxiosInstance` to `ResolvedClientConfig`. `resolveConfig()` now creates a shared `axios.create({ timeout })` instance. All query functions use `config.axiosInstance.get(...)` instead of the global `axios.get(...)`. This enables interceptor injection and simplifies test mocking.
 
 #### 3.2.3 `Job.id` and `Job.url` Typed `string | undefined` Despite Parser Guarantees
 
@@ -119,11 +113,10 @@ Both query files call `axios.get<string>(url, config)` on the module-level axios
 
 ### 3.3 Low Issues
 
-#### 3.3.1 Raw `ClientConfig` Retained After Resolution
+#### 3.3.1 Raw `ClientConfig` Retained After Resolution — **FIXED**
 
 **File:** `src/client.ts:141-152`
-
-Raw `ClientConfig | undefined` is stored on both `JobbyClient` and `JobsResource` and re-resolved per query call. Fix by resolving once at construction.
+**Status: FIXED** — Removed the raw `this.config` field from `JobbyClient`. `JobsResource` now stores `ResolvedClientConfig` directly. Config is resolved once at construction and passed through the internal call chain. `ResolvedClientConfig` removed from public exports (it's an internal type).
 
 #### 3.3.2 `queries/index.ts` Dead Barrel — **FIXED**
 
@@ -220,9 +213,9 @@ None found.
 
 1. **`mergeJobDetailsData` merge contract not directly tested** — only implicitly covered via higher-level tests
 2. **`parseSalaryText` not tested with European numeric formats** (comma as decimal separator)
-3. **Timing-dependent test** in `logging.test.ts` uses fixed 200ms `setTimeout` — flake risk
+3. ~~**Timing-dependent test** in `logging.test.ts` uses fixed 200ms `setTimeout` — flake risk~~ **FIXED** — Replaced `setTimeout(resolve, 200)` with `vi.waitFor()` for reliable async assertions
 4. **`validatePagination`** not tested with all three fields invalid simultaneously (trivial gap)
-5. **`logging.test.ts:52-55`** tests assert `logger.http`/`logger.silly` — methods not in the `Logger` interface (tests Winston internals)
+5. ~~**`logging.test.ts:52-55`** tests assert `logger.http`/`logger.silly` — methods not in the `Logger` interface (tests Winston internals)~~ **FIXED** — Removed assertions on Winston-internal `logger.http` and `logger.silly` methods
 6. **Integration search tests** bypass the client, only validate fixture server (per code review agent)
 
 ---
@@ -268,22 +261,22 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 2. ~~Fix `appendStringParam` truthy check~~ **DONE**
 3. Simplify `scrapeShortDescription` / `scrapeSharingImageUrl` verbose guards
 4. ~~Delete `queries/index.ts` dead barrel~~ **DONE**
-5. Fix timing-dependent test in `logging.test.ts` (use `vi.waitFor`)
+5. ~~Fix timing-dependent test in `logging.test.ts` (use `vi.waitFor`)~~ **DONE**
 6. Add direct unit test for `mergeJobDetailsData` merge contract
-7. Remove `logger.http`/`logger.silly` assertions from `logging.test.ts`
+7. ~~Remove `logger.http`/`logger.silly` assertions from `logging.test.ts`~~ **DONE**
 
 ### Phase 2 — Architecture Improvements (internal)
 
-8. Fix double `resolveConfig` on `byId` variants
+8. ~~Fix double `resolveConfig` on `byId` variants~~ **DONE**
 9. Replace `random-useragent` with inline curated User-Agent list
-10. Introduce shared `AxiosInstance` in query functions
+10. ~~Introduce shared `AxiosInstance` in query functions~~ **DONE**
 11. Slim `Logger` interface to remove Winston-specific properties
 
 ### Phase 3 — Refactoring (internal)
 
 12. Split `job-details-query.ts` into parser modules
 13. Make `createTurndownService` injectable into `htmlToMarkdown`
-14. Resolve config once at construction, pass `ResolvedClientConfig` to query functions
+14. ~~Resolve config once at construction, pass `ResolvedClientConfig` to query functions~~ **DONE**
 
 ### Phase 4 — Public API Changes (semver minor or major)
 

@@ -101,25 +101,11 @@ All exported functions and schema exports carry JSDoc comments explaining their 
 
 ## 4. Medium Issues
 
-### 4.1 Module-Level Singleton Client Blocks Testability and Configuration
+### 4.1 Module-Level Singleton Client Blocks Testability and Configuration — **FIXED**
 
 **File:** `src/handlers.ts:11`
 **Severity:** Medium
-
-```typescript
-const client = new JobbyClient({ timeout: 30000 });
-```
-
-The client is instantiated at module load time with a hardcoded 30s timeout, no retry configuration, and no injection seam. Tests must mock the entire `jobby-client` module.
-
-**Fix:** Accept a client factory or instance in `createServer`, defaulting to standard construction with retry enabled:
-
-```typescript
-export function createHandlers(client: JobbyClient = new JobbyClient({
-  timeout: 30_000,
-  retry: { maxRetries: 2, initialDelayMs: 1_000, maxDelayMs: 10_000 },
-})) { ... }
-```
+**Status: FIXED** — Removed the module-level singleton client from `handlers.ts`. Added optional `client?: JobbyClient` parameter to `createServer()`, defaulting to `new JobbyClient({ timeout: 30_000 })`. Client is passed to both handler functions as a parameter. Tests now inject mock clients directly instead of mocking the module-level import.
 
 ### 4.2 `zod` Classified as `peerDependency` for a Binary Server — **FIXED**
 
@@ -210,12 +196,11 @@ The config declares an integration project but no integration test files exist. 
 
 ## 7. SOLID Principle Violations
 
-### 7.1 Dependency Inversion — Handlers Depend on Concrete Client Class
+### 7.1 Dependency Inversion — Handlers Depend on Concrete Client Class — **FIXED**
 
 **File:** `src/handlers.ts:1, 11`
 **Severity:** Medium
-
-Handlers import and instantiate `JobbyClient` directly. No DI seam exists. The fix in 4.1 resolves this.
+**Status: FIXED** — Resolved by 4.1. Handlers now receive `JobbyClient` as a parameter via dependency injection from `createServer()`.
 
 ### 7.2 Single Responsibility — `server.ts` Reads Package Metadata
 
@@ -253,7 +238,7 @@ For parity with CLI convenience scripts in root `package.json`.
 |---|---|---|---|---|
 | 3.1 | `main()` is never called — server silently exits | Critical | Runtime | **Fixed** |
 | 3.2 | `get_job_details` schema/handler mismatch; ZodError escapes | Critical | MCP Protocol | **Fixed** |
-| 4.1 | Module-level singleton client; no DI, no retry | Medium | Architecture | Open |
+| 4.1 | Module-level singleton client; no DI, no retry | Medium | Architecture | **Fixed** |
 | 4.2 | `zod` as `peerDependency` — fails on global install | Medium | Deployment | **Fixed** |
 | 4.3 | `setup.md` timeout wrong (says 10s, actual 30s) | Medium | Documentation | **Fixed** |
 | 5.1 | `ToolResponse` unexported; duplicated with weaker types | Low | Code Quality | **Fixed** |
@@ -265,11 +250,11 @@ For parity with CLI convenience scripts in root `package.json`.
 | 6.3 | Test enshrines ZodError escape as expected behavior | Low | MCP Protocol | **Fixed** |
 | 6.4 | Version test hardcodes `"1.0.0"` | Low | Test Quality | **Fixed** |
 | 6.5 | No integration tests | Low | Testing | Open |
-| 7.1 | Handlers depend on concrete `JobbyClient` | Medium | SOLID | Open |
-| 8.1 | Tool descriptions should enumerate enum values | Recommendation | MCP UX | Open |
+| 7.1 | Handlers depend on concrete `JobbyClient` | Medium | SOLID | **Fixed** |
+| 8.1 | Tool descriptions should enumerate enum values | Recommendation | MCP UX | **Fixed** |
 | 8.2 | `get_job_details` description needs constraint note | Recommendation | MCP UX | **Fixed** |
 | 8.3 | Missing `start:mcp` root script | Recommendation | DX | Open |
-| 8.4 | Startup log should include version | Recommendation | Observability | Open |
+| 8.4 | Startup log should include version | Recommendation | Observability | **Fixed** |
 
 ### Priority Recommendations
 
@@ -282,7 +267,7 @@ For parity with CLI convenience scripts in root `package.json`.
 
 **P2 — Fix for robustness:**
 4. ~~Fix `server.test.ts` mock constructor arg order (6.2)~~ **DONE**
-5. Add retry config; inject client as dependency (4.1, 5.5, 7.1)
+5. ~~Inject client as dependency (4.1, 7.1)~~ **DONE** — Add retry config (5.5) still open
 6. ~~Add `.int().nonnegative()` to pagination fields (5.2)~~ **DONE**
 7. ~~Add `.min(1)` to keyword/location (5.3)~~ **DONE**
 8. ~~Add `.url()` to jobUrl (5.4)~~ **DONE**
@@ -292,9 +277,9 @@ For parity with CLI convenience scripts in root `package.json`.
 **P3 — Polish:**
 11. ~~Correct `setup.md` timeout documentation (4.3)~~ **DONE**
 12. ~~Export `ToolResponse`; remove duplicate (5.1)~~ **DONE**
-13. ~~Improve `get_job_details` description (8.2)~~ **DONE** — Improve tool descriptions for enum values (8.1) still open
+13. ~~Improve `get_job_details` description (8.2)~~ **DONE** — ~~Improve tool descriptions for enum values (8.1)~~ **DONE**
 14. Add `start:mcp` to root `package.json` (8.3)
-15. Add version to startup log (8.4)
+15. ~~Add version to startup log (8.4)~~ **DONE**
 
 ---
 

@@ -117,9 +117,10 @@ describe('queryForJobDetails - details command handler', () => {
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalled();
     });
 
-    it('should detect ftp:// as a URL', async () => {
+    it('should NOT detect ftp:// as a URL', async () => {
       await queryForJobDetails('ftp://files.example.com/job/123', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalled();
+      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
+      expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalled();
     });
 
     it('should detect https:// as a URL', async () => {

@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
-import axios, { type AxiosRequestConfig } from 'axios';
-import { type ClientConfig, resolveConfig, type ResolvedClientConfig } from '../config.js';
+import type { AxiosRequestConfig } from 'axios';
+import { type ResolvedClientConfig } from '../config.js';
 import {
   type JobDetails,
   type JobDetailsInfo,
@@ -33,10 +33,8 @@ interface JobDetailsQueryContext {
  */
 async function fetchJobDetailsHtml(
   jobUrl: string,
-  clientConfig?: ClientConfig,
-  resolvedConfig?: ResolvedClientConfig,
+  config: ResolvedClientConfig,
 ): Promise<JobDetailsQueryContext> {
-  const config = resolvedConfig ?? resolveConfig(clientConfig);
   const { logger } = config;
   const startTime = Date.now();
 
@@ -70,7 +68,7 @@ async function fetchJobDetailsHtml(
 
     logger.verbose(`Executing query ${normalizedUrl}...`);
 
-    const response = await axios.get<string>(normalizedUrl, axiosConfig);
+    const response = await config.axiosInstance.get<string>(normalizedUrl, axiosConfig);
 
     return { html: response.data, config, startTime };
   } catch (error: unknown) {
@@ -81,15 +79,15 @@ async function fetchJobDetailsHtml(
 /** Fetches detailed information for a specific job posting by URL. */
 export async function executeJobDetailsQueryByUrl(
   jobUrl: string,
-  clientConfig?: ClientConfig
+  config: ResolvedClientConfig
 ): Promise<JobDetails> {
-  const { html, config, startTime } = await fetchJobDetailsHtml(jobUrl, clientConfig);
+  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  config.logger.verbose('Processing query response...');
+  resolvedConfig.logger.verbose('Processing query response...');
 
-  const details = parseJobDetails(html, jobUrl, config);
+  const details = parseJobDetails(html, jobUrl, resolvedConfig);
 
-  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
+  resolvedConfig.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -97,11 +95,11 @@ export async function executeJobDetailsQueryByUrl(
 /** Fetches the raw HTML response for a specific job posting by URL. */
 export async function executeJobDetailsQueryRawHtmlByUrl(
   jobUrl: string,
-  clientConfig?: ClientConfig
+  config: ResolvedClientConfig
 ): Promise<string> {
-  const { html, config, startTime } = await fetchJobDetailsHtml(jobUrl, clientConfig);
+  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
+  resolvedConfig.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -109,15 +107,14 @@ export async function executeJobDetailsQueryRawHtmlByUrl(
 /** Fetches detailed information for a specific job posting by job ID. */
 export async function executeJobDetailsQueryById(
   jobId: string,
-  clientConfig?: ClientConfig
+  config: ResolvedClientConfig
 ): Promise<JobDetails> {
   const trimmedId = jobId.trim();
   if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
-  const config = resolveConfig(clientConfig);
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, undefined, config);
+  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
   resolvedConfig.logger.verbose('Processing query response...');
 
@@ -131,15 +128,14 @@ export async function executeJobDetailsQueryById(
 /** Fetches the raw HTML response for a specific job posting by job ID. */
 export async function executeJobDetailsQueryRawHtmlById(
   jobId: string,
-  clientConfig?: ClientConfig
+  config: ResolvedClientConfig
 ): Promise<string> {
   const trimmedId = jobId.trim();
   if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
-  const config = resolveConfig(clientConfig);
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, undefined, config);
+  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
   resolvedConfig.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 

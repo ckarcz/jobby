@@ -20,17 +20,17 @@ export const SearchInputSchema = z.object({
   jobType: z.union([
     z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]]),
     z.array(z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]])),
-  ]).optional().describe('Type of employment (single value or array)'),
+  ]).optional().describe(`Type of employment. Valid values: ${JOB_TYPE_CHOICES.join(', ')}. Single value or array.`),
   experienceLevel: z.union([
     z.enum(EXPERIENCE_LEVEL_CHOICES as [ExperienceLevel, ...ExperienceLevel[]]),
     z.array(z.enum(EXPERIENCE_LEVEL_CHOICES as [ExperienceLevel, ...ExperienceLevel[]])),
-  ]).optional().describe('Required experience level (single value or array)'),
-  minimumSalary: z.enum(MINIMUM_SALARY_CHOICES as [MinimumSalary, ...MinimumSalary[]]).optional().describe('Minimum salary'),
+  ]).optional().describe(`Required experience level. Valid values: ${EXPERIENCE_LEVEL_CHOICES.join(', ')}. Single value or array.`),
+  minimumSalary: z.enum(MINIMUM_SALARY_CHOICES as [MinimumSalary, ...MinimumSalary[]]).optional().describe(`Minimum salary filter. Valid values: ${MINIMUM_SALARY_CHOICES.join(', ')}.`),
   workplaceType: z.union([
     z.enum(WORKPLACE_TYPE_CHOICES as [WorkplaceType, ...WorkplaceType[]]),
     z.array(z.enum(WORKPLACE_TYPE_CHOICES as [WorkplaceType, ...WorkplaceType[]])),
-  ]).optional().describe('Workplace arrangement (single value or array)'),
-  listingAge: z.enum(LISTING_AGE_CHOICES as [ListingAge, ...ListingAge[]]).optional().describe('How recently the job was posted'),
+  ]).optional().describe(`Workplace arrangement. Valid values: ${WORKPLACE_TYPE_CHOICES.join(', ')}. Single value or array.`),
+  listingAge: z.enum(LISTING_AGE_CHOICES as [ListingAge, ...ListingAge[]]).optional().describe(`How recently the job was posted. Valid values: ${LISTING_AGE_CHOICES.join(', ')}.`),
   geoId: z.string().optional().describe('LinkedIn geo ID (e.g. 103644278 for US, 101165590 for UK)'),
   companyId: z.string().optional().describe('LinkedIn company ID (e.g. 1441 for Google, 1035 for Microsoft)'),
   start: z.number().int().nonnegative().optional().describe('Starting offset for the query.'),

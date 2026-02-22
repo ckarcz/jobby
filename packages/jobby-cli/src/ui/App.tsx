@@ -34,11 +34,9 @@ export function App(): React.ReactElement {
   const layoutState = useMemo<LayoutState>(() => ({
     terminalWidth: state.terminalWidth,
     terminalHeight: state.terminalHeight,
-    maxWidth: state.maxWidth,
-    maxHeight: state.maxHeight,
     focusedPanel: state.focusedPanel,
     filterDrawerOpen: state.filterDrawerOpen,
-  }), [state.terminalWidth, state.terminalHeight, state.maxWidth, state.maxHeight, state.focusedPanel, state.filterDrawerOpen]);
+  }), [state.terminalWidth, state.terminalHeight, state.focusedPanel, state.filterDrawerOpen]);
 
   const searchState = useMemo<SearchState>(() => ({
     searchKeyword: state.searchKeyword,

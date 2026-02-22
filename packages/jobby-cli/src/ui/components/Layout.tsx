@@ -11,13 +11,13 @@ import { FILTER_DRAWER_WIDTH } from '../constants.js';
 
 /** Fullscreen layout with header, main content area, and status bar. */
 export function Layout(): React.ReactElement {
-  const { maxWidth, maxHeight, filterDrawerOpen } = useLayoutState();
+  const { terminalWidth, terminalHeight, filterDrawerOpen } = useLayoutState();
   const { searchStatus, totalResults } = useSearchState();
 
   const showDetailsPanel = searchStatus === 'results' && totalResults.length > 0;
 
   return (
-    <Box flexDirection="column" width={maxWidth} height={maxHeight} marginTop={0}>
+    <Box flexDirection="column" width={terminalWidth} height={terminalHeight} marginTop={0}>
       <Header />
       <Box flexDirection="row" flexGrow={1}>
         <FocusableBox panel="filters" flexDirection="column" borderStyle="single" paddingX={1} width={FILTER_DRAWER_WIDTH} overflow="hidden" display={filterDrawerOpen ? 'flex' : 'none'}>

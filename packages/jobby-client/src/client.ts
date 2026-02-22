@@ -8,10 +8,10 @@ import type { ResolvedRetryConfig } from './utils/retry.js';
 
 /** Jobs resource providing search and details methods. */
 class JobsResource {
-  private readonly config: ClientConfig | undefined;
+  private readonly config: ResolvedClientConfig;
   private readonly retryConfig: ResolvedRetryConfig;
 
-  constructor(config: ClientConfig | undefined, retryConfig: ResolvedRetryConfig) {
+  constructor(config: ResolvedClientConfig, retryConfig: ResolvedRetryConfig) {
     this.config = config;
     this.retryConfig = retryConfig;
   }
@@ -138,7 +138,6 @@ export class JobbyClient {
    */
   public readonly jobs: JobsResource;
 
-  private readonly config: ClientConfig | undefined;
   private readonly resolvedConfig: ResolvedClientConfig;
 
   /**
@@ -147,9 +146,8 @@ export class JobbyClient {
    * @param config - Optional configuration options
    */
   constructor(config?: ClientConfig) {
-    this.config = config;
     this.resolvedConfig = resolveConfig(config);
-    this.jobs = new JobsResource(config, this.resolvedConfig.retry);
+    this.jobs = new JobsResource(this.resolvedConfig, this.resolvedConfig.retry);
   }
 
   /**

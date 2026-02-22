@@ -91,11 +91,10 @@ Node 22 supports JSON import assertions natively. `createRequire` is a workaroun
 
 These are implementation details that should not be exported.
 
-#### `yamlFormatter` Ignores `pretty` Option Silently
+#### `yamlFormatter` Ignores `pretty` Option Silently — **FIXED**
 
 **File:** `src/formatters/yaml-formatter.ts:6`
-
-A user passing `--format yaml --pretty` gets the same output as without `--pretty`. Should be documented.
+**Status: FIXED** — Added JSDoc noting that the `pretty` option is intentionally unused (YAML is inherently human-readable).
 
 ---
 
@@ -103,8 +102,8 @@ A user passing `--format yaml --pretty` gets the same output as without `--prett
 
 - ~~**`search.test.ts` uses invalid `'mid-senior'` ExperienceLevel value** (`src/commands/search.test.ts:97,103`).~~ **FIXED** — Changed invalid `'mid-senior'` to `'director'` in search.test.ts.
 - **Redundant duplicate test cases in `parse.test.ts`** — identical assertions across describe blocks for zero parsing, negative numbers, and empty strings.
-- **`formatter.test.ts` mutates shared default registry** without guaranteed cleanup via `afterEach`.
-- **`details.ts` `isUrl` helper is overly permissive** — accepts `ftp://`, `data:`, etc. Should narrow to `http:` and `https:`.
+- ~~**`formatter.test.ts` mutates shared default registry** without guaranteed cleanup via `afterEach`.~~ **FIXED** — Added `afterEach(() => { registerDefaultFormatters(); })` for guaranteed cleanup.
+- ~~**`details.ts` `isUrl` helper is overly permissive** — accepts `ftp://`, `data:`, etc. Should narrow to `http:` and `https:`.~~ **FIXED** — Added protocol check: `url.protocol === 'http:' || url.protocol === 'https:'`.
 - **`helpConfig` is exported from `index.ts`** without documented reason for external consumers to use it.
 
 ---
@@ -161,17 +160,17 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 ### Priority 3 — Code Quality
 
 8. ~~Replace `writeFileSync` with `fs.promises.writeFile` in `outputResult`~~ **DONE**
-9. Narrow `isUrl` to `http:` and `https:` schemes only
+9. ~~Narrow `isUrl` to `http:` and `https:` schemes only~~ **DONE**
 10. Remove `export` from `swapScreenBuffer`/`restoreScreenBuffer`
 11. Remove `helpConfig` from `index.ts` exports
 12. ~~Fix invalid `'mid-senior'` value in `search.test.ts`~~ **DONE**
 13. Deduplicate redundant test cases in `parse.test.ts`
-14. Improve `formatter.test.ts` test isolation
+14. ~~Improve `formatter.test.ts` test isolation~~ **DONE**
 
 ### Priority 4 — Documentation
 
 15. ~~Update `docs/commands.md` to match actual implementation~~ **DONE**
-16. Add JSDoc note to `yamlFormatter` about `--pretty` having no effect
+16. ~~Add JSDoc note to `yamlFormatter` about `--pretty` having no effect~~ **DONE**
 17. Add integration test coverage for `--no-color` on data output
 
 ---

@@ -1,4 +1,4 @@
-import type { ClientConfig } from '../config.js';
+import { type ClientConfig, type ResolvedClientConfig, resolveConfig } from '../config.js';
 import type {
   JobSearchParams,
   PaginationParams,
@@ -33,13 +33,13 @@ import { type ResolvedRetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../ut
  * ```
  */
 export class JobSearchBuilder {
-  private readonly config: ClientConfig | undefined;
+  private readonly resolvedConfig: ResolvedClientConfig;
   private readonly retryConfig: ResolvedRetryConfig;
   private params: JobSearchParams = {};
   private pagination: PaginationParams = {};
 
   constructor(config?: ClientConfig, retryConfig?: ResolvedRetryConfig) {
-    this.config = config;
+    this.resolvedConfig = retryConfig !== undefined ? (config as unknown as ResolvedClientConfig) : resolveConfig(config);
     this.retryConfig = retryConfig ?? DEFAULT_RETRY_CONFIG;
   }
 
@@ -157,6 +157,6 @@ export class JobSearchBuilder {
    * Execute the search query and return results.
    */
   async execute(): Promise<SearchResponse<Job>> {
-    return withRetry(() => executeJobsQuery(this.params, this.pagination, this.config), this.retryConfig);
+    return withRetry(() => executeJobsQuery(this.params, this.pagination, this.resolvedConfig), this.retryConfig);
   }
 }

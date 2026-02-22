@@ -76,7 +76,7 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'TypeScript' },
           undefined,
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result.results).toHaveLength(1);
       });
@@ -93,21 +93,20 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'React' },
           { start: 25, take: 10 },
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
       });
 
-      it('should pass config to query', async () => {
+      it('should pass resolved config to query', async () => {
         const { executeJobsQuery } = await import('./queries/jobs-query.js');
-        const config = { timeout: 15000 };
-        const client = new JobbyClient(config);
+        const client = new JobbyClient({ timeout: 15000 });
 
         await client.jobs.queryForJobs({ keyword: 'Python' });
 
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'Python' },
           undefined,
-          config
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
         );
       });
     });
@@ -121,21 +120,20 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/123',
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result.summary.position).toBe('Senior Developer');
       });
 
-      it('should pass config to query', async () => {
+      it('should pass resolved config to query', async () => {
         const { executeJobDetailsQueryByUrl } = await import('./queries/job-details-query.js');
-        const config = { timeout: 15000 };
-        const client = new JobbyClient(config);
+        const client = new JobbyClient({ timeout: 15000 });
 
         await client.jobs.queryForJobDetailsByUrl('https://linkedin.com/jobs/view/456');
 
         expect(executeJobDetailsQueryByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/456',
-          config
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
         );
       });
     });
@@ -149,21 +147,20 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryById).toHaveBeenCalledWith(
           '123',
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result.summary.position).toBe('Senior Developer');
       });
 
-      it('should pass config to query', async () => {
+      it('should pass resolved config to query', async () => {
         const { executeJobDetailsQueryById } = await import('./queries/job-details-query.js');
-        const config = { timeout: 15000 };
-        const client = new JobbyClient(config);
+        const client = new JobbyClient({ timeout: 15000 });
 
         await client.jobs.queryForJobDetailsById('456');
 
         expect(executeJobDetailsQueryById).toHaveBeenCalledWith(
           '456',
-          config
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
         );
       });
     });
@@ -178,7 +175,7 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQueryRawHtml).toHaveBeenCalledWith(
           { keyword: 'TypeScript' },
           undefined,
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result).toBe('<html><li>Job 1</li></html>');
       });
@@ -193,7 +190,7 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryRawHtmlByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/123',
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result).toBe('<html><h1>Job Details</h1></html>');
       });
@@ -208,7 +205,7 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryRawHtmlById).toHaveBeenCalledWith(
           '123',
-          undefined
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
         );
         expect(result).toBe('<html><h1>Job Details</h1></html>');
       });

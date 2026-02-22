@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
-import axios, { type AxiosRequestConfig } from 'axios';
-import { type ClientConfig, resolveConfig, type ResolvedClientConfig } from '../config.js';
+import type { AxiosRequestConfig } from 'axios';
+import { type ResolvedClientConfig } from '../config.js';
 import {
   type JobSearchParams,
   type PaginationParams,
@@ -49,11 +49,10 @@ interface JobsQueryContext {
  * @returns The raw HTML response alongside all resolved query context
  */
 async function fetchJobsHtml(
-  jobSearchParams?: JobSearchParams,
-  paginationParams?: PaginationParams,
-  clientConfig?: ClientConfig
+  jobSearchParams: JobSearchParams | undefined,
+  paginationParams: PaginationParams | undefined,
+  config: ResolvedClientConfig
 ): Promise<JobsQueryContext> {
-  const config = resolveConfig(clientConfig);
   const { logger } = config;
   const startTime = Date.now();
 
@@ -88,7 +87,7 @@ async function fetchJobsHtml(
       axiosConfig.signal = config.signal;
     }
 
-    const response = await axios.get<string>(queryUrl, axiosConfig);
+    const response = await config.axiosInstance.get<string>(queryUrl, axiosConfig);
 
     return { html: response.data, queryUrl, config, normalizedJobSearchParams, normalizedPaginationParams, start, startTime };
   } catch (error: unknown) {
@@ -101,16 +100,16 @@ async function fetchJobsHtml(
  * Makes a single request and applies skip/take to the results.
  */
 export async function executeJobsQuery(
-  jobSearchParams?: JobSearchParams,
-  paginationParams?: PaginationParams,
-  clientConfig?: ClientConfig
+  jobSearchParams: JobSearchParams | undefined,
+  paginationParams: PaginationParams | undefined,
+  config: ResolvedClientConfig
 ): Promise<SearchResponse<Job>> {
-  const { html, config, normalizedJobSearchParams, normalizedPaginationParams, start, startTime, queryUrl } =
-    await fetchJobsHtml(jobSearchParams, paginationParams, clientConfig);
+  const { html, config: resolvedConfig, normalizedJobSearchParams, normalizedPaginationParams, start, startTime, queryUrl } =
+    await fetchJobsHtml(jobSearchParams, paginationParams, config);
 
-  config.logger.verbose('Processing query response...');
+  resolvedConfig.logger.verbose('Processing query response...');
 
-  let fetchedJobs = parseJobs(html, config);
+  let fetchedJobs = parseJobs(html, resolvedConfig);
 
   const fetchedJobsCount = fetchedJobs.length;
 
@@ -123,7 +122,7 @@ export async function executeJobsQuery(
   }
 
   const durationMs = Date.now() - startTime;
-  config.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
+  resolvedConfig.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
 
   return {
     results: fetchedJobs,
@@ -145,13 +144,13 @@ export async function executeJobsQuery(
 
 /** Executes a job search query against LinkedIn and returns the raw HTML response. */
 export async function executeJobsQueryRawHtml(
-  jobSearchParams?: JobSearchParams,
-  paginationParams?: PaginationParams,
-  clientConfig?: ClientConfig
+  jobSearchParams: JobSearchParams | undefined,
+  paginationParams: PaginationParams | undefined,
+  config: ResolvedClientConfig
 ): Promise<string> {
-  const { html, config, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, clientConfig);
+  const { html, config: resolvedConfig, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, config);
 
-  config.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
+  resolvedConfig.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }

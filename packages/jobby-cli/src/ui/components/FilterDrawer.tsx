@@ -27,13 +27,13 @@ export function FilterDrawer(): React.ReactElement {
   const [draft, draftDispatch] = useFilterDraft();
   useFilterKeyboard(draft, draftDispatch);
 
-  const { maxHeight } = useLayoutState();
+  const { terminalHeight } = useLayoutState();
   const scrollRef = useRef<ScrollListRef>(null);
 
   // Remeasure on terminal resize
   useEffect(() => {
     scrollRef.current?.remeasure();
-  }, [maxHeight]);
+  }, [terminalHeight]);
 
   // Stable text change callbacks — each closes over its filter key and dispatches SET_FILTERS
   const draftDispatchRef = useRef<React.Dispatch<FilterDrawerAction>>(draftDispatch);

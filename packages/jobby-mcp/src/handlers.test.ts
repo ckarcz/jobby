@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { JobbyClient } from 'jobby-client';
+import { JobbyError, ErrorCode, NetworkError, ValidationError, ParsingError } from 'jobby-client';
+import { handleError, handleSearchJobs, handleGetJobDetails } from './handlers.js';
 
 const { mockSearch, mockGetDetailsByUrl, mockGetDetailsById } = vi.hoisted(() => ({
   mockSearch: vi.fn(),
@@ -6,22 +9,15 @@ const { mockSearch, mockGetDetailsByUrl, mockGetDetailsById } = vi.hoisted(() =>
   mockGetDetailsById: vi.fn(),
 }));
 
-vi.mock('jobby-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('jobby-client')>();
+function createMockClient() {
   return {
-    ...actual,
-    JobbyClient: vi.fn(() => ({
-      jobs: {
-        queryForJobs: mockSearch,
-        queryForJobDetailsByUrl: mockGetDetailsByUrl,
-        queryForJobDetailsById: mockGetDetailsById,
-      },
-    })),
-  };
-});
-
-import { handleError, handleSearchJobs, handleGetJobDetails } from './handlers.js';
-import { JobbyError, ErrorCode, NetworkError, ValidationError, ParsingError } from 'jobby-client';
+    jobs: {
+      queryForJobs: mockSearch,
+      queryForJobDetailsByUrl: mockGetDetailsByUrl,
+      queryForJobDetailsById: mockGetDetailsById,
+    },
+  } as unknown as JobbyClient;
+}
 
 /**
  * Direct unit tests for MCP tool handler functions including error formatting,
@@ -102,7 +98,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
       listingAge: 'past-week',
       geoId: '103644278',
       companyId: '1441',
-    });
+    }, createMockClient());
 
     expect(mockSearch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -128,7 +124,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
       jobType: ['full-time', 'contract'],
       experienceLevel: ['senior', 'director'],
       workplaceType: ['remote', 'hybrid'],
-    });
+    }, createMockClient());
 
     expect(mockSearch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -149,7 +145,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
       start: 10,
       skip: 2,
       take: 5,
-    });
+    }, createMockClient());
 
     expect(mockSearch).toHaveBeenCalledWith(
       expect.any(Object),
@@ -160,7 +156,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
   it('should handle empty args (no filters)', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
 
-    const result = await handleSearchJobs({});
+    const result = await handleSearchJobs({}, createMockClient());
 
     expect(result.isError).toBeUndefined();
     expect(result.content[0].type).toBe('text');
@@ -173,7 +169,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
     };
     mockSearch.mockResolvedValueOnce(mockResponse);
 
-    const result = await handleSearchJobs({ keyword: 'Dev' });
+    const result = await handleSearchJobs({ keyword: 'Dev' }, createMockClient());
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.results[0].summary.position).toBe('Dev');
@@ -181,7 +177,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
 
   it('should return pretty-printed JSON (2-space indent)', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
-    const result = await handleSearchJobs({});
+    const result = await handleSearchJobs({}, createMockClient());
     const text = result.content[0].text;
     // JSON.stringify with null, 2 produces indented output
     expect(text).toContain('\n');
@@ -190,14 +186,14 @@ describe('handleSearchJobs - search parameter forwarding', () => {
 
   it('should return isError true on failure', async () => {
     mockSearch.mockRejectedValueOnce(new Error('fail'));
-    const result = await handleSearchJobs({ keyword: 'test' });
+    const result = await handleSearchJobs({ keyword: 'test' }, createMockClient());
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('fail');
   });
 
   it('should prefix error text with "Error: "', async () => {
     mockSearch.mockRejectedValueOnce(new Error('connection timeout'));
-    const result = await handleSearchJobs({ keyword: 'test' });
+    const result = await handleSearchJobs({ keyword: 'test' }, createMockClient());
     expect(result.content[0].text).toMatch(/^Error: /);
   });
 
@@ -209,7 +205,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
       start: 0,
       skip: 1,
       take: 10,
-    });
+    }, createMockClient());
 
     const filterArg = mockSearch.mock.calls[0][0];
     expect(filterArg).not.toHaveProperty('start');
@@ -220,7 +216,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
   it('should pass undefined filter fields when not provided', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
 
-    await handleSearchJobs({ keyword: 'Python' });
+    await handleSearchJobs({ keyword: 'Python' }, createMockClient());
 
     const filterArg = mockSearch.mock.calls[0][0];
     expect(filterArg.keyword).toBe('Python');
@@ -231,7 +227,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
   it('should pass undefined pagination fields when not provided', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
 
-    await handleSearchJobs({ keyword: 'Rust' });
+    await handleSearchJobs({ keyword: 'Rust' }, createMockClient());
 
     const paginationArg = mockSearch.mock.calls[0][1];
     expect(paginationArg.start).toBeUndefined();
@@ -241,7 +237,7 @@ describe('handleSearchJobs - search parameter forwarding', () => {
 
   it('should return content array with single text element', async () => {
     mockSearch.mockResolvedValueOnce({ results: [], pagination: {} });
-    const result = await handleSearchJobs({});
+    const result = await handleSearchJobs({}, createMockClient());
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
   });
@@ -256,28 +252,28 @@ describe('handleGetJobDetails - job detail resolution', () => {
 
   it('should call queryForJobDetailsByUrl when jobUrl provided', async () => {
     mockGetDetailsByUrl.mockResolvedValueOnce({ id: '1', details: {} });
-    await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
+    await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' }, createMockClient());
     expect(mockGetDetailsByUrl).toHaveBeenCalledWith('https://linkedin.com/jobs/view/1');
     expect(mockGetDetailsById).not.toHaveBeenCalled();
   });
 
   it('should call queryForJobDetailsById when only jobId provided', async () => {
     mockGetDetailsById.mockResolvedValueOnce({ id: '2', details: {} });
-    await handleGetJobDetails({ jobId: '2' });
+    await handleGetJobDetails({ jobId: '2' }, createMockClient());
     expect(mockGetDetailsById).toHaveBeenCalledWith('2');
     expect(mockGetDetailsByUrl).not.toHaveBeenCalled();
   });
 
   it('should prefer jobUrl over jobId when both provided', async () => {
     mockGetDetailsByUrl.mockResolvedValueOnce({ id: '1', details: {} });
-    await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1', jobId: '1' });
+    await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1', jobId: '1' }, createMockClient());
     expect(mockGetDetailsByUrl).toHaveBeenCalled();
     expect(mockGetDetailsById).not.toHaveBeenCalled();
   });
 
   it('should return isError true on fetch failure', async () => {
     mockGetDetailsByUrl.mockRejectedValueOnce(new Error('not found'));
-    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
+    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' }, createMockClient());
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('not found');
   });
@@ -285,21 +281,21 @@ describe('handleGetJobDetails - job detail resolution', () => {
   it('should return JSON response for successful fetch', async () => {
     const details = { id: '123', summary: { position: 'Engineer' }, details: { description: 'desc' } };
     mockGetDetailsByUrl.mockResolvedValueOnce(details);
-    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/123' });
+    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/123' }, createMockClient());
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.summary.position).toBe('Engineer');
   });
 
   it('should not set isError on success', async () => {
     mockGetDetailsByUrl.mockResolvedValueOnce({ id: '1', details: {} });
-    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
+    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' }, createMockClient());
     expect(result.isError).toBeUndefined();
   });
 
   it('should return pretty-printed JSON for details', async () => {
     const details = { id: '1', summary: { position: 'Dev' } };
     mockGetDetailsById.mockResolvedValueOnce(details);
-    const result = await handleGetJobDetails({ jobId: '1' });
+    const result = await handleGetJobDetails({ jobId: '1' }, createMockClient());
     const text = result.content[0].text;
     expect(text).toContain('\n');
     expect(text).toContain('  ');
@@ -307,13 +303,13 @@ describe('handleGetJobDetails - job detail resolution', () => {
 
   it('should prefix error text with "Error: " on failure', async () => {
     mockGetDetailsById.mockRejectedValueOnce(new Error('timeout'));
-    const result = await handleGetJobDetails({ jobId: '999' });
+    const result = await handleGetJobDetails({ jobId: '999' }, createMockClient());
     expect(result.content[0].text).toMatch(/^Error: /);
   });
 
   it('should return content array with single text element on success', async () => {
     mockGetDetailsById.mockResolvedValueOnce({ id: '1' });
-    const result = await handleGetJobDetails({ jobId: '1' });
+    const result = await handleGetJobDetails({ jobId: '1' }, createMockClient());
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
   });
@@ -323,13 +319,13 @@ describe('handleGetJobDetails - job detail resolution', () => {
     // With explicit undefined checks, empty string is not undefined,
     // so the handler treats it as a provided value and delegates to the client.
     // In practice the schema's min(1) rejects empty strings before reaching the handler.
-    await handleGetJobDetails({ jobId: '' });
+    await handleGetJobDetails({ jobId: '' }, createMockClient());
     expect(mockGetDetailsById).toHaveBeenCalledWith('');
   });
 
   it('should handle JobbyError thrown from queryForJobDetailsByUrl', async () => {
     mockGetDetailsByUrl.mockRejectedValueOnce(new JobbyError(ErrorCode.NETWORK, 'Network failure'));
-    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' });
+    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' }, createMockClient());
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('E_NETWORK');
     expect(result.content[0].text).toContain('Network failure');
@@ -353,7 +349,7 @@ describe('handleGetJobDetails - job detail resolution', () => {
       },
     };
     mockGetDetailsByUrl.mockResolvedValueOnce(details);
-    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/123' });
+    const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/123' }, createMockClient());
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.details.benefitsInfo).toBe('Benefits Eligible: Yes');
     expect(parsed.details.incentiveInfo).toBe('Bonus Eligible: Yes');
@@ -370,7 +366,7 @@ describe('handleGetJobDetails - job detail resolution', () => {
       },
     };
     mockGetDetailsById.mockResolvedValueOnce(details);
-    const result = await handleGetJobDetails({ jobId: '123' });
+    const result = await handleGetJobDetails({ jobId: '123' }, createMockClient());
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.details.benefitsInfo).toBeUndefined();
     expect(parsed.details.incentiveInfo).toBeUndefined();
@@ -378,7 +374,7 @@ describe('handleGetJobDetails - job detail resolution', () => {
 
   it('should handle non-Error thrown value from queryForJobDetailsById', async () => {
     mockGetDetailsById.mockRejectedValueOnce('raw string error');
-    const result = await handleGetJobDetails({ jobId: '42' });
+    const result = await handleGetJobDetails({ jobId: '42' }, createMockClient());
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('raw string error');
   });

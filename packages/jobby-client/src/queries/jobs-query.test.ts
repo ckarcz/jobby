@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { executeJobsQuery, executeJobsQueryRawHtml } from './jobs-query.js';
+import { resolveConfig } from '../config.js';
 import { ValidationError, RateLimitError, NetworkError, ParsingError } from '../types/errors.js';
 
-// Mock axios
-vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
-mockedAxios.isAxiosError.mockImplementation(
-  (error): error is import('axios').AxiosError =>
-    typeof error === 'object' && error !== null && (error as Record<string, unknown>)['isAxiosError'] === true,
-);
+// Mock axios — set up create() to return a mock instance with a .get method
+const mockedGet = vi.fn();
+vi.mock('axios', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('axios')>();
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      create: vi.fn(() => ({ get: mockedGet })),
+      isAxiosError: actual.default.isAxiosError,
+    },
+  };
+});
 
 // Mock random-useragent
 vi.mock('random-useragent', () => ({
@@ -30,9 +37,11 @@ vi.mock('../logging.js', async () => {
  * job listing results with pagination metadata.
  */
 
+const defaultConfig = resolveConfig();
+
 describe('executeJobsQuery - job listing search and HTML parsing', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockedGet.mockReset();
   });
 
   const mockJobHtml = `
@@ -52,11 +61,11 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
   `;
 
   it('should execute a basic search query', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: mockJobHtml });
+    mockedGet.mockResolvedValueOnce({ data: mockJobHtml });
 
-    const result = await executeJobsQuery({ keyword: 'TypeScript' });
+    const result = await executeJobsQuery({ keyword: 'TypeScript' }, undefined, defaultConfig);
 
-    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+    expect(mockedGet).toHaveBeenCalledTimes(1);
     expect(result.results).toHaveLength(1);
     expect(result.results[0].id).toBe('123');
     expect(result.results[0].url).toBe('https://linkedin.com/jobs/view/123');
@@ -72,114 +81,114 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
   describe('search parameter URL encoding', () => {
     it('should include keyword in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ keyword: 'React Developer' });
+    await executeJobsQuery({ keyword: 'React Developer' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     // URLSearchParams encodes spaces as + naturally
     expect(url).toContain('keywords=React+Developer');
   });
 
   it('should include location in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ location: 'New York' });
+    await executeJobsQuery({ location: 'New York' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     // URLSearchParams encodes spaces as + naturally
     expect(url).toContain('location=New+York');
   });
 
   it('should include job type in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ jobType: 'full-time' });
+    await executeJobsQuery({ jobType: 'full-time' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_JT=F');
   });
 
   it('should include multiple job types in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ jobType: ['full-time', 'contract'] });
+    await executeJobsQuery({ jobType: ['full-time', 'contract'] }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_JT=F%2CC');
   });
 
   it('should include experience level in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ experienceLevel: 'senior' });
+    await executeJobsQuery({ experienceLevel: 'senior' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_E=4');
   });
 
   it('should include minimum salary in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ minimumSalary: '100,000' });
+    await executeJobsQuery({ minimumSalary: '100,000' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_SB2=4');
   });
 
   it('should include workplace type in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ workplaceType: 'remote' });
+    await executeJobsQuery({ workplaceType: 'remote' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_WT=2');
   });
 
   it('should include listing age in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ listingAge: 'past-week' });
+    await executeJobsQuery({ listingAge: 'past-week' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_TPR=r604800');
   });
 
   it('should include geoId in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ geoId: '103644278' });
+    await executeJobsQuery({ geoId: '103644278' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('geoId=103644278');
   });
 
   it('should not drop geoId when value is "0"', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ geoId: '0' });
+    await executeJobsQuery({ geoId: '0' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('geoId=0');
   });
 
   it('should include companyId in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQuery({ companyId: '1441' });
+    await executeJobsQuery({ companyId: '1441' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('f_C=1441');
     });
   });
 
   describe('pagination', () => {
     it('should include start in URL', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-      await executeJobsQuery({}, { start: 25 });
+      await executeJobsQuery({}, { start: 25 }, defaultConfig);
 
-      const url = mockedAxios.get.mock.calls[0][0] as string;
+      const url = mockedGet.mock.calls[0][0] as string;
       expect(url).toContain('start=25');
     });
 
@@ -198,9 +207,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
           <div class="base-search-card__title">Job 3</div>
         </li>
       `;
-      mockedAxios.get.mockResolvedValueOnce({ data: multiJobHtml });
+      mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
 
-      const result = await executeJobsQuery({}, { skip: 1 });
+      const result = await executeJobsQuery({}, { skip: 1 }, defaultConfig);
 
       expect(result.results).toHaveLength(2);
       expect(result.results[0].summary.company.name).toBe('Company 2');
@@ -221,9 +230,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
           <div class="base-search-card__title">Job 3</div>
         </li>
       `;
-      mockedAxios.get.mockResolvedValueOnce({ data: multiJobHtml });
+      mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
 
-      const result = await executeJobsQuery({}, { take: 2 });
+      const result = await executeJobsQuery({}, { take: 2 }, defaultConfig);
 
       expect(result.results).toHaveLength(2);
       expect(result.results[0].summary.company.name).toBe('Company 1');
@@ -245,9 +254,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
           <div class="base-search-card__title">Job 3</div>
         </li>
       `;
-      mockedAxios.get.mockResolvedValueOnce({ data: multiJobHtml });
+      mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
 
-      const result = await executeJobsQuery({}, { skip: 1, take: 1 });
+      const result = await executeJobsQuery({}, { skip: 1, take: 1 }, defaultConfig);
 
       expect(result.results).toHaveLength(1);
       expect(result.results[0].summary.company.name).toBe('Company 2');
@@ -256,22 +265,22 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
   describe('validation', () => {
     it('should throw ValidationError for negative start', async () => {
-      await expect(executeJobsQuery({}, { start: -1 }))
+      await expect(executeJobsQuery({}, { start: -1 }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for negative skip', async () => {
-      await expect(executeJobsQuery({}, { skip: -1 }))
+      await expect(executeJobsQuery({}, { skip: -1 }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for negative take', async () => {
-      await expect(executeJobsQuery({}, { take: -1 }))
+      await expect(executeJobsQuery({}, { take: -1 }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for invalid job type', async () => {
-      await expect(executeJobsQuery({ jobType: 'invalid' as any }))
+      await expect(executeJobsQuery({ jobType: 'invalid' as any }, undefined, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
   });
@@ -286,9 +295,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         },
         message: 'Rate limited',
       };
-      mockedAxios.get.mockRejectedValueOnce(axiosError);
+      mockedGet.mockRejectedValueOnce(axiosError);
 
-      await expect(executeJobsQuery({})).rejects.toThrow(RateLimitError);
+      await expect(executeJobsQuery({}, undefined, defaultConfig)).rejects.toThrow(RateLimitError);
     });
 
     it('should throw NetworkError on other HTTP errors', async () => {
@@ -297,15 +306,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         response: { status: 500 },
         message: 'Server error',
       };
-      mockedAxios.get.mockRejectedValueOnce(axiosError);
+      mockedGet.mockRejectedValueOnce(axiosError);
 
-      await expect(executeJobsQuery({})).rejects.toThrow(NetworkError);
+      await expect(executeJobsQuery({}, undefined, defaultConfig)).rejects.toThrow(NetworkError);
     });
 
     it('should throw NetworkError on unknown errors', async () => {
-      mockedAxios.get.mockRejectedValueOnce(new Error('Unknown'));
+      mockedGet.mockRejectedValueOnce(new Error('Unknown'));
 
-      await expect(executeJobsQuery({})).rejects.toThrow(NetworkError);
+      await expect(executeJobsQuery({}, undefined, defaultConfig)).rejects.toThrow(NetworkError);
     });
   });
 
@@ -326,9 +335,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
           <a class="base-card__full-link" href="https://linkedin.com/jobs/view/200"></a>
         </li>
       `;
-      mockedAxios.get.mockResolvedValueOnce({ data: htmlWithBadJob });
+      mockedGet.mockResolvedValueOnce({ data: htmlWithBadJob });
 
-      const result = await executeJobsQuery({});
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
 
       expect(result.results).toHaveLength(2);
       expect(result.results[0].summary.position).toBe('Good Job');
@@ -340,9 +349,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         <li><!-- empty --></li>
         <li><!-- also empty --></li>
       `;
-      mockedAxios.get.mockResolvedValueOnce({ data: htmlWithNoValidJobs });
+      mockedGet.mockResolvedValueOnce({ data: htmlWithNoValidJobs });
 
-      const result = await executeJobsQuery({});
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
 
       expect(result.results).toHaveLength(0);
     });
@@ -350,9 +359,9 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
   describe('response structure', () => {
     it('should return proper response structure', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: mockJobHtml });
+      mockedGet.mockResolvedValueOnce({ data: mockJobHtml });
 
-      const result = await executeJobsQuery({ keyword: 'Test' }, { start: 0 });
+      const result = await executeJobsQuery({ keyword: 'Test' }, { start: 0 }, defaultConfig);
 
       expect(result).toHaveProperty('results');
       expect(result).toHaveProperty('pagination');
@@ -369,23 +378,23 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
   describe('config options', () => {
     it('should use custom timeout from config', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-      await executeJobsQuery({}, undefined, { timeout: 30000 });
+      await executeJobsQuery({}, undefined, resolveConfig({ timeout: 30000 }));
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedGet).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ timeout: 30000 })
       );
     });
 
     it('should use abort signal from config', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
       const controller = new AbortController();
 
-      await executeJobsQuery({}, undefined, { signal: controller.signal });
+      await executeJobsQuery({}, undefined, resolveConfig({ signal: controller.signal }));
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(
+      expect(mockedGet).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ signal: controller.signal })
       );
@@ -400,39 +409,39 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
 describe('executeJobsQueryRawHtml - raw HTML response', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockedGet.mockReset();
   });
 
   it('should return raw HTML string without parsing', async () => {
     const rawHtml = '<html><body><li>Job 1</li></body></html>';
-    mockedAxios.get.mockResolvedValueOnce({ data: rawHtml });
+    mockedGet.mockResolvedValueOnce({ data: rawHtml });
 
-    const result = await executeJobsQueryRawHtml({ keyword: 'TypeScript' });
+    const result = await executeJobsQueryRawHtml({ keyword: 'TypeScript' }, undefined, defaultConfig);
 
     expect(result).toBe(rawHtml);
   });
 
   it('should include search params in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQueryRawHtml({ keyword: 'React', location: 'NYC' });
+    await executeJobsQueryRawHtml({ keyword: 'React', location: 'NYC' }, undefined, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('keywords=React');
     expect(url).toContain('location=NYC');
   });
 
   it('should include pagination start in URL', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobsQueryRawHtml({}, { start: 25 });
+    await executeJobsQueryRawHtml({}, { start: 25 }, defaultConfig);
 
-    const url = mockedAxios.get.mock.calls[0][0] as string;
+    const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('start=25');
   });
 
   it('should throw ValidationError for negative start', async () => {
-    await expect(executeJobsQueryRawHtml({}, { start: -1 }))
+    await expect(executeJobsQueryRawHtml({}, { start: -1 }, defaultConfig))
       .rejects.toThrow(ValidationError);
   });
 
@@ -445,9 +454,9 @@ describe('executeJobsQueryRawHtml - raw HTML response', () => {
       },
       message: 'Rate limited',
     };
-    mockedAxios.get.mockRejectedValueOnce(axiosError);
+    mockedGet.mockRejectedValueOnce(axiosError);
 
-    await expect(executeJobsQueryRawHtml({})).rejects.toThrow(RateLimitError);
+    await expect(executeJobsQueryRawHtml({}, undefined, defaultConfig)).rejects.toThrow(RateLimitError);
   });
 
   it('should throw NetworkError on HTTP errors', async () => {
@@ -456,49 +465,49 @@ describe('executeJobsQueryRawHtml - raw HTML response', () => {
       response: { status: 500 },
       message: 'Server error',
     };
-    mockedAxios.get.mockRejectedValueOnce(axiosError);
+    mockedGet.mockRejectedValueOnce(axiosError);
 
-    await expect(executeJobsQueryRawHtml({})).rejects.toThrow(NetworkError);
+    await expect(executeJobsQueryRawHtml({}, undefined, defaultConfig)).rejects.toThrow(NetworkError);
   });
 });
 
 describe('executeJobsQuery - additional edge cases', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockedGet.mockReset();
   });
 
   describe('pagination validation edge cases', () => {
     it('should throw ValidationError for NaN start', async () => {
-      await expect(executeJobsQuery({}, { start: NaN }))
+      await expect(executeJobsQuery({}, { start: NaN }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for NaN skip', async () => {
-      await expect(executeJobsQuery({}, { skip: NaN }))
+      await expect(executeJobsQuery({}, { skip: NaN }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for NaN take', async () => {
-      await expect(executeJobsQuery({}, { take: NaN }))
+      await expect(executeJobsQuery({}, { take: NaN }, defaultConfig))
         .rejects.toThrow(ValidationError);
     });
 
     it('should accept zero for start', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
-      const result = await executeJobsQuery({}, { start: 0 });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+      const result = await executeJobsQuery({}, { start: 0 }, defaultConfig);
       expect(result.pagination.start).toBe(0);
     });
 
     it('should accept zero for skip', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
-      const result = await executeJobsQuery({}, { skip: 0 });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+      const result = await executeJobsQuery({}, { skip: 0 }, defaultConfig);
       expect(result.results).toHaveLength(0);
     });
 
     it('should accept zero for take', async () => {
       const html = `<li><div class="base-search-card__subtitle">Co</div><div class="base-search-card__title">Job</div></li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({}, { take: 0 });
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, { take: 0 }, defaultConfig);
       expect(result.results).toHaveLength(0);
       expect(result.pagination.responseCount).toBe(1);
     });
@@ -507,15 +516,15 @@ describe('executeJobsQuery - additional edge cases', () => {
   describe('parsing edge cases', () => {
     it('should skip job with empty company name (only whitespace)', async () => {
       const html = `<li><div class="base-search-card__subtitle">   </div><div class="base-search-card__title">Developer</div></li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
     });
 
     it('should skip job with empty position name (only whitespace)', async () => {
       const html = `<li><div class="base-search-card__subtitle">Company</div><div class="base-search-card__title">   </div></li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
     });
 
@@ -526,8 +535,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__title">Job Title</div>
           <a class="base-card__full-link" href="https://linkedin.com/jobs/view/999"></a>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(1);
       expect(result.results[0].summary.company.logoUrl).toBeUndefined();
       expect(result.results[0].posted.date).toBeUndefined();
@@ -536,8 +545,8 @@ describe('executeJobsQuery - additional edge cases', () => {
     });
 
     it('should handle completely empty HTML document', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '' });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: '' });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
     });
 
@@ -548,8 +557,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__title">Dev</div>
           <div class="job-search-card__salary-info">  $100k  -  $150k  </div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.salary).toBe('$100k - $150k');
     });
   });
@@ -562,21 +571,21 @@ describe('executeJobsQuery - additional edge cases', () => {
     `;
 
     it('should return empty when skip exceeds total results', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: threeJobsHtml });
-      const result = await executeJobsQuery({}, { skip: 10 });
+      mockedGet.mockResolvedValueOnce({ data: threeJobsHtml });
+      const result = await executeJobsQuery({}, { skip: 10 }, defaultConfig);
       expect(result.results).toHaveLength(0);
       expect(result.pagination.responseCount).toBe(3);
     });
 
     it('should return all when take exceeds available results', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: threeJobsHtml });
-      const result = await executeJobsQuery({}, { take: 100 });
+      mockedGet.mockResolvedValueOnce({ data: threeJobsHtml });
+      const result = await executeJobsQuery({}, { take: 100 }, defaultConfig);
       expect(result.results).toHaveLength(3);
     });
 
     it('should report correct pagination metadata with skip and take', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: threeJobsHtml });
-      const result = await executeJobsQuery({}, { skip: 1, take: 1 });
+      mockedGet.mockResolvedValueOnce({ data: threeJobsHtml });
+      const result = await executeJobsQuery({}, { skip: 1, take: 1 }, defaultConfig);
       expect(result.pagination.responseCount).toBe(3);
       expect(result.pagination.resultsCount).toBe(1);
       expect(result.pagination.skip).toBe(1);
@@ -586,7 +595,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
   describe('URL construction', () => {
     it('should build URL with all search params combined', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
       await executeJobsQuery({
         keyword: 'TypeScript',
         location: 'NYC',
@@ -597,9 +606,9 @@ describe('executeJobsQuery - additional edge cases', () => {
         listingAge: 'past-week',
         geoId: '103644278',
         companyId: '1441',
-      }, { start: 25 });
+      }, { start: 25 }, defaultConfig);
 
-      const url = mockedAxios.get.mock.calls[0][0] as string;
+      const url = mockedGet.mock.calls[0][0] as string;
       expect(url).toContain('keywords=TypeScript');
       expect(url).toContain('location=NYC');
       expect(url).toContain('f_JT=F');
@@ -613,16 +622,16 @@ describe('executeJobsQuery - additional edge cases', () => {
     });
 
     it('should default start to 0 when not provided', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
-      await executeJobsQuery({});
-      const url = mockedAxios.get.mock.calls[0][0] as string;
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+      await executeJobsQuery({}, undefined, defaultConfig);
+      const url = mockedGet.mock.calls[0][0] as string;
       expect(url).toContain('start=0');
     });
 
     it('should not include undefined optional params in URL', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
-      await executeJobsQuery({});
-      const url = mockedAxios.get.mock.calls[0][0] as string;
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+      await executeJobsQuery({}, undefined, defaultConfig);
+      const url = mockedGet.mock.calls[0][0] as string;
       expect(url).not.toContain('keywords=');
       expect(url).not.toContain('location=');
       expect(url).not.toContain('f_JT=');
@@ -632,8 +641,8 @@ describe('executeJobsQuery - additional edge cases', () => {
 
   describe('query invocation with no params', () => {
     it('should work with no arguments at all', async () => {
-      mockedAxios.get.mockResolvedValueOnce({ data: '<html></html>' });
-      const result = await executeJobsQuery();
+      mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+      const result = await executeJobsQuery(undefined, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
       expect(result.pagination.start).toBe(0);
     });
@@ -647,8 +656,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate" datetime="2024-01-15">2 weeks ago</time>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.isNew).toBeUndefined();
     });
 
@@ -658,8 +667,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.easyApply).toBeUndefined();
     });
 
@@ -669,8 +678,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.highlight).toBeUndefined();
     });
 
@@ -680,8 +689,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.company.slug).toBeUndefined();
     });
 
@@ -692,8 +701,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate--new" datetime="2024-01-15">1 day ago</time>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].posted.ago).toBe('1 day ago');
     });
 
@@ -703,8 +712,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.location).toBeUndefined();
     });
 
@@ -715,8 +724,8 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__title">Job</div>
           <div class="job-posting-benefits"><span class="job-posting-benefits__text">  Actively   Hiring   </span></div>
         </li>`;
-      mockedAxios.get.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({});
+      mockedGet.mockResolvedValueOnce({ data: html });
+      const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results[0].summary.highlight).toBe('Actively Hiring');
     });
   });

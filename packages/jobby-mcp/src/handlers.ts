@@ -1,14 +1,7 @@
-import { JobbyClient, JobbyError } from 'jobby-client';
+import type { JobbyClient } from 'jobby-client';
+import { JobbyError } from 'jobby-client';
 import type { z } from 'zod';
 import type { SearchInputSchema, JobDetailsInputSchema } from './schemas.js';
-
-/**
- * Shared Jobby API client used by all tool handlers.
- *
- * Instantiated once at module level so every request reuses the same
- * configuration without creating a new client per call.
- */
-const client = new JobbyClient({ timeout: 30000 });
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- must be `type` for MCP SDK index signature compatibility
 export type ToolResponse = {
@@ -42,6 +35,7 @@ export function handleError(error: unknown): string {
  */
 export async function handleSearchJobs(
   args: z.infer<typeof SearchInputSchema>,
+  client: JobbyClient,
 ): Promise<ToolResponse> {
   try {
     const { keyword, location, jobType, experienceLevel, minimumSalary, workplaceType, listingAge, geoId, companyId, start, skip, take } = args;
@@ -70,6 +64,7 @@ export async function handleSearchJobs(
  */
 export async function handleGetJobDetails(
   args: z.infer<typeof JobDetailsInputSchema>,
+  client: JobbyClient,
 ): Promise<ToolResponse> {
   try {
     let details;

@@ -59,6 +59,7 @@ vi.mock('jobby-client', async (importOriginal) => {
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { JobbyClient } from 'jobby-client';
 import { JobbyError } from 'jobby-client';
 import { createServer, main } from './server.js';
 
@@ -386,6 +387,14 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
   });
 });
 
+describe('createServer - dependency injection', () => {
+  it('should accept an injected client', () => {
+    const customClient = { jobs: {} } as unknown as JobbyClient;
+    const server = createServer(customClient);
+    expect(server).toBeDefined();
+  });
+});
+
 describe('main - MCP server startup', () => {
   it('should create server, connect transport, and log startup message', async () => {
     vi.clearAllMocks();
@@ -399,7 +408,7 @@ describe('main - MCP server startup', () => {
 
     const serverInstance = (McpServer as unknown as Mock).mock.results[0]?.value as { connect: Mock };
     expect(serverInstance.connect).toHaveBeenCalled();
-    expect(errorSpy).toHaveBeenCalledWith('Jobby MCP server started.');
+    expect(errorSpy).toHaveBeenCalledWith(`Jobby MCP server v${packageJson.version} started.`);
 
     errorSpy.mockRestore();
   });
