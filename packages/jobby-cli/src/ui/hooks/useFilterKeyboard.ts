@@ -1,7 +1,8 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useInput } from 'ink';
 import { useSearchState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
+import { useLatest } from './useLatest.js';
 import { useSearchActions } from '../state/searchActions.js';
 import { toggleCheckboxOption, toggleRadioOption } from '../state/filterHelpers.js';
 import { SECTION_ORDER, getFilterSection } from '../state/filterTypes.js';
@@ -127,16 +128,11 @@ export function useFilterKeyboard(
 
   // Capture all values in refs so the stable handler always reads current state
   // without forcing useInput to re-subscribe.
-  const draftRef = useRef(draft);
-  draftRef.current = draft;
-  const draftDispatchRef = useRef(draftDispatch);
-  draftDispatchRef.current = draftDispatch;
-  const dispatchRef = useRef(dispatch);
-  dispatchRef.current = dispatch;
-  const searchRef = useRef(search);
-  searchRef.current = search;
-  const searchStateRef = useRef(searchState);
-  searchStateRef.current = searchState;
+  const draftRef = useLatest(draft);
+  const draftDispatchRef = useLatest(draftDispatch);
+  const dispatchRef = useLatest(dispatch);
+  const searchRef = useLatest(search);
+  const searchStateRef = useLatest(searchState);
 
   const stableHandler = useCallback((_input: string, key: InputKey): void => {
     const d = draftRef.current;

@@ -95,10 +95,8 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 
 ### Issues Introduced by Audit Fixes
 
-1. **`useResultsKeyboard` ref boilerplate — Missing `useLatest()` abstraction** (078d85b)
-   - The rewrite introduced 6 refs with 6 `.current =` sync lines, making the hook harder to read than the original
-   - `useFilterKeyboard` uses the identical pattern — two files with the same repetitive boilerplate
-   - **Recommendation:** Extract a shared `useLatest<T>(value: T)` hook (3 lines) that returns a ref synced to the latest value. Both hooks would become significantly more readable.
+1. **`useResultsKeyboard` ref boilerplate — Missing `useLatest()` abstraction** (078d85b) — **FIXED**
+   - **Status: FIXED** — Extracted `useLatest<T>` hook to `useLatest.ts`. Replaced 6 ref-sync pairs in `useResultsKeyboard` and 5 in `useFilterKeyboard` with single `useLatest()` calls.
 
 2. **`SearchActionsContext` no-op default** (078d85b)
    - Default value provides `() => undefined` for `search` and `loadMore`

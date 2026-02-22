@@ -4,18 +4,11 @@ import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, execut
 import { resolveConfig } from '../config.js';
 import { ValidationError, RateLimitError, NetworkError } from '../types/errors.js';
 
-// Mock axios — set up create() to return a mock instance with a .get method
-const mockedGet = vi.fn();
+// Mock axios
+const { mockedGet } = vi.hoisted(() => ({ mockedGet: vi.fn() }));
 vi.mock('axios', async (importOriginal) => {
   const actual = await importOriginal<typeof import('axios')>();
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      create: vi.fn(() => ({ get: mockedGet })),
-      isAxiosError: actual.default.isAxiosError,
-    },
-  };
+  return { ...actual, default: { ...actual.default, get: mockedGet } };
 });
 
 // Mock random-useragent

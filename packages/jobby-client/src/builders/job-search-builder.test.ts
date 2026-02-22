@@ -231,7 +231,10 @@ describe('JobSearchBuilder - fluent search query construction API', () => {
     it('should wrap executeJobsQuery with withRetry using provided retry config', async () => {
       const { withRetry } = await import('../utils/retry.js');
       const customRetry: ResolvedRetryConfig = { maxRetries: 3, initialDelayMs: 500, maxDelayMs: 5000 };
-      const retryBuilder = new JobSearchBuilder(undefined, customRetry);
+      const retryBuilder = JobSearchBuilder._fromResolved(
+        (await import('../config.js')).resolveConfig(),
+        customRetry,
+      );
 
       await retryBuilder.withKeyword('Test').execute();
 

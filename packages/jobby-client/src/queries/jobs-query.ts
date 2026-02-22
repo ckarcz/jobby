@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import type { AxiosRequestConfig } from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import { type ResolvedClientConfig } from '../config.js';
 import {
   type JobSearchParams,
@@ -87,7 +87,7 @@ async function fetchJobsHtml(
       axiosConfig.signal = config.signal;
     }
 
-    const response = await config.axiosInstance.get<string>(queryUrl, axiosConfig);
+    const response = await axios.get<string>(queryUrl, axiosConfig);
 
     return { html: response.data, queryUrl, config, normalizedJobSearchParams, normalizedPaginationParams, start, startTime };
   } catch (error: unknown) {
@@ -104,12 +104,12 @@ export async function executeJobsQuery(
   paginationParams: PaginationParams | undefined,
   config: ResolvedClientConfig
 ): Promise<SearchResponse<Job>> {
-  const { html, config: resolvedConfig, normalizedJobSearchParams, normalizedPaginationParams, start, startTime, queryUrl } =
+  const { html, normalizedJobSearchParams, normalizedPaginationParams, start, startTime, queryUrl } =
     await fetchJobsHtml(jobSearchParams, paginationParams, config);
 
-  resolvedConfig.logger.verbose('Processing query response...');
+  config.logger.verbose('Processing query response...');
 
-  let fetchedJobs = parseJobs(html, resolvedConfig);
+  let fetchedJobs = parseJobs(html, config);
 
   const fetchedJobsCount = fetchedJobs.length;
 
@@ -122,7 +122,7 @@ export async function executeJobsQuery(
   }
 
   const durationMs = Date.now() - startTime;
-  resolvedConfig.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
+  config.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
 
   return {
     results: fetchedJobs,
@@ -148,9 +148,9 @@ export async function executeJobsQueryRawHtml(
   paginationParams: PaginationParams | undefined,
   config: ResolvedClientConfig
 ): Promise<string> {
-  const { html, config: resolvedConfig, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, config);
+  const { html, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, config);
 
-  resolvedConfig.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
+  config.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }

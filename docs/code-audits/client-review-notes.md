@@ -130,24 +130,17 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 
 ### Issues Introduced by Audit Fixes
 
-#### 1. `axiosInstance` on `ResolvedClientConfig` — Premature (18c6114)
+#### 1. `axiosInstance` on `ResolvedClientConfig` — Premature (18c6114) — **FIXED**
 
-- The shared AxiosInstance only carries `{ timeout }`, which is already set per-request in every query function
-- Test mock setup went from 3 lines (`vi.mock('axios'); const mockedAxios = vi.mocked(axios);`) to 12 lines of nested factory pattern with `axios.create` returning a mock
-- ~200 lines of mechanical test churn across `jobs-query.test.ts` and `job-details-query.test.ts` with no functional benefit
-- **Recommendation:** Remove `axiosInstance` from `ResolvedClientConfig`. If centralized request config is needed in the future, add it then. YAGNI.
+- **Status: FIXED** — Removed `axiosInstance` from `ResolvedClientConfig` and `resolveConfig()`. Query functions now call `axios.get()` directly. Test mocks simplified from 12-line factory to 5-line pattern.
 
-#### 2. `job-search-builder.ts` unsafe double cast (18c6114)
+#### 2. `job-search-builder.ts` unsafe double cast (18c6114) — **FIXED**
 
-- `retryConfig !== undefined ? (config as unknown as ResolvedClientConfig) : resolveConfig(config)` — uses presence of one parameter to determine the type of another
-- `as unknown as` completely bypasses the type system
-- **Recommendation:** Use constructor overloads or a static factory method `JobSearchBuilder.fromResolved(config, retryConfig)` for the internal call path
+- **Status: FIXED** — Constructor now only accepts `ClientConfig | undefined` (public API). Added `static _fromResolved(config, retryConfig)` factory for internal use by `JobbyClient`. Eliminates the `as unknown as` cast.
 
-#### 3. `config: resolvedConfig` confusing alias (18c6114)
+#### 3. `config: resolvedConfig` confusing alias (18c6114) — **FIXED**
 
-- In both query files, the parameter `config: ResolvedClientConfig` is destructured with an alias `config: resolvedConfig` from the context object
-- The config IS already resolved — the alias implies a transformation that doesn't exist
-- **Recommendation:** Rename the field in the query context objects, or just use `config` directly
+- **Status: FIXED** — Removed the `config: resolvedConfig` destructuring alias in both query files. Functions now use the `config` parameter directly since the returned config is the same object.
 
 #### 4. `jobs-query.test.ts` misleading test name (078d85b)
 

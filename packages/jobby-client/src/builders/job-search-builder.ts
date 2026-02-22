@@ -33,14 +33,22 @@ import { type ResolvedRetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../ut
  * ```
  */
 export class JobSearchBuilder {
-  private readonly resolvedConfig: ResolvedClientConfig;
-  private readonly retryConfig: ResolvedRetryConfig;
+  private resolvedConfig: ResolvedClientConfig;
+  private retryConfig: ResolvedRetryConfig;
   private params: JobSearchParams = {};
   private pagination: PaginationParams = {};
 
-  constructor(config?: ClientConfig, retryConfig?: ResolvedRetryConfig) {
-    this.resolvedConfig = retryConfig !== undefined ? (config as unknown as ResolvedClientConfig) : resolveConfig(config);
-    this.retryConfig = retryConfig ?? DEFAULT_RETRY_CONFIG;
+  constructor(config?: ClientConfig) {
+    this.resolvedConfig = resolveConfig(config);
+    this.retryConfig = DEFAULT_RETRY_CONFIG;
+  }
+
+  /** @internal Creates a builder from pre-resolved configuration. Used by JobbyClient. */
+  static _fromResolved(config: ResolvedClientConfig, retryConfig: ResolvedRetryConfig): JobSearchBuilder {
+    const builder = new JobSearchBuilder();
+    builder.resolvedConfig = config;
+    builder.retryConfig = retryConfig;
+    return builder;
   }
 
   /**

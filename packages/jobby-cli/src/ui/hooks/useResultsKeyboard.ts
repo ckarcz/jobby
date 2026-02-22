@@ -3,6 +3,7 @@ import { useInput } from 'ink';
 import type { VirtualListRef, ViewportState } from 'ink-virtual-list';
 import { useSearchState, useSelectionState, useAppDispatch } from '../state/context.js';
 import { usePanelFocus } from './usePanelFocus.js';
+import { useLatest } from './useLatest.js';
 import { useSearchActions } from '../state/searchActions.js';
 
 interface InputKey { downArrow: boolean; upArrow: boolean; home: boolean; end: boolean; pageDown: boolean; pageUp: boolean; return: boolean; escape: boolean }
@@ -22,18 +23,12 @@ export function useResultsKeyboard(
   const scrollAfterLoadMore = useRef(false);
 
   // Store values in refs so the stable handler always reads current state
-  const selectedJobIndexRef = useRef(selectedJobIndex);
-  selectedJobIndexRef.current = selectedJobIndex;
-  const totalResultsRef = useRef(totalResults);
-  totalResultsRef.current = totalResults;
-  const loadMoreStatusRef = useRef(loadMoreStatus);
-  loadMoreStatusRef.current = loadMoreStatus;
-  const loadMoreRef = useRef(loadMore);
-  loadMoreRef.current = loadMore;
-  const dispatchRef = useRef(dispatch);
-  dispatchRef.current = dispatch;
-  const viewportRef = useRef(viewport);
-  viewportRef.current = viewport;
+  const selectedJobIndexRef = useLatest(selectedJobIndex);
+  const totalResultsRef = useLatest(totalResults);
+  const loadMoreStatusRef = useLatest(loadMoreStatus);
+  const loadMoreRef = useLatest(loadMore);
+  const dispatchRef = useLatest(dispatch);
+  const viewportRef = useLatest(viewport);
 
   // After a page jump, scroll so the new selection is at the correct position
   useEffect(() => {

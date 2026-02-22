@@ -97,7 +97,7 @@ class JobsResource {
    * ```
    */
   createSearch(): JobSearchBuilder {
-    return new JobSearchBuilder(this.config, this.retryConfig);
+    return JobSearchBuilder._fromResolved(this.config, this.retryConfig);
   }
 }
 

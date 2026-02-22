@@ -1,4 +1,3 @@
-import axios, { type AxiosInstance } from 'axios';
 import { type LoggingConfig, type Logger, createLogger } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
 import { type RetryConfig, type ResolvedRetryConfig, resolveRetryConfig } from './utils/retry.js';
@@ -50,7 +49,6 @@ export interface ResolvedClientConfig {
   signal: AbortSignal | undefined;
   logger: Logger;
   retry: ResolvedRetryConfig;
-  axiosInstance: AxiosInstance;
 }
 
 /** Default configuration values. */
@@ -85,6 +83,5 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
     signal: config?.signal,
     logger: createLogger(config?.logging),
     retry: resolveRetryConfig(config?.retry),
-    axiosInstance: axios.create({ timeout }),
   };
 }

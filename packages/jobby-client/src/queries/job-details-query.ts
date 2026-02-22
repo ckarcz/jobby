@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import type { AxiosRequestConfig } from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import { type ResolvedClientConfig } from '../config.js';
 import {
   type JobDetails,
@@ -68,7 +68,7 @@ async function fetchJobDetailsHtml(
 
     logger.verbose(`Executing query ${normalizedUrl}...`);
 
-    const response = await config.axiosInstance.get<string>(normalizedUrl, axiosConfig);
+    const response = await axios.get<string>(normalizedUrl, axiosConfig);
 
     return { html: response.data, config, startTime };
   } catch (error: unknown) {
@@ -81,13 +81,13 @@ export async function executeJobDetailsQueryByUrl(
   jobUrl: string,
   config: ResolvedClientConfig
 ): Promise<JobDetails> {
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  resolvedConfig.logger.verbose('Processing query response...');
+  config.logger.verbose('Processing query response...');
 
-  const details = parseJobDetails(html, jobUrl, resolvedConfig);
+  const details = parseJobDetails(html, jobUrl, config);
 
-  resolvedConfig.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
+  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -97,9 +97,9 @@ export async function executeJobDetailsQueryRawHtmlByUrl(
   jobUrl: string,
   config: ResolvedClientConfig
 ): Promise<string> {
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  resolvedConfig.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
+  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -114,13 +114,13 @@ export async function executeJobDetailsQueryById(
     throw new ValidationError('Job ID is required');
   }
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  resolvedConfig.logger.verbose('Processing query response...');
+  config.logger.verbose('Processing query response...');
 
-  const details = parseJobDetails(html, jobUrl, resolvedConfig);
+  const details = parseJobDetails(html, jobUrl, config);
 
-  resolvedConfig.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
+  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -135,9 +135,9 @@ export async function executeJobDetailsQueryRawHtmlById(
     throw new ValidationError('Job ID is required');
   }
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, config: resolvedConfig, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
 
-  resolvedConfig.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
+  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
