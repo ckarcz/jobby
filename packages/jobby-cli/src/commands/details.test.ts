@@ -224,8 +224,8 @@ describe('queryForJobDetails - details command handler', () => {
 
     it('should output empty string when html response is empty', async () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue('');
-      await queryForJobDetails(testUrl, { format: 'rawHtml' });
-      expect(consoleSpy).toHaveBeenCalled();
+      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
+      expect(consoleSpy).toHaveBeenCalledWith('');
     });
   });
 

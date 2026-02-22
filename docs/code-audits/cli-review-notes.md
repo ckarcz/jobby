@@ -98,16 +98,11 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 1. **`useResultsKeyboard` ref boilerplate — Missing `useLatest()` abstraction** (078d85b) — **FIXED**
    - **Status: FIXED** — Extracted `useLatest<T>` hook to `useLatest.ts`. Replaced 6 ref-sync pairs in `useResultsKeyboard` and 5 in `useFilterKeyboard` with single `useLatest()` calls.
 
-2. **`SearchActionsContext` no-op default** (078d85b)
-   - Default value provides `() => undefined` for `search` and `loadMore`
-   - If a component renders outside the provider, it will silently do nothing instead of crashing
-   - **Recommendation:** Throw an error in the default: `throw new Error('useSearchActions must be used within SearchActionsContext.Provider')`
+2. **`SearchActionsContext` no-op default** (078d85b) — **FIXED**
+   - **Status: FIXED** — Default `search` and `loadMore` now throw `Error('useSearchActions must be used within SearchActionsContext.Provider')` instead of returning `undefined`.
 
-3. **`main.test.ts` vitest 4 mock repetition** (fe732a3)
-   - 11 instances of `MockedJobbyClient.mockImplementation(function () { return { ... } as any; })` — all structurally identical with only the mock return values varying
-   - The arrow-to-function conversion was mandatory (vitest 4 breaking change), but 11 repetitions should have been extracted into a helper like `mockClient({ queryForJobs: vi.fn().mockResolvedValue(...) })`
-   - Formatting is inconsistent: `test-helpers.ts` uses proper multi-line formatting, `main.test.ts` crams everything onto single lines
-   - **Recommendation:** Extract a `createMockClient(overrides)` helper in `main.test.ts` or reuse the one in `test-helpers.ts`
+3. **`main.test.ts` vitest 4 mock repetition** (fe732a3) — **FIXED**
+   - **Status: FIXED** — Extracted `createMockClient(overrides?)` helper in `main.test.ts`. All 11 `MockedJobbyClient.mockImplementation(...)` calls replaced with concise `createMockClient(...)` calls.
 
 ### Changes That Were Good
 

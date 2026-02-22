@@ -4,28 +4,23 @@ import { delay } from './delay.js';
 /** Configuration for retry behavior. */
 export interface RetryConfig {
   /** Maximum number of retry attempts. @default 0 (no retries) */
-  maxRetries?: number | undefined;
-  /** Initial backoff delay in milliseconds. Doubles on each retry. @default 1000 */
-  initialDelayMs?: number | undefined;
-  /** Maximum backoff delay in milliseconds. @default 30000 */
-  maxDelayMs?: number | undefined;
-}
-
-/** Resolved retry configuration with all required values. */
-export interface ResolvedRetryConfig {
   maxRetries: number;
+  /** Initial backoff delay in milliseconds. Doubles on each retry. @default 1000 */
   initialDelayMs: number;
+  /** Maximum backoff delay in milliseconds. @default 30000 */
   maxDelayMs: number;
 }
 
-export const DEFAULT_RETRY_CONFIG: ResolvedRetryConfig = {
+export type RetryConfigInput = Partial<RetryConfig>;
+
+export const DEFAULT_RETRY_CONFIG = {
   maxRetries: 0,
   initialDelayMs: 1000,
   maxDelayMs: 30_000,
-};
+} as const satisfies RetryConfig;
 
 /** Resolves retry config with defaults. */
-export function resolveRetryConfig(config?: RetryConfig): ResolvedRetryConfig {
+export function resolveRetryConfig(config?: RetryConfigInput): RetryConfig {
   return {
     maxRetries: config?.maxRetries ?? DEFAULT_RETRY_CONFIG.maxRetries,
     initialDelayMs: config?.initialDelayMs ?? DEFAULT_RETRY_CONFIG.initialDelayMs,
@@ -39,7 +34,7 @@ export function resolveRetryConfig(config?: RetryConfig): ResolvedRetryConfig {
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  config: ResolvedRetryConfig,
+  config: RetryConfig,
 ): Promise<T> {
   let lastError: unknown;
 

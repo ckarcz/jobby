@@ -21,6 +21,7 @@
     "test:coverage": "vitest run --project unit --coverage",
     "test:coverage:ui": "vitest --ui --project unit --coverage.enabled",
     "start:cli": "npm run start -w jobby-cli",
+    "start:mcp": "npm run start -w jobby-mcp",
     "start:cli:ui": "npm run start:ui -w jobby-cli",
     "start:cli:search": "npm run start:search -w jobby-cli",
     "start:cli:details": "npm run start:details -w jobby-cli",

@@ -11,7 +11,7 @@ import type {
   ListingAge,
 } from '../types/index.js';
 import { executeJobsQuery } from '../queries/jobs-query.js';
-import { type ResolvedRetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../utils/retry.js';
+import { type RetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../utils/retry.js';
 
 /**
  * Fluent builder for constructing job search queries.
@@ -34,7 +34,7 @@ import { type ResolvedRetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../ut
  */
 export class JobSearchBuilder {
   private resolvedConfig: ResolvedClientConfig;
-  private retryConfig: ResolvedRetryConfig;
+  private retryConfig: RetryConfig;
   private params: JobSearchParams = {};
   private pagination: PaginationParams = {};
 
@@ -44,7 +44,7 @@ export class JobSearchBuilder {
   }
 
   /** @internal Creates a builder from pre-resolved configuration. Used by JobbyClient. */
-  static _fromResolved(config: ResolvedClientConfig, retryConfig: ResolvedRetryConfig): JobSearchBuilder {
+  static _fromResolved(config: ResolvedClientConfig, retryConfig: RetryConfig): JobSearchBuilder {
     const builder = new JobSearchBuilder();
     builder.resolvedConfig = config;
     builder.retryConfig = retryConfig;

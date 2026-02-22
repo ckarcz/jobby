@@ -1,9 +1,8 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { Box, type DOMElement } from 'ink';
+import { Box } from 'ink';
 import { VirtualList, type VirtualListRef, type ViewportState } from 'ink-virtual-list';
 import { useSearchState, useSelectionState } from '../state/context.js';
 import { usePanelFocus } from '../hooks/usePanelFocus.js';
-import { useContainerHeight } from '../hooks/useContainerHeight.js';
 import { useResultsKeyboard } from '../hooks/useResultsKeyboard.js';
 import { useTimedVisibility } from '../hooks/useTimedVisibility.js';
 import { JOBCARD_HEIGHT, JobCard } from './JobCard.js';
@@ -17,11 +16,9 @@ export function SearchResults(): React.ReactElement {
   const { totalResults, searchResults, searchMetadata, loadMoreStatus, loadMoreError } = useSearchState();
   const { selectedJobIndex } = useSelectionState();
   const panelFocused = usePanelFocus('results');
-  const containerRef = useRef<DOMElement>(null);
   const listRef = useRef<VirtualListRef>(null);
   const [viewport, setViewport] = useState<ViewportState>({ offset: 0, visibleCount: 0, totalCount: 0 });
 
-  useContainerHeight(containerRef);
   useResultsKeyboard(listRef, viewport);
 
   const showLoadDuration = useTimedVisibility(searchMetadata, LOAD_DURATION_DISPLAY_MS);
@@ -38,7 +35,7 @@ export function SearchResults(): React.ReactElement {
   ), [panelFocused]);
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1} justifyContent="flex-start" alignItems="stretch">
+    <Box flexDirection="column" flexGrow={1} justifyContent="flex-start" alignItems="stretch">
       <ResultsHeader
         viewport={viewport}
         totalCount={totalResults.length}

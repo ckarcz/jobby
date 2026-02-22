@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JobSearchBuilder } from './job-search-builder.js';
-import type { ResolvedRetryConfig } from '../utils/retry.js';
+import type { RetryConfig } from '../utils/retry.js';
 
 // Mock the jobs query module
 vi.mock('../queries/jobs-query.js', () => ({
@@ -230,7 +230,7 @@ describe('JobSearchBuilder - fluent search query construction API', () => {
 
     it('should wrap executeJobsQuery with withRetry using provided retry config', async () => {
       const { withRetry } = await import('../utils/retry.js');
-      const customRetry: ResolvedRetryConfig = { maxRetries: 3, initialDelayMs: 500, maxDelayMs: 5000 };
+      const customRetry: RetryConfig = { maxRetries: 3, initialDelayMs: 500, maxDelayMs: 5000 };
       const retryBuilder = JobSearchBuilder._fromResolved(
         (await import('../config.js')).resolveConfig(),
         customRetry,

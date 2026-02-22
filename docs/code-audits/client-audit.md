@@ -49,8 +49,8 @@ Not every recommendation deserves equal effort. The table below classifies every
 | # | Item | Rating | Notes |
 |---|---|---|---|
 | 3 | Simplify verbose null guards | **Pragmatic** | Straightforward cleanup, fewer lines. |
-| 6 | Direct test for `mergeJobDetailsData` | **Pragmatic** | Closes an implicit-only coverage gap. |
-| 9 | Replace `random-useragent` | **Pragmatic** | Abandoned dependency; inline list is trivial. |
+| 6 | Direct test for `mergeJobDetailsData` | **Pragmatic** | Closes an implicit-only coverage gap. **FIXED** — exported with `@internal` JSDoc and direct tests added. |
+| 9 | Replace `random-useragent` | **Won't fix** | Accepted risk — no CVEs, trivially simple dep, not worth replacing. |
 | 11 | Slim `Logger` interface | **Over-engineered** | YAGNI — one logging impl, not worth abstracting further. |
 | 12 | Split `job-details-query.ts` | **Nice-to-have** | 600 lines of cohesive code; split when naturally adding features. |
 | 13 | Make `createTurndownService` injectable | **Over-engineered** | One consumer, no test benefit. |
@@ -252,7 +252,7 @@ None found.
 
 ### 5.3 Coverage Gaps
 
-1. **`mergeJobDetailsData` merge contract not directly tested** — only implicitly covered via higher-level tests
+1. ~~**`mergeJobDetailsData` merge contract not directly tested** — only implicitly covered via higher-level tests~~ **FIXED** — Exported with `@internal` JSDoc, direct unit tests added (primary wins, fallback used, both undefined)
 2. **`parseSalaryText` not tested with European numeric formats** (comma as decimal separator)
 3. ~~**Timing-dependent test** in `logging.test.ts` uses fixed 200ms `setTimeout` — flake risk~~ **FIXED** — Replaced `setTimeout(resolve, 200)` with `vi.waitFor()` for reliable async assertions
 4. **`validatePagination`** not tested with all three fields invalid simultaneously (trivial gap)
@@ -287,7 +287,7 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 |---|---|---|
 | `axios` | `^1.7.0` | Current. See 3.2.2 for `AxiosInstance` concern. |
 | `cheerio` | `^1.0.0` | Current. Correct tool. |
-| `random-useragent` | `^0.5.0` | **Stale — abandoned since 2019.** No CVEs but supply-chain risk. Replace with inline curated list. |
+| `random-useragent` | `^0.5.0` | Abandoned since 2019. No CVEs. **Won't fix** — accepted risk; trivially simple dependency. |
 | `turndown` | `^7.2.2` | Current. Maintained. |
 | `winston` | `^3.19.0` | Current. Heavy for a library. Consider if `onLog` callback suffices. |
 | `zod` | `^3.25 \|\| ^4.0` | Excellent — dual version range. Future-proof. |
@@ -303,13 +303,13 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 3. Simplify `scrapeShortDescription` / `scrapeSharingImageUrl` verbose guards
 4. ~~Delete `queries/index.ts` dead barrel~~ **DONE**
 5. ~~Fix timing-dependent test in `logging.test.ts` (use `vi.waitFor`)~~ **DONE**
-6. Add direct unit test for `mergeJobDetailsData` merge contract
+6. ~~Add direct unit test for `mergeJobDetailsData` merge contract~~ **DONE**
 7. ~~Remove `logger.http`/`logger.silly` assertions from `logging.test.ts`~~ **DONE**
 
 ### Phase 2 — Architecture Improvements (internal)
 
 8. ~~Fix double `resolveConfig` on `byId` variants~~ **DONE**
-9. Replace `random-useragent` with inline curated User-Agent list
+9. ~~Replace `random-useragent` with inline curated User-Agent list~~ **Won't fix** — accepted risk (no CVEs, trivially simple)
 10. ~~Introduce shared `AxiosInstance` in query functions~~ **DONE**
 11. Slim `Logger` interface to remove Winston-specific properties
 

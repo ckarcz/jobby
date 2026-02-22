@@ -6,10 +6,10 @@ import { helpConfig } from '../help-config.js';
 
 // swapping terminal buffers may not work well on every OS
 // it does work very well on Windows
-export function swapScreenBuffer(): void {
+function swapScreenBuffer(): void {
   process.stdout.write('\x1B[?1049h');
 }
-export function restoreScreenBuffer(): void {
+function restoreScreenBuffer(): void {
   process.stdout.write('\x1B[?1049l');
 }
 

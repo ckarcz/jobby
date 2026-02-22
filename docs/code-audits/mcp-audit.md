@@ -256,9 +256,9 @@ The current `search_jobs` description is generic. The AI benefits from seeing av
 Must state that at least one of `jobUrl` or `jobId` is required, and that `jobUrl` takes precedence. Directly related to 3.2.
 **Status: FIXED** — Updated `get_job_details` description to state the constraint.
 
-### 8.3 Add a Root-Level `start:mcp` Orchestration Script
+### 8.3 Add a Root-Level `start:mcp` Orchestration Script — **FIXED**
 
-For parity with CLI convenience scripts in root `package.json`.
+**Status: FIXED** — Added `"start:mcp": "npm run start -w jobby-mcp"` to root `package.json`.
 
 ### 8.4 Include Version in Startup Log Message
 
@@ -287,7 +287,7 @@ For parity with CLI convenience scripts in root `package.json`.
 | 7.1 | Handlers depend on concrete `JobbyClient` | Medium | SOLID | **Fixed** |
 | 8.1 | Tool descriptions should enumerate enum values | Recommendation | MCP UX | **Fixed** |
 | 8.2 | `get_job_details` description needs constraint note | Recommendation | MCP UX | **Fixed** |
-| 8.3 | Missing `start:mcp` root script | Recommendation | DX | Open |
+| 8.3 | Missing `start:mcp` root script | Recommendation | DX | **Fixed** |
 | 8.4 | Startup log should include version | Recommendation | Observability | **Fixed** |
 
 ### Priority Recommendations
@@ -312,7 +312,7 @@ For parity with CLI convenience scripts in root `package.json`.
 11. ~~Correct `setup.md` timeout documentation (4.3)~~ **DONE**
 12. ~~Export `ToolResponse`; remove duplicate (5.1)~~ **DONE**
 13. ~~Improve `get_job_details` description (8.2)~~ **DONE** — ~~Improve tool descriptions for enum values (8.1)~~ **DONE**
-14. Add `start:mcp` to root `package.json` (8.3)
+14. ~~Add `start:mcp` to root `package.json` (8.3)~~ **DONE**
 15. ~~Add version to startup log (8.4)~~ **DONE**
 
 ---

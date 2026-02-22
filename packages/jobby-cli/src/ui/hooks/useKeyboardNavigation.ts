@@ -1,5 +1,7 @@
+import { useCallback } from 'react';
 import { useInput } from 'ink';
 import { useLayoutState, useAppDispatch, useIsTextInputActive } from '../state/context.js';
+import { useLatest } from './useLatest.js';
 
 /**
  * Global keyboard handler — routes shortcuts based on current panel focus.
@@ -14,33 +16,39 @@ export function useKeyboardNavigation(): void {
   const dispatch = useAppDispatch();
   const textInputActiveRef = useIsTextInputActive();
 
-  useInput((input, key) => {
+  const focusedPanelRef = useLatest(focusedPanel);
+  const filterDrawerOpenRef = useLatest(filterDrawerOpen);
+  const dispatchRef = useLatest(dispatch);
+
+  const stableHandler = useCallback((input: string, key: { escape: boolean }) => {
     const inTextInput = textInputActiveRef.current > 0;
 
     if (input === '\\' && !inTextInput) {
-      if (filterDrawerOpen) {
-        dispatch({ type: 'FOCUS_PANEL', panel: 'filters' });
+      if (filterDrawerOpenRef.current) {
+        dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'filters' });
       } else {
-        dispatch({ type: 'OPEN_FILTER_DRAWER' });
-        dispatch({ type: 'FOCUS_PANEL', panel: 'filters' });
+        dispatchRef.current({ type: 'OPEN_FILTER_DRAWER' });
+        dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'filters' });
       }
       return;
     }
 
     if (input === '/' && !inTextInput) {
-      dispatch({ type: 'FOCUS_PANEL', panel: 'search' });
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'search' });
       return;
     }
 
-    if (key.escape && focusedPanel === 'details') {
-      dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
+    if (key.escape && focusedPanelRef.current === 'details') {
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'results' });
       return;
     }
 
-    if (key.escape && focusedPanel === 'filters') {
-      dispatch({ type: 'CLOSE_FILTER_DRAWER' });
-      dispatch({ type: 'FOCUS_PANEL', panel: 'results' });
+    if (key.escape && focusedPanelRef.current === 'filters') {
+      dispatchRef.current({ type: 'CLOSE_FILTER_DRAWER' });
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'results' });
       return;
     }
-  });
+  }, []);
+
+  useInput(stableHandler);
 }

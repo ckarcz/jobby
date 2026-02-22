@@ -28,8 +28,8 @@ The TUI architecture is in very good shape after four rounds of audit fixes. The
 
 **Key new findings:**
 
-- ~~**2 medium issues** — `useResultsKeyboard` still uses an inline `useInput` handler (inconsistent with the ref-based pattern established elsewhere)~~ **FIXED**, and `useContainerHeight` is called in `SearchResults` but its return value is discarded (dead work)
-- ~~**1 low-medium issue** — `JobbyClient` instantiated via `useMemo` rather than `useRef`~~ **FIXED**, **2 low-medium issues remaining** — `useKeyboardNavigation` passes an inline handler to `useInput`, and `FilterDrawer.sectionElements` memo invalidates on every navigation keystroke due to `cursors` object reference
+- ~~**2 medium issues** — `useResultsKeyboard` still uses an inline `useInput` handler (inconsistent with the ref-based pattern established elsewhere)~~ **FIXED**, and ~~`useContainerHeight` is called in `SearchResults` but its return value is discarded (dead work)~~ **FIXED**
+- ~~**1 low-medium issue** — `JobbyClient` instantiated via `useMemo` rather than `useRef`~~ **FIXED**, ~~**1 low-medium issue** — `useKeyboardNavigation` passes an inline handler to `useInput`~~ **FIXED**, **1 low-medium issue remaining** — `FilterDrawer.sectionElements` memo invalidates on every navigation keystroke due to `cursors` object reference
 - All previously-audited items confirmed fixed
 
 ### 1.1 Pragmatism Assessment
@@ -39,14 +39,14 @@ Not every audit finding carries equal weight. The table below classifies each re
 | # | Finding | Rating | Rationale |
 |---|---|---|---|
 | 3.1 | `useResultsKeyboard` inline handler re-registration | **Pragmatic** | Real Ink re-registration bug on every keypress; fixed. |
-| 3.2 | `useContainerHeight` dead call in `SearchResults` | **Pragmatic** | Dead hook doing real work (Yoga measurement + state updates); easy removal. |
+| 3.2 | `useContainerHeight` dead call in `SearchResults` | **Pragmatic** | Dead hook doing real work (Yoga measurement + state updates); easy removal. **FIXED** |
 | 4.1 | `JobbyClient` via `useMemo` instead of `useRef` | **Nice-to-have** | `useMemo` with `[]` deps has never re-run in any shipping React version; fixed anyway for semantic correctness. |
-| 4.2 | `useKeyboardNavigation` inline handler | **Nice-to-have** | Layout changes are infrequent user-initiated events; consistency is the only motivation. |
+| 4.2 | `useKeyboardNavigation` inline handler | **Nice-to-have** | Layout changes are infrequent user-initiated events; consistency is the only motivation. **FIXED** |
 | 4.3 | `sectionElements` memo invalidation | **Over-engineered** | Rebuilding 8 JSX elements per keypress is not a real bottleneck. |
 | 5.1 | `maxWidth`/`maxHeight` redundant state | **Pragmatic** | Bug waiting to happen (divergent values); fixed. |
 | 5.2 | `getFilterSection` O(n) linear scan | **Over-engineered** | `Array.find` over 8 items ~5-6 times is ~48 comparisons; a `Record` lookup saves unmeasurable time. |
-| Priority 1 | Ref-based handler for `useKeyboardNavigation` | **Nice-to-have** | Infrequent events; consistency-only motivation. |
-| Priority 2 | Remove `useContainerHeight` dead call | **Pragmatic** | Dead work with real side effects. |
+| Priority 1 | Ref-based handler for `useKeyboardNavigation` | **Nice-to-have** | Infrequent events; consistency-only motivation. **FIXED** |
+| Priority 2 | Remove `useContainerHeight` dead call | **Pragmatic** | Dead work with real side effects. **FIXED** |
 | Priority 3 | Optimize `sectionElements` memo / pre-build lookup map | **Over-engineered** | Micro-optimizations below any observable threshold. |
 | Testing | Focus on reducers and abort paths | **Pragmatic** | Right strategy -- highest value-to-effort ratio for TUI tests. |
 
@@ -91,21 +91,11 @@ The two-level filter state (local `useReducer` draft committed on Enter) is arch
 **Severity:** Medium
 **Status: FIXED** — Rewrote with ref-based stable handler pattern (matching useFilterKeyboard/useDetailsKeyboard). All state values stored in refs, `useCallback` with empty deps. Fix matched the recommended approach.
 
-### 3.2 `useContainerHeight` Called in `SearchResults` with Return Value Discarded
+### 3.2 `useContainerHeight` Called in `SearchResults` with Return Value Discarded — **FIXED**
 
 **File:** `packages/jobby-cli/src/ui/components/SearchResults.tsx:24`
 **Severity:** Medium (dead work)
-
-```typescript
-// SearchResults.tsx:24 — return value unused
-useContainerHeight(containerRef);
-```
-
-`useContainerHeight` measures the DOM element and returns the measured height as state. `SearchResults` calls it but never captures the returned `measuredHeight`. The `VirtualList` component manages its own height via `height='auto'`.
-
-The hook still runs its effect (measuring the element, calling `setMeasuredHeight`), causing unnecessary Yoga layout traversals and state updates that trigger re-renders with no consumer.
-
-**Fix:** Either remove the call entirely (if `VirtualList`'s `height='auto'` is sufficient), or capture and pass the height to `VirtualList` if explicit height control is needed.
+**Status: FIXED** — Removed the `useContainerHeight(containerRef)` call, the `containerRef` variable, the `ref={containerRef}` JSX prop, and the unused `useContainerHeight` and `DOMElement` imports.
 
 ---
 
@@ -117,33 +107,11 @@ The hook still runs its effect (measuring the element, calling `setMeasuredHeigh
 **Severity:** Low-Medium
 **Status: FIXED** — Changed `useMemo(() => new JobbyClient(...), [])` to `useRef(new JobbyClient(...)).current` in `useSearch.ts`. Slightly simpler than the recommended null-check pattern, but achieves the same stable-reference semantics.
 
-### 4.2 `useKeyboardNavigation` Passes Inline Handler to `useInput`
+### 4.2 `useKeyboardNavigation` Passes Inline Handler to `useInput` — **FIXED**
 
 **File:** `packages/jobby-cli/src/ui/hooks/useKeyboardNavigation.ts:17`
 **Severity:** Low-Medium
-
-```typescript
-useInput((input, key) => {
-  const inTextInput = textInputActiveRef.current > 0;
-  // reads focusedPanel, filterDrawerOpen from closure
-  // ...
-});
-```
-
-The handler closes over `focusedPanel` and `filterDrawerOpen` from `useLayoutState()`. Each layout state change (panel focus, drawer toggle) creates a new handler function and causes Ink to re-register it. This is low severity because layout changes are infrequent (user-initiated), but for consistency with the established ref-based pattern in other hooks, it should use the same approach:
-
-```typescript
-const layoutRef = useRef({ focusedPanel, filterDrawerOpen });
-layoutRef.current = { focusedPanel, filterDrawerOpen };
-
-const handler = useCallback((input: string, key: Key) => {
-  const { focusedPanel, filterDrawerOpen } = layoutRef.current;
-  const inTextInput = textInputActiveRef.current > 0;
-  // ...
-}, [dispatch, textInputActiveRef]);
-
-useInput(handler);
-```
+**Status: FIXED** — Refactored to ref-based stable handler pattern matching `useFilterKeyboard`/`useDetailsKeyboard`. Reactive values (`focusedPanel`, `filterDrawerOpen`, `dispatch`) stored in refs via `useLatest`, stable `useCallback` handler with empty deps reads from refs.
 
 ### 4.3 `FilterDrawer.sectionElements` Memo Invalidates on Every Navigation Keystroke
 
@@ -193,10 +161,10 @@ The `cursors` dependency is an object from the filter draft reducer. On every ar
 | `useDetailsKeyboard` | Yes | Yes | Yes | Correctly implemented |
 | `useFilterKeyboard` | Yes | Yes | Yes | Correctly implemented |
 | `useResultsKeyboard` | Yes | Yes | Yes | **Fixed (3.1)** |
-| `useKeyboardNavigation` | **No** | N/A (global) | Partial (textInputActiveRef only) | **Needs fix (4.2)** |
+| `useKeyboardNavigation` | Yes | N/A (global) | Yes | **Fixed (4.2)** |
 | `useSearch` | N/A | N/A | `useRef` client | **Fixed (4.1)** |
 | `useJobDetails` | N/A | N/A | Yes (statusRef, abortRef) | Correctly implemented |
-| `useContainerHeight` | N/A | N/A | N/A | **Dead call in SearchResults (3.2)** |
+| `useContainerHeight` | N/A | N/A | N/A | **Dead call removed (3.2 — Fixed)** |
 | `usePanelFocus` | N/A | N/A | N/A | Simple derived value — correct |
 | `useFilterDraft` | N/A | N/A | N/A | Reducer pattern — correct |
 
@@ -255,11 +223,11 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 ### Priority 1 — Consistency Fixes (follow established patterns)
 
 1. ~~**Apply ref-based stable handler to `useResultsKeyboard`** (3.1) — same pattern as `useDetailsKeyboard`~~ **DONE**
-2. **Apply ref-based stable handler to `useKeyboardNavigation`** (4.2) — same pattern
+2. ~~**Apply ref-based stable handler to `useKeyboardNavigation`** (4.2) — same pattern~~ **DONE**
 
 ### Priority 2 — Dead Code and Semantic Fixes
 
-3. **Remove or utilize `useContainerHeight` call in `SearchResults`** (3.2)
+3. ~~**Remove or utilize `useContainerHeight` call in `SearchResults`** (3.2)~~ **DONE**
 4. ~~**Use `useRef` for `JobbyClient` in `useSearch`** (4.1)~~ **DONE**
 
 ### Priority 3 — Optimization
@@ -288,9 +256,9 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 | # | Severity | Issue | File(s) | Status |
 |---|---|---|---|---|
 | 3.1 | Medium | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts:46` | **Fixed** |
-| 3.2 | Medium | `useContainerHeight` called in `SearchResults` with return value discarded | `SearchResults.tsx:24` | Open |
+| 3.2 | Medium | `useContainerHeight` called in `SearchResults` with return value discarded | `SearchResults.tsx:24` | **Fixed** |
 | 4.1 | Low-Medium | `JobbyClient` via `useMemo` instead of `useRef` | `useSearch.ts:17` | **Fixed** |
-| 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | Open |
+| 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | **Fixed** |
 | 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Open |
 | 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | **Fixed** |
 | 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | Open |

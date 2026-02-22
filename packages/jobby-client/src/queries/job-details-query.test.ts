@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById } from './job-details-query.js';
+import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById, mergeJobDetailsData } from './job-details-query.js';
 import { resolveConfig } from '../config.js';
 import { ValidationError, RateLimitError, NetworkError } from '../types/errors.js';
 
@@ -1504,5 +1504,67 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
       expect(result.details.benefitsInfo).toBeUndefined();
       expect(result.details.incentiveInfo).toBeUndefined();
     });
+  });
+});
+
+describe('mergeJobDetailsData - merge primary and fallback detail records', () => {
+  const emptyData = {
+    jobUrl: undefined,
+    title: undefined,
+    location: undefined,
+    company: undefined,
+    companyPage: undefined,
+    companyLogo: undefined,
+    companySlug: undefined,
+    salary: undefined,
+    postedDate: undefined,
+    postedTimeAgo: undefined,
+    expirationDate: undefined,
+    description: undefined,
+    workplaceType: undefined,
+    employmentType: undefined,
+    seniorityLevel: undefined,
+    applicantCount: undefined,
+    industry: undefined,
+    jobFunction: undefined,
+    experienceRequired: undefined,
+    educationRequired: undefined,
+    applyUrl: undefined,
+    applyText: undefined,
+    shortDescription: undefined,
+    sharingImageUrl: undefined,
+    benefitsInfo: undefined,
+    incentiveInfo: undefined,
+  };
+
+  it('should prefer primary values over fallback values', () => {
+    const primary = { ...emptyData, title: 'Primary Title', company: 'Primary Co' };
+    const fallback = { ...emptyData, title: 'Fallback Title', company: 'Fallback Co' };
+
+    const result = mergeJobDetailsData(primary, fallback);
+
+    expect(result.title).toBe('Primary Title');
+    expect(result.company).toBe('Primary Co');
+  });
+
+  it('should use fallback value when primary field is undefined', () => {
+    const primary = { ...emptyData };
+    const fallback = { ...emptyData, title: 'Fallback Title', location: 'New York' };
+
+    const result = mergeJobDetailsData(primary, fallback);
+
+    expect(result.title).toBe('Fallback Title');
+    expect(result.location).toBe('New York');
+  });
+
+  it('should stay undefined when both primary and fallback fields are undefined', () => {
+    const primary = { ...emptyData };
+    const fallback = { ...emptyData };
+
+    const result = mergeJobDetailsData(primary, fallback);
+
+    expect(result.title).toBeUndefined();
+    expect(result.company).toBeUndefined();
+    expect(result.location).toBeUndefined();
   });
 });

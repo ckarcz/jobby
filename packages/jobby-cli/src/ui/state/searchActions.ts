@@ -9,8 +9,8 @@ export interface SearchActions {
 
 /** Context for search/loadMore actions — created once in AppInner, consumed everywhere. */
 export const SearchActionsContext = createContext<SearchActions>({
-  search: () => undefined,
-  loadMore: () => undefined,
+  search: () => { throw new Error('useSearchActions must be used within SearchActionsContext.Provider'); },
+  loadMore: () => { throw new Error('useSearchActions must be used within SearchActionsContext.Provider'); },
 });
 
 /** Consume the shared search actions (search, loadMore). */

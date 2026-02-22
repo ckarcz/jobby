@@ -6,7 +6,10 @@ import {
   WORKPLACE_TYPE_CHOICES,
   LISTING_AGE_CHOICES,
 } from 'jobby-client';
-import type { JobType, ExperienceLevel, MinimumSalary, WorkplaceType, ListingAge } from 'jobby-client';
+
+function asNonEmpty<T>(arr: readonly T[]): [T, ...T[]] {
+  return arr as [T, ...T[]];
+}
 
 /**
  * Input schema for the `search_jobs` MCP tool.
@@ -18,19 +21,19 @@ export const SearchInputSchema = z.object({
   keyword: z.string().min(1).optional().describe('Job title, skill, or company name to search for'),
   location: z.string().min(1).optional().describe('City, state, or country to search in'),
   jobType: z.union([
-    z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]]),
-    z.array(z.enum(JOB_TYPE_CHOICES as [JobType, ...JobType[]])),
+    z.enum(asNonEmpty(JOB_TYPE_CHOICES)),
+    z.array(z.enum(asNonEmpty(JOB_TYPE_CHOICES))),
   ]).optional().describe(`Type of employment. Valid values: ${JOB_TYPE_CHOICES.join(', ')}. Single value or array.`),
   experienceLevel: z.union([
-    z.enum(EXPERIENCE_LEVEL_CHOICES as [ExperienceLevel, ...ExperienceLevel[]]),
-    z.array(z.enum(EXPERIENCE_LEVEL_CHOICES as [ExperienceLevel, ...ExperienceLevel[]])),
+    z.enum(asNonEmpty(EXPERIENCE_LEVEL_CHOICES)),
+    z.array(z.enum(asNonEmpty(EXPERIENCE_LEVEL_CHOICES))),
   ]).optional().describe(`Required experience level. Valid values: ${EXPERIENCE_LEVEL_CHOICES.join(', ')}. Single value or array.`),
-  minimumSalary: z.enum(MINIMUM_SALARY_CHOICES as [MinimumSalary, ...MinimumSalary[]]).optional().describe(`Minimum salary filter. Valid values: ${MINIMUM_SALARY_CHOICES.join(', ')}.`),
+  minimumSalary: z.enum(asNonEmpty(MINIMUM_SALARY_CHOICES)).optional().describe(`Minimum salary filter. Valid values: ${MINIMUM_SALARY_CHOICES.join(', ')}.`),
   workplaceType: z.union([
-    z.enum(WORKPLACE_TYPE_CHOICES as [WorkplaceType, ...WorkplaceType[]]),
-    z.array(z.enum(WORKPLACE_TYPE_CHOICES as [WorkplaceType, ...WorkplaceType[]])),
+    z.enum(asNonEmpty(WORKPLACE_TYPE_CHOICES)),
+    z.array(z.enum(asNonEmpty(WORKPLACE_TYPE_CHOICES))),
   ]).optional().describe(`Workplace arrangement. Valid values: ${WORKPLACE_TYPE_CHOICES.join(', ')}. Single value or array.`),
-  listingAge: z.enum(LISTING_AGE_CHOICES as [ListingAge, ...ListingAge[]]).optional().describe(`How recently the job was posted. Valid values: ${LISTING_AGE_CHOICES.join(', ')}.`),
+  listingAge: z.enum(asNonEmpty(LISTING_AGE_CHOICES)).optional().describe(`How recently the job was posted. Valid values: ${LISTING_AGE_CHOICES.join(', ')}.`),
   geoId: z.string().optional().describe('LinkedIn geo ID (e.g. 103644278 for US, 101165590 for UK)'),
   companyId: z.string().optional().describe('LinkedIn company ID (e.g. 1441 for Google, 1035 for Microsoft)'),
   start: z.number().int().nonnegative().optional().describe('Starting offset for the query.'),

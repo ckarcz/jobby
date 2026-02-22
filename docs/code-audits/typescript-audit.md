@@ -347,9 +347,9 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 
 | # | Finding | Pragmatism | Effort | Files |
 |---|---|---|---|---|
-| 2.3 | Replace `ResolvedRetryConfig` with `Partial<RetryConfig>` + defaults | **Pragmatic** | Low | `retry.ts` |
-| 5.1 | Use `satisfies` on `DEFAULT_RETRY_CONFIG` and `DEFAULT_CLIENT_CONFIG` | **Pragmatic** | Low | `retry.ts`, `config.ts` |
-| 4.2 | Create `asNonEmpty<T>` helper for Zod enum arrays | **Pragmatic** | Trivial | `schemas.ts` |
+| 2.3 | Replace `ResolvedRetryConfig` with `Partial<RetryConfig>` + defaults | **Pragmatic** | Low | `retry.ts` | **FIXED** |
+| 5.1 | Use `satisfies` on `DEFAULT_RETRY_CONFIG` and `DEFAULT_CLIENT_CONFIG` | **Pragmatic** | Low | `retry.ts`, `config.ts` | **FIXED** |
+| 4.2 | Create `asNonEmpty<T>` helper for Zod enum arrays | **Pragmatic** | Trivial | `schemas.ts` | **FIXED** |
 | 9.2 | Eliminate `as unknown as` cast via constructor overloads | **Pragmatic** | Low | `job-search-builder.ts` |
 | 4.3 | Add `default: never` exhaustiveness check to reducer | **Nice-to-have** | Trivial | `reducer.ts` |
 | 7.2 | Convert `ErrorCode` enum to const object | **Nice-to-have** | Low | `errors.ts` |
@@ -367,7 +367,7 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 | `interface` for object shapes | Yes | Consistent, correct |
 | `type` for unions/aliases | Yes | Consistent, correct |
 | Generics `<T>` | Yes | Appropriate where used |
-| `Partial<T>` | No | Should use for config inputs (**Pragmatic**) |
+| `Partial<T>` | Yes | **FIXED** — Used for `RetryConfigInput` and `DEFAULT_CLIENT_CONFIG` |
 | `Required<T>` | No | Could use to eliminate ResolvedRetryConfig (**Pragmatic**) |
 | `Readonly<T>` | Partial | `readonly` on class props is the standard level. Wrapping interfaces in `Readonly<T>` adds noise for little benefit. |
 | `Pick/Omit/Extract/Exclude` | No | Not needed. Would add type-level complexity without improving readability. |
@@ -377,7 +377,7 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 | Discriminated unions | Yes | Excellent usage |
 | Type guards (`is`) | Yes | Correct usage |
 | `as const` | Yes | Consistent on all mapping objects |
-| `satisfies` | No | Should use on const defaults (**Pragmatic**) |
+| `satisfies` | Yes | **FIXED** — Used on `DEFAULT_RETRY_CONFIG` and `DEFAULT_CLIENT_CONFIG` |
 | Branded types | No | Not needed — method names (`ById`/`ByUrl`) are sufficient. Branded types add complexity for marginal safety. |
 | `never` for exhaustiveness | Partial | Used as return type; ESLint rule covers reducer |
 | `unknown` in catch | Yes | Consistent and correct |

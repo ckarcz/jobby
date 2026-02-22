@@ -202,8 +202,9 @@ function formatSalaryDisplay(salary: JobDetailsInfo['salary']): string | undefin
  * Merges two parsed detail records, preferring the primary source for each field.
  * Adding a new field to {@link ParsedJobDetailsData} automatically gets merged
  * here — no manual `primary.x ?? fallback.x` line required.
+ * @internal Exported for testing only
  */
-function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: ParsedJobDetailsData): ParsedJobDetailsData {
+export function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: ParsedJobDetailsData): ParsedJobDetailsData {
   const merged = { ...fallback };
   for (const key of Object.keys(primary) as (keyof ParsedJobDetailsData)[]) {
     const value = primary[key];

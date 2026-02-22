@@ -40,8 +40,8 @@ Not every audit finding carries equal weight in practice. The table below classi
 | Item | Rating | Note |
 |------|--------|------|
 | `writeFileSync` to async | Nice-to-have | For a CLI writing one file, sync is fine in practice |
-| Unexport `swapScreenBuffer` / `restoreScreenBuffer` | Nice-to-have | Nobody is importing these accidentally |
-| Remove `helpConfig` from `index.ts` exports | Nice-to-have | Same reasoning |
+| Unexport `swapScreenBuffer` / `restoreScreenBuffer` | Nice-to-have | **FIXED** — `export` removed |
+| Remove `helpConfig` from `index.ts` exports | Nice-to-have | **FIXED** — export line removed |
 | Deduplicate `parse.test.ts` tests | Nice-to-have | Harmless duplication |
 | `[url]` assertion false positive | Nice-to-have | Weak assertion, not wrong |
 | `details.test.ts` empty `rawHtml` assertion | Nice-to-have | Strengthen when in the file |
@@ -124,11 +124,10 @@ The action handler resolves `value` from opts/args/stdin, then passes both `valu
 
 Node 22 supports JSON import assertions natively. `createRequire` is a workaround from an older ESM era.
 
-#### `swapScreenBuffer` / `restoreScreenBuffer` Are Exported
+#### `swapScreenBuffer` / `restoreScreenBuffer` Are Exported — **FIXED**
 
 **File:** `src/commands/ui.ts:9-12`
-
-These are implementation details that should not be exported.
+**Status: FIXED** — Removed `export` keyword from both functions.
 
 #### `yamlFormatter` Ignores `pretty` Option Silently — **FIXED**
 
@@ -143,7 +142,7 @@ These are implementation details that should not be exported.
 - **Redundant duplicate test cases in `parse.test.ts`** — identical assertions across describe blocks for zero parsing, negative numbers, and empty strings.
 - ~~**`formatter.test.ts` mutates shared default registry** without guaranteed cleanup via `afterEach`.~~ **FIXED** — Added `afterEach(() => { registerDefaultFormatters(); })` for guaranteed cleanup.
 - ~~**`details.ts` `isUrl` helper is overly permissive** — accepts `ftp://`, `data:`, etc. Should narrow to `http:` and `https:`.~~ **FIXED** — Added protocol check: `url.protocol === 'http:' || url.protocol === 'https:'`.
-- **`helpConfig` is exported from `index.ts`** without documented reason for external consumers to use it.
+- ~~**`helpConfig` is exported from `index.ts`** without documented reason for external consumers to use it.~~ **FIXED** — Export removed from `index.ts`.
 
 ---
 
@@ -156,7 +155,7 @@ These are implementation details that should not be exported.
 | `--easy-apply-only` / `--under-10-applicants` assertions | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Options not implemented in CLI | **Fixed** |
 | `[url]` argument assertion | `cli-help.test.ts:135` | Passes incidentally (`[url]` is substring of `[id-or-url]`) | Open |
 | Signal handler spies on `process.on` | `main.test.ts:237,260` | Code uses `process.once`, spy should target `.once` | **Fixed** |
-| `details.test.ts` empty rawHtml assertion | `details.test.ts:224-228` | Only checks `consoleSpy` was called, not what with | Open |
+| `details.test.ts` empty rawHtml assertion | `details.test.ts:224-228` | Only checks `consoleSpy` was called, not what with | **Fixed** |
 
 ### 5.2 Important Untested Code Paths
 
@@ -200,8 +199,8 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 
 8. ~~Replace `writeFileSync` with `fs.promises.writeFile` in `outputResult`~~ **DONE**
 9. ~~Narrow `isUrl` to `http:` and `https:` schemes only~~ **DONE**
-10. Remove `export` from `swapScreenBuffer`/`restoreScreenBuffer`
-11. Remove `helpConfig` from `index.ts` exports
+10. ~~Remove `export` from `swapScreenBuffer`/`restoreScreenBuffer`~~ **DONE**
+11. ~~Remove `helpConfig` from `index.ts` exports~~ **DONE**
 12. ~~Fix invalid `'mid-senior'` value in `search.test.ts`~~ **DONE**
 13. Deduplicate redundant test cases in `parse.test.ts`
 14. ~~Improve `formatter.test.ts` test isolation~~ **DONE**

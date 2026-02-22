@@ -12,6 +12,16 @@ import { main } from './main.js';
 
 const MockedJobbyClient = vi.mocked(JobbyClient);
 
+function createMockClient(overrides?: { queryForJobs?: ReturnType<typeof vi.fn> }) {
+  MockedJobbyClient.mockImplementation(function () { return {
+    jobs: {
+      queryForJobs: overrides?.queryForJobs ?? vi.fn(),
+      queryForJobDetailsByUrl: vi.fn(),
+      queryForJobDetailsById: vi.fn(),
+    },
+  } as any; });
+}
+
 /**
  * Tests for the main CLI entrypoint focusing on error handling behavior:
  * LinkedIn API errors with actionable hints, debug mode stack traces,
@@ -47,13 +57,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { JobbyError } = await import('jobby-client');
       const error = new (JobbyError as any)('E_RATE_LIMIT', 'Rate limit reached');
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -66,13 +70,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { RateLimitError } = await import('jobby-client');
       const error = new (RateLimitError as any)('Rate limit reached', 30);
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -84,13 +82,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { NetworkError } = await import('jobby-client');
       const error = new (NetworkError as any)('Connection failed');
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -102,13 +94,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { ValidationError } = await import('jobby-client');
       const error = new (ValidationError as any)('Invalid parameter');
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -120,13 +106,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { ParsingError } = await import('jobby-client');
       const error = new (ParsingError as any)('Parse failed');
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -140,13 +120,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { NetworkError } = await import('jobby-client');
       const error = new (NetworkError as any)('Connection failed');
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -160,13 +134,7 @@ describe('main - CLI entrypoint error handling', () => {
       const { JobbyError } = await import('jobby-client');
       const origErr = new Error('underlying cause');
       const error = new (JobbyError as any)('E_NETWORK', 'Wrapper error', { originalError: origErr });
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(error),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
 
@@ -179,13 +147,7 @@ describe('main - CLI entrypoint error handling', () => {
     it('should log unexpected errors and exit with code 1', async () => {
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(new Error('Unexpected failure')),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(new Error('Unexpected failure')) });
 
       await main();
 
@@ -196,13 +158,7 @@ describe('main - CLI entrypoint error handling', () => {
     it('should show stack trace for unexpected errors when --debug is set', async () => {
       process.argv = ['node', 'main', 'search', '--keyword', 'test', '--debug'];
 
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockRejectedValue(new Error('Debug failure')),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockRejectedValue(new Error('Debug failure')) });
 
       await main();
 
@@ -242,13 +198,7 @@ describe('main - CLI entrypoint error handling', () => {
       const onSpy = vi.spyOn(process, 'once');
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockResolvedValue(null),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockResolvedValue(null) });
       vi.spyOn(console, 'log').mockImplementation(() => { });
 
       await main();
@@ -265,13 +215,7 @@ describe('main - CLI entrypoint error handling', () => {
       const onSpy = vi.spyOn(process, 'once');
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
-      MockedJobbyClient.mockImplementation(function () { return {
-        jobs: {
-          queryForJobs: vi.fn().mockResolvedValue(null),
-          queryForJobDetailsByUrl: vi.fn(),
-          queryForJobDetailsById: vi.fn(),
-        },
-      } as any; });
+      createMockClient({ queryForJobs: vi.fn().mockResolvedValue(null) });
       vi.spyOn(console, 'log').mockImplementation(() => { });
 
       await main();

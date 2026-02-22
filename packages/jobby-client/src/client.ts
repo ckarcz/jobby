@@ -4,14 +4,14 @@ import { executeJobsQuery, executeJobsQueryRawHtml  } from './queries/jobs-query
 import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById  } from './queries/job-details-query.js';
 import { JobSearchBuilder } from './builders/job-search-builder.js';
 import { withRetry } from './utils/retry.js';
-import type { ResolvedRetryConfig } from './utils/retry.js';
+import type { RetryConfig } from './utils/retry.js';
 
 /** Jobs resource providing search and details methods. */
 class JobsResource {
   private readonly config: ResolvedClientConfig;
-  private readonly retryConfig: ResolvedRetryConfig;
+  private readonly retryConfig: RetryConfig;
 
-  constructor(config: ResolvedClientConfig, retryConfig: ResolvedRetryConfig) {
+  constructor(config: ResolvedClientConfig, retryConfig: RetryConfig) {
     this.config = config;
     this.retryConfig = retryConfig;
   }
