@@ -134,21 +134,15 @@ None. No correctness bugs, security vulnerabilities, or data corruption paths we
 **Files:** `src/queries/jobs-query.ts:91`, `src/queries/job-details-query.ts:73`
 **Status: FIXED** — Added `axiosInstance: AxiosInstance` to `ResolvedClientConfig`. `resolveConfig()` now creates a shared `axios.create({ timeout })` instance. All query functions use `config.axiosInstance.get(...)` instead of the global `axios.get(...)`. This enables interceptor injection and simplifies test mocking.
 
-#### 3.2.3 `Job.id` and `Job.url` Typed `string | undefined` Despite Parser Guarantees
+#### 3.2.3 `Job.id` and `Job.url` Typed `string | undefined` Despite Parser Guarantees — **FIXED**
 
 **File:** `src/types/responses.ts:44-54`
+**Status: FIXED** — Narrowed `Job.id` and `Job.url` to `string`. Updated `parseJobs` to filter out records without valid `jobId` or `jobUrl`. Added `ParsingError` guard in `parseJobDetails` for the same guarantee. Removed unnecessary null checks in `enrich.ts`. Updated test fixtures with valid URLs.
 
-`parseJobs` only returns records where `position && company` are non-null. Every consumer must defensively null-check `job.id` and `job.url` even though they are always present on valid parsed records.
-
-**Fix:** Define a `ValidJob` type with narrowed `id: string` and `url: string`, or use a branded type pattern.
-
-#### 3.2.4 `JobsResource` is Private, Non-Exported, and Duplicates Retry Wrapping
+#### 3.2.4 `JobsResource` is Private, Non-Exported, and Duplicates Retry Wrapping — **FIXED** (export)
 
 **File:** `src/client.ts:10-102`
-
-`JobsResource` is instantiated only once per `JobbyClient` but is not exported, so consumers cannot type-check against `client.jobs`. Its retry wrapping pattern is identical to `JobSearchBuilder.execute`, creating two maintenance sites.
-
-**Fix:** Export `JobsResource` (or an `IJobsResource` interface). Consider consolidating retry wrapping.
+**Status: Partially FIXED** — `JobsResource` class is now exported and added to the public barrel (`index.ts`). Consumers can type-check against `client.jobs`. Retry wrapping consolidation remains open (nice-to-have).
 
 ---
 
@@ -181,17 +175,19 @@ src/parsers/salary.ts               (parseSalaryText, formatSalaryDisplay, extra
 
 The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. Misleading duality.
 
-#### 3.3.5 Winston Logger Properties Leaked Through `Logger` Interface
+#### 3.3.5 Winston Logger Properties Leaked Through `Logger` Interface — **PLANNED**
 
 `level: string` and `silent: boolean` are Winston-specific properties in the `Logger` interface.
+
+**Planned:** Logger will be moved out of `ResolvedClientConfig` entirely. It is a cross-cutting concern, not a config property. `ResolvedClientConfig` will be eliminated in favor of `Partial<ClientConfig>` + defaults pattern (matching the `RetryConfig` approach).
 
 #### 3.3.6 `extractCriteriaValue` Does Not Short-Circuit on Match — **FIXED**
 
 **Status: FIXED** — Added `return false;` after match in `.each()` loop to short-circuit, plus explicit `return;` on non-match path for TypeScript compliance.
 
-#### 3.3.7 `parseJobs` Uses Overly Broad `$('li')` Selector
+#### 3.3.7 `parseJobs` Uses Overly Broad `$('li')` Selector — **FIXED**
 
-Should use `$('li.base-card')` or `$('li[data-entity-urn]')` for precision.
+**Status: FIXED** — Changed to `$('li.base-card')` for precision. Only matches the actual job listing cards.
 
 #### 3.3.8 `appendStringParam` Truthy Check Drops `'0'` — **FIXED**
 
@@ -208,11 +204,10 @@ Should use `$('li.base-card')` or `$('li[data-entity-urn]')` for precision.
 
 Well-documented with eslint-disable comment. A narrower `as never` cast is possible but not critical.
 
-### 4.2 Verbose Null Guards in `scrapeShortDescription` / `scrapeSharingImageUrl`
+### 4.2 Verbose Null Guards in `scrapeShortDescription` / `scrapeSharingImageUrl` — **FIXED**
 
-**File:** `src/queries/job-details-query.ts:501-516`
-
-6 unnecessary lines — could be single-line `return ... || undefined`.
+**File:** `src/queries/job-details-query.ts`
+**Status: FIXED** — Both functions are now single-line implementations using optional chaining: `return $('meta[...]').attr('content')?.trim() ?? undefined;`
 
 ### 4.3 `DEFAULT_CLIENT_CONFIG` Export is Incomplete
 

@@ -181,14 +181,11 @@ All exported functions and schema exports carry JSDoc comments explaining their 
 **Severity:** Low
 **Status: FIXED** — Used `z.url()` for `jobUrl`. Slightly different from recommendation (used `z.url()` instead of `z.string().url()`).
 
-### 5.5 No Retry Configuration on the Client
+### 5.5 No Retry Configuration on the Client — **FIXED**
 
-**File:** `src/handlers.ts:11`
+**File:** `src/server.ts`
 **Severity:** Low
-
-No `retry` option is passed, defaulting to `maxRetries: 0`. LinkedIn rate limiting is common.
-
-**Fix:** Add retry config (alongside 4.1).
+**Status: FIXED** — Client is now created with `retry: { maxRetries: 2 }` in `createServer()`. This provides resilience against transient failures and LinkedIn rate limiting.
 
 ---
 
@@ -279,7 +276,7 @@ Must state that at least one of `jobUrl` or `jobId` is required, and that `jobUr
 | 5.2 | Pagination accepts negatives and non-integers | Low | Validation | **Fixed** |
 | 5.3 | Empty string accepted for keyword/location | Low | Validation | **Fixed** |
 | 5.4 | `jobUrl` not validated as a URL | Low | Validation | **Fixed** |
-| 5.5 | No retry configuration | Low | Resilience | Open |
+| 5.5 | No retry configuration | Low | Resilience | **Fixed** |
 | 6.2 | Mock `JobbyError` has inverted constructor args | Medium | Test Fidelity | **Fixed** |
 | 6.3 | Test enshrines ZodError escape as expected behavior | Low | MCP Protocol | **Fixed** |
 | 6.4 | Version test hardcodes `"1.0.0"` | Low | Test Quality | **Fixed** |
@@ -301,7 +298,7 @@ Must state that at least one of `jobUrl` or `jobId` is required, and that `jobUr
 
 **P2 — Fix for robustness:**
 4. ~~Fix `server.test.ts` mock constructor arg order (6.2)~~ **DONE**
-5. ~~Inject client as dependency (4.1, 7.1)~~ **DONE** — Add retry config (5.5) still open
+5. ~~Inject client as dependency (4.1, 7.1)~~ **DONE** — ~~Add retry config (5.5)~~ **DONE**
 6. ~~Add `.int().nonnegative()` to pagination fields (5.2)~~ **DONE**
 7. ~~Add `.min(1)` to keyword/location (5.3)~~ **DONE**
 8. ~~Add `.url()` to jobUrl (5.4)~~ **DONE**

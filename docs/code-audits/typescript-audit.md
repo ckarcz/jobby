@@ -103,9 +103,15 @@ export function resolveRetryConfig(config?: RetryConfigInput): RetryConfig {
 - Adding a new field requires changing only the interface and the default — the input type updates automatically
 - This is the standard pattern used by most TS config libraries
 
-#### For complex cases (ClientConfig):
+#### For complex cases (ClientConfig): — **PLANNED**
 
-When the resolved type differs structurally from the input (e.g., factory functions resolved to strings, derived objects like `Logger`), the separate `ResolvedClientConfig` interface is justified. No change needed there.
+The original assessment was that `ResolvedClientConfig` was justified due to structural differences (`logger`, `userAgent` factory resolution, `retry`). However, these differences can be eliminated:
+
+1. **Remove `logger` from config entirely** — Logger is a cross-cutting concern, not a config property. Move it out of `ResolvedClientConfig` and pass it separately (or create at construction time as a standalone field on `JobbyClient`).
+2. **Resolve `userAgent` at construction** — Store the resolved `string` directly, handle the factory in the constructor.
+3. **Use `RetryConfig` directly** — Already resolved via `Partial<RetryConfig>` pattern.
+
+With these changes, `ResolvedClientConfig` can be eliminated entirely. `ClientConfig` becomes the full/required type, `Partial<ClientConfig>` is the input type, matching the `RetryConfig` pattern.
 
 ### 2.4 Generic Config Merge Utility — **Nice-to-have**
 
@@ -176,18 +182,9 @@ z.enum(asNonEmpty(JOB_TYPE_CHOICES))
 
 This is a common pattern in Zod codebases. The non-empty tuple cast is a known Zod ergonomic issue and helpers like this are standard.
 
-### 4.3 Exhaustive Switch with `never` — **Nice-to-have**
+### 4.3 Exhaustive Switch with `never` — **FIXED**
 
-The reducer at `cli/src/ui/state/reducer.ts:26-112` handles all `AppAction` cases but has no `default: never` exhaustiveness check:
-
-```typescript
-default: {
-  const _exhaustive: never = action;
-  return _exhaustive;
-}
-```
-
-The ESLint rule `@typescript-eslint/switch-exhaustiveness-check` is already enabled and should catch this. If the rule is configured to only warn on missing cases (not require a default), adding the `never` guard is a belt-and-suspenders safety net. Worth doing when you're in the file, but the ESLint rule is the real protection.
+**Status: FIXED** — The reducer at `cli/src/ui/state/reducer.ts` already has the `default: never` exhaustiveness check implemented. The ESLint rule `@typescript-eslint/switch-exhaustiveness-check` is also enabled as a belt-and-suspenders safety net.
 
 ---
 
@@ -228,9 +225,9 @@ No changes needed. This is how Zod should be used.
 
 The MCP schemas in `schemas.ts` duplicate the structure of `JobSearchParams` and `PaginationParams`. Sharing schemas between packages would eliminate this duplication, but requires exporting internal Zod schemas from `jobby-client`'s public API — a reasonable trade-off to avoid. The current approach of separate schemas is fine for package isolation.
 
-### 6.3 Type-Safe Error Formatting — **Nice-to-have**
+### 6.3 Type-Safe Error Formatting — **FIXED**
 
-The `toValidationError` function in `normalize.ts:36-45` accesses `issue.values` with a cast. Using `z.ZodIssueCode.invalid_enum_value` for narrowing would be cleaner, but the current code works and is a few lines in one file.
+**Status: FIXED** — Removed redundant `'values' in issue` runtime guard and `as string[]` cast from `toValidationError`. Zod's discriminated union on `issue.code` provides proper type narrowing when `code === 'invalid_value'`.
 
 ---
 
@@ -240,18 +237,13 @@ The `toValidationError` function in `normalize.ts:36-45` accesses `issue.values`
 
 The codebase uses `as const` objects + `keyof typeof` for all domain values — this is the modern TypeScript best practice. No changes needed for the mapping objects.
 
-### 7.2 Convert ErrorCode Enum to Const Object — **Nice-to-have**
+### 7.2 Convert ErrorCode Enum to Const Object — **FIXED**
 
-`ErrorCode` in `errors.ts:2-7` is the only TypeScript `enum` in the codebase. Converting it to `as const` + type derivation would be consistent with the rest of the codebase, but:
-- It's a breaking change for consumers using `ErrorCode.RATE_LIMIT` (syntax changes from enum member access to object property access — actually identical at runtime for string enums)
-- The tree-shaking argument is theoretical for a Node.js library (no bundler in the server path)
-- The enum works correctly
+**Status: FIXED** — `ErrorCode` enum has been converted to `ErrorType` as const object with derived type, consistent with the rest of the codebase. All usages updated throughout the monorepo.
 
-Do it for consistency if you're doing a major version bump. Otherwise, leave it.
+### 7.3 `readonly` on CHOICES Arrays — **FIXED**
 
-### 7.3 `readonly` on CHOICES Arrays — **Nice-to-have**
-
-Making `JOB_TYPE_CHOICES` etc. `readonly` would prevent accidental mutation and could eliminate some downstream casts. Low effort, but also low urgency since nobody is mutating these arrays.
+**Status: FIXED** — All 5 CHOICES arrays now typed as `readonly`. `getKeys` returns `readonly (keyof T & string)[]`. Downstream `as string[]` casts in `filterTypes.ts` and `FilterDrawer.tsx` eliminated by updating interfaces to `readonly string[]`.
 
 ---
 
@@ -277,35 +269,9 @@ Two separate export lines from `./utils/index.js` could be merged into one. Pure
 
 No changes needed. Proper `public readonly`, `Error.captureStackTrace`, static factory, per-subclass `this.name`.
 
-### 9.2 Builder Constructor Unsafe Cast — **Pragmatic**
+### 9.2 Builder Constructor Unsafe Cast — **FIXED**
 
-The `JobSearchBuilder` constructor has:
-
-```typescript
-this.resolvedConfig = retryConfig !== undefined
-  ? (config as unknown as ResolvedClientConfig)  // bypasses all type checking
-  : resolveConfig(config);
-```
-
-This exists because the builder is called externally with `ClientConfig` and internally with `ResolvedClientConfig`. The `as unknown as` cast is the worst kind of cast — it turns off the compiler completely for this path.
-
-**Fix with overloads:**
-
-```typescript
-constructor(config?: ClientConfig);
-constructor(config: ResolvedClientConfig, retryConfig: ResolvedRetryConfig);
-constructor(config?: ClientConfig | ResolvedClientConfig, retryConfig?: ResolvedRetryConfig) {
-  if (retryConfig !== undefined) {
-    this.resolvedConfig = config as ResolvedClientConfig;
-    this.retryConfig = retryConfig;
-  } else {
-    this.resolvedConfig = resolveConfig(config as ClientConfig | undefined);
-    this.retryConfig = DEFAULT_RETRY_CONFIG;
-  }
-}
-```
-
-Still has a cast in the implementation, but the overloads make the two calling conventions type-safe at all call sites. This is a standard TypeScript pattern for constructors with multiple valid signatures.
+**Status: FIXED** — Replaced the unsafe `as unknown as` cast with a `static _fromResolved(config, retryConfig)` factory method. Constructor now only accepts `ClientConfig | undefined` (public API). `JobbyClient` uses `_fromResolved()` for internal construction. This is a different approach from the recommended overloads but achieves the same type safety without casts.
 
 ---
 
@@ -350,11 +316,11 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 | 2.3 | Replace `ResolvedRetryConfig` with `Partial<RetryConfig>` + defaults | **Pragmatic** | Low | `retry.ts` | **FIXED** |
 | 5.1 | Use `satisfies` on `DEFAULT_RETRY_CONFIG` and `DEFAULT_CLIENT_CONFIG` | **Pragmatic** | Low | `retry.ts`, `config.ts` | **FIXED** |
 | 4.2 | Create `asNonEmpty<T>` helper for Zod enum arrays | **Pragmatic** | Trivial | `schemas.ts` | **FIXED** |
-| 9.2 | Eliminate `as unknown as` cast via constructor overloads | **Pragmatic** | Low | `job-search-builder.ts` |
-| 4.3 | Add `default: never` exhaustiveness check to reducer | **Nice-to-have** | Trivial | `reducer.ts` |
-| 7.2 | Convert `ErrorCode` enum to const object | **Nice-to-have** | Low | `errors.ts` |
-| 7.3 | `readonly` on CHOICES arrays | **Nice-to-have** | Trivial | `params.ts` |
-| 6.3 | Type-safe Zod error narrowing in `toValidationError` | **Nice-to-have** | Trivial | `normalize.ts` |
+| 9.2 | Eliminate `as unknown as` cast via constructor overloads | **Pragmatic** | Low | `job-search-builder.ts` | **FIXED** |
+| 4.3 | Add `default: never` exhaustiveness check to reducer | **Nice-to-have** | Trivial | `reducer.ts` | **FIXED** |
+| 7.2 | Convert `ErrorCode` enum to const object | **Nice-to-have** | Low | `errors.ts` | **FIXED** |
+| 7.3 | `readonly` on CHOICES arrays | **Nice-to-have** | Trivial | `params.ts` | **FIXED** |
+| 6.3 | Type-safe Zod error narrowing in `toValidationError` | **Nice-to-have** | Trivial | `normalize.ts` | **FIXED** |
 | 11.3 | Move DOM lib to CLI-only tsconfig | **Nice-to-have** | Trivial | tsconfig files |
 | 8.3 | Consolidate duplicate barrel export lines | **Nice-to-have** | Trivial | `index.ts` |
 
@@ -379,14 +345,14 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 | `as const` | Yes | Consistent on all mapping objects |
 | `satisfies` | Yes | **FIXED** — Used on `DEFAULT_RETRY_CONFIG` and `DEFAULT_CLIENT_CONFIG` |
 | Branded types | No | Not needed — method names (`ById`/`ByUrl`) are sufficient. Branded types add complexity for marginal safety. |
-| `never` for exhaustiveness | Partial | Used as return type; ESLint rule covers reducer |
+| `never` for exhaustiveness | Yes | **FIXED** — Used as return type and `default: never` in reducer |
 | `unknown` in catch | Yes | Consistent and correct |
 | `import type` | Yes | Enforced by compiler and ESLint |
-| `enum` | 1 instance | Works fine, convert for consistency if desired |
-| `as` type casting | Minimal | One unsafe cast worth fixing (builder) |
+| `enum` | 0 instances | **FIXED** — Converted `ErrorCode` enum to `ErrorType` as const |
+| `as` type casting | Minimal | **FIXED** — Unsafe builder cast eliminated via `_fromResolved` factory |
 | `!` non-null assertion | 2 instances | Justified and documented |
 | `any` | 0 instances | Excellent |
-| Function overloads | No | Would benefit builder constructor |
+| Function overloads | No | Builder uses `_fromResolved` factory instead (overloads not needed) |
 | `override` keyword | Yes | Used correctly |
 | `using` / Decorators | No | Not needed |
 

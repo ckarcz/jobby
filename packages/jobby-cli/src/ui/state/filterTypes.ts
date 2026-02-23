@@ -44,14 +44,14 @@ export interface CheckboxFilterSectionDef {
   key: CheckboxFilterKey;
   title: string;
   type: 'checkbox';
-  options: string[];
+  options: readonly string[];
 }
 
 export interface RadioFilterSectionDef {
   key: RadioFilterKey;
   title: string;
   type: 'radio';
-  options: string[];
+  options: readonly string[];
 }
 
 export interface TextFilterSectionDef {
@@ -81,11 +81,11 @@ export const SECTION_ORDER: FilterSectionKey[] = [
 
 /** All filter sections displayed in the drawer. */
 export const filterSections: FilterSectionDef[] = [
-  { key: 'jobType', title: 'Job Type', type: 'checkbox', options: JOB_TYPE_CHOICES as string[] },
-  { key: 'experienceLevel', title: 'Experience Level', type: 'checkbox', options: EXPERIENCE_LEVEL_CHOICES as string[] },
-  { key: 'workplaceType', title: 'Workplace Type', type: 'checkbox', options: WORKPLACE_TYPE_CHOICES as string[] },
-  { key: 'minimumSalary', title: 'Minimum Salary', type: 'radio', options: MINIMUM_SALARY_CHOICES as string[] },
-  { key: 'listingAge', title: 'Listing Age', type: 'radio', options: LISTING_AGE_CHOICES as string[] },
+  { key: 'jobType', title: 'Job Type', type: 'checkbox', options: JOB_TYPE_CHOICES },
+  { key: 'experienceLevel', title: 'Experience Level', type: 'checkbox', options: EXPERIENCE_LEVEL_CHOICES },
+  { key: 'workplaceType', title: 'Workplace Type', type: 'checkbox', options: WORKPLACE_TYPE_CHOICES },
+  { key: 'minimumSalary', title: 'Minimum Salary', type: 'radio', options: MINIMUM_SALARY_CHOICES },
+  { key: 'listingAge', title: 'Listing Age', type: 'radio', options: LISTING_AGE_CHOICES },
   { key: 'location', title: 'Location', type: 'text', options: [] },
   { key: 'geoId', title: 'Geo ID', type: 'text', options: [] },
   { key: 'companyId', title: 'Company ID', type: 'text', options: [] },

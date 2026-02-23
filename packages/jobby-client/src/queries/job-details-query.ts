@@ -210,9 +210,13 @@ function parseJobDetails(html: string, jobUrl: string, config: ResolvedClientCon
     const scrapedDetails = scrapeJobDetailsDataFromDom($);
     const merged = mergeJobDetailsData(jsonLdDetails, scrapedDetails);
 
-    const rawJobUrl = urlWithNoQueryParams(merged.jobUrl ?? jobUrl);
-    const jobId = extractJobIdFromUrl(rawJobUrl);
+    const rawJobUrl = urlWithNoQueryParams(merged.jobUrl ?? jobUrl) ?? jobUrl;
+    const jobId = extractJobIdFromUrl(rawJobUrl) ?? extractJobIdFromUrl(jobUrl);
     const resolvedJobUrl = buildCanonicalJobUrl(jobId, rawJobUrl) ?? rawJobUrl;
+
+    if (!jobId) {
+      throw new ParsingError(`Could not extract job ID from URL: ${jobUrl}`);
+    }
 
     return {
       id: jobId,

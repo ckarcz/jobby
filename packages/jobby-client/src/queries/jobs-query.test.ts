@@ -208,14 +208,17 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/100"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/101"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/102"></a>
         </li>
       `;
       mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
@@ -231,14 +234,17 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/103"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/104"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/105"></a>
         </li>
       `;
       mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
@@ -255,14 +261,17 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/106"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/107"></a>
         </li>
         <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/108"></a>
         </li>
       `;
       mockedGet.mockResolvedValueOnce({ data: multiJobHtml });
@@ -564,6 +573,7 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Co</div>
           <div class="base-search-card__title">Dev</div>
           <div class="job-search-card__salary-info">  $100k  -  $150k  </div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/112"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -573,9 +583,9 @@ describe('executeJobsQuery - additional edge cases', () => {
 
   describe('skip/take edge cases', () => {
     const threeJobsHtml = `
-      <li class="base-card"><div class="base-search-card__subtitle">C1</div><div class="base-search-card__title">J1</div></li>
-      <li class="base-card"><div class="base-search-card__subtitle">C2</div><div class="base-search-card__title">J2</div></li>
-      <li class="base-card"><div class="base-search-card__subtitle">C3</div><div class="base-search-card__title">J3</div></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C1</div><div class="base-search-card__title">J1</div><a class="base-card__full-link" href="https://linkedin.com/jobs/view/109"></a></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C2</div><div class="base-search-card__title">J2</div><a class="base-card__full-link" href="https://linkedin.com/jobs/view/110"></a></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C3</div><div class="base-search-card__title">J3</div><a class="base-card__full-link" href="https://linkedin.com/jobs/view/111"></a></li>
     `;
 
     it('should return empty when skip exceeds total results', async () => {
@@ -663,6 +673,7 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate" datetime="2024-01-15">2 weeks ago</time>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/113"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -674,6 +685,7 @@ describe('executeJobsQuery - additional edge cases', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/114"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -685,6 +697,7 @@ describe('executeJobsQuery - additional edge cases', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/115"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -696,6 +709,7 @@ describe('executeJobsQuery - additional edge cases', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/116"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -708,6 +722,7 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate--new" datetime="2024-01-15">1 day ago</time>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/117"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -719,6 +734,7 @@ describe('executeJobsQuery - additional edge cases', () => {
         <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/118"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
@@ -731,6 +747,7 @@ describe('executeJobsQuery - additional edge cases', () => {
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <div class="job-posting-benefits"><span class="job-posting-benefits__text">  Actively   Hiring   </span></div>
+          <a class="base-card__full-link" href="https://linkedin.com/jobs/view/119"></a>
         </li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);

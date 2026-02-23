@@ -1,5 +1,5 @@
 // Main client
-export { JobbyClient } from './client.js';
+export { JobbyClient, JobsResource } from './client.js';
 
 // Configuration
 export {

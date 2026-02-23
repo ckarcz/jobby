@@ -7,7 +7,7 @@ import { withRetry } from './utils/retry.js';
 import type { RetryConfig } from './utils/retry.js';
 
 /** Jobs resource providing search and details methods. */
-class JobsResource {
+export class JobsResource {
   private readonly config: ResolvedClientConfig;
   private readonly retryConfig: RetryConfig;
 

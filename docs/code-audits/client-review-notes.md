@@ -18,32 +18,22 @@
 
 ## Important Issues
 
-### 2. `extractJobIdFromUrl` regex is fragile — matches any trailing number, not specifically a LinkedIn job ID
+### 2. `extractJobIdFromUrl` regex is fragile — matches any trailing number, not specifically a LinkedIn job ID — **FIXED**
 
 **Confidence: 85**
 **File:** `packages/jobby-client/src/utils/url.ts`, line 37
+**Status: FIXED** — Regex anchored to the expected `/view/` path structure: `/\/view\/.*?(\d+)\/?$/`. This ensures only LinkedIn job view URLs are matched.
 
-The regex `/(\d+)\/?$/` matches the last numeric sequence at the end of the URL path. If a URL ends with a numeric suffix that is not the job ID, the wrong ID is extracted.
-
-**Fix:** Anchor the regex to the expected path structure.
-
-### 3. `resolveConfig` is called per-query, re-reads env vars each time
+### 3. `resolveConfig` is called per-query, re-reads env vars each time — **FIXED**
 
 **Confidence: 82**
 **File:** `packages/jobby-client/src/queries/jobs-query.ts`, line 56; `packages/jobby-client/src/queries/job-details-query.ts`, line 39
+**Status: FIXED** — Config is now resolved once at `JobbyClient` construction time and passed as `ResolvedClientConfig` through the entire call chain. Redundant `resolveConfig()` calls in all query functions have been removed.
 
-Both query entry points call `resolveConfig` on every invocation. This means each individual HTTP request gets a different random User-Agent string and re-reads environment variables.
-
-**Fix:** Document this behavior clearly. Consider calling `resolveConfig` once at `JobbyClient` construction time.
-
-### 4. `parseSalaryText` extracts all numbers without validating count
+### 4. `parseSalaryText` extracts all numbers without validating count — **MOOT**
 
 **Confidence: 83**
-**File:** `packages/jobby-client/src/queries/job-details-query.ts`, lines 453-463
-
-If the salary string contains more than 2 numbers (e.g., `"$50,000 - $80,000 (as of Q3 2024)"`), the third number (2024) is silently ignored. If the string only contains a year, the function returns a salary object with that number.
-
-**Fix:** Add a basic plausibility check (e.g., numbers must be > 1000 to be considered a salary).
+**Status: MOOT** — The `parseSalaryText` function has been removed from the codebase. Salary parsing is no longer done via this approach.
 
 ### 5. `mergeJobDetailsData` uses `any` cast — fragile with nullable fields
 
@@ -99,10 +89,11 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 **File:** `packages/jobby-client/src/types/params-schemas.ts`, lines 16-19
 **Status: FIXED** — Added a guard that throws a descriptive error if the map has zero keys. Added unit tests in `params-schemas.test.ts`.
 
-### 11. `validatePagination` accepts `take: 0` — wastes a network request
+### 11. `validatePagination` accepts `take: 0` — wastes a network request — **FIXED**
 
 **Confidence: 80**
 **File:** `packages/jobby-client/src/queries/jobs-query.ts`, lines 172-177
+**Status: FIXED** — Validation now checks `take < 1` instead of `take < 0`, rejecting `take: 0`.
 
 ---
 
@@ -111,16 +102,16 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 | # | Severity | File | Issue | Confidence | Status |
 |---|----------|------|-------|------------|--------|
 | 1 | Critical | `types/errors.ts:68` | `NetworkError.retryable=true` causes 404/401/403 to be retried | 95 | **Fixed** |
-| 2 | Important | `utils/url.ts:37` | `extractJobIdFromUrl` regex fragile — no path anchor | 85 | Open |
-| 3 | Important | `queries/jobs-query.ts:56` | `resolveConfig` called per-query, re-reads env vars each time | 82 | Open |
-| 4 | Important | `queries/job-details-query.ts:453` | `parseSalaryText` silently ignores 3rd+ numbers | 83 | Open |
+| 2 | Important | `utils/url.ts:37` | `extractJobIdFromUrl` regex fragile — no path anchor | 85 | **Fixed** |
+| 3 | Important | `queries/jobs-query.ts:56` | `resolveConfig` called per-query, re-reads env vars each time | 82 | **Fixed** |
+| 4 | Important | `queries/job-details-query.ts:453` | `parseSalaryText` silently ignores 3rd+ numbers | 83 | **Moot** (removed) |
 | 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 | **Fixed** (JSDoc) |
 | 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 | **Fixed** (prior round) |
 | 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 | **Fixed** (prior round) |
 | 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 | Open |
 | 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 | **Fixed** |
 | 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | **Fixed** |
-| 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | Open |
+| 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | **Fixed** |
 
 ---
 

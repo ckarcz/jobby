@@ -323,7 +323,7 @@ function parseJobs(jobData: string, config: ResolvedClientConfig): Job[] {
           const date = job.find('time').attr('datetime') ?? undefined;
           const agoTime = job.find('.job-search-card__listdate, .job-search-card__listdate--new').text().trim() || undefined;
 
-          if (!position || !company) {
+          if (!position || !company || !jobId || !jobUrl) {
             return null;
           }
 

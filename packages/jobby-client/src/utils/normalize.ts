@@ -36,8 +36,8 @@ const PaginationParamsSchema = z.object({
 function toValidationError(error: z.ZodError): ValidationError {
   const messages = error.issues.map(issue => {
     const path = issue.path.join('.');
-    if (issue.code === 'invalid_value' && 'values' in issue) {
-      return `Invalid value for the ${path} parameter. Valid values: ${(issue.values as string[]).join(', ')}`;
+    if (issue.code === 'invalid_value') {
+      return `Invalid value for the ${path} parameter. Valid values: ${issue.values.join(', ')}`;
     }
     return `Invalid value for the ${path} parameter: ${issue.message}`;
   });

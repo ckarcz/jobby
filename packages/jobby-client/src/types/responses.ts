@@ -44,9 +44,9 @@ export interface JobPosted {
 /** Job data returned from a jobs search. */
 export interface Job {
   /** The unique LinkedIn job ID. */
-  id: string | undefined;
+  id: string;
   /** The canonical URL for the job listing. */
-  url: string | undefined;
+  url: string;
   /** Summary information about the job. */
   summary: JobSummary;
   /** Posting date information. */

@@ -32,6 +32,9 @@ export function SearchBar(): React.ReactElement {
   const dispatchRef = useRef(dispatch);
   dispatchRef.current = dispatch;
 
+  // Note: TextInput (rendered below) has its own internal useInput that handles
+  // Enter (onSubmit) and printable characters (onChange). Do NOT add handlers for
+  // those keys here — both handlers fire simultaneously and would cause double actions.
   useInput((_input, key) => {
     if (key.escape) {
       if (totalResults.length > 0) {

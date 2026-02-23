@@ -23,55 +23,19 @@
 **Confidence: 90**
 **Status: FIXED** — Rewrote with ref-based stable handler pattern (matching useFilterKeyboard/useDetailsKeyboard). All state values stored in refs, `useCallback` with empty deps. Fix matched the recommended approach.
 
-### I2. `useContainerHeight` Has a Stale Closure on `measuredHeight` Inside the Effect Body
+### I2. `useContainerHeight` Has a Stale Closure on `measuredHeight` Inside the Effect Body — **FIXED**
 
 **Confidence: 85**
-
-**File:** `packages/jobby-cli/src/ui/hooks/useContainerHeight.ts` lines 15-26
-
-```typescript
-// Note: measuredHeight is intentionally excluded from the dependency array.
-useEffect(() => {
-  if (ref.current) {
-    const { height } = measureElement(ref.current);
-    if (height !== measuredHeight) {   // reads stale closure value
-      setMeasuredHeight(height);
-    }
-  }
-}, [terminalWidth, terminalHeight, filterDrawerOpen]);
-```
-
-`measuredHeight` inside the effect closure is the value captured at effect registration time. If two resize events fire before the first `setMeasuredHeight` triggers a re-render, the second closure compares against the old pre-resize height.
-
-**Fix:** Use a ref to hold the last-measured value:
-
-```typescript
-const measuredHeightRef = useRef(0);
-
-useEffect(() => {
-  if (ref.current) {
-    const { height } = measureElement(ref.current);
-    if (height !== measuredHeightRef.current) {
-      measuredHeightRef.current = height;
-      setMeasuredHeight(height);
-    }
-  }
-}, [terminalWidth, terminalHeight, filterDrawerOpen, ref]);
-```
+**Status: FIXED** — Already uses `measuredHeightRef` pattern. The ref holds the last-measured value and the effect compares against `measuredHeightRef.current`, avoiding the stale closure.
 
 ---
 
 ## Minor
 
-### M1. `maxWidth`/`maxHeight` Are Always Identical to `terminalWidth`/`terminalHeight` — Redundant State
+### M1. `maxWidth`/`maxHeight` Are Always Identical to `terminalWidth`/`terminalHeight` — Redundant State — **FIXED**
 
 **Confidence: 82**
-
-**Files:** `types.ts` (lines 22-23), `reducer.ts` (lines 7-8, 31), `context.ts` (lines 11-12, 49-50), `App.tsx` (lines 30-31, 34)
-
-The `SET_TERMINAL_SIZE` case always sets `maxWidth = action.width, maxHeight = action.height`. No code path ever sets them differently. These 4 fields add bulk to `AppState`, `LayoutState`, and the `useMemo` dependency array with no behavioral difference.
-
-**Fix:** Either implement the capping logic they were intended to support or remove them and use `terminalWidth`/`terminalHeight` directly.
+**Status: FIXED** — Removed `maxWidth` and `maxHeight` from `AppState`, `initialState`, `SET_TERMINAL_SIZE` reducer case, and `LayoutState`. All usages replaced with `terminalWidth`/`terminalHeight` directly. (Fixed in tui-architecture-audit round.)
 
 ### M2. `getFilterSection` Uses `Array.find` — O(n) Linear Scan Called 5-6 Times Per Keypress
 
@@ -85,9 +49,9 @@ The `SET_TERMINAL_SIZE` case always sets `maxWidth = action.width, maxHeight = a
 
 ## Informational
 
-### N1. `SearchBar` Dual `useInput` Registration
+### N1. `SearchBar` Dual `useInput` Registration — **FIXED**
 
-`SearchBar` registers its own `useInput` (for `Escape`) and simultaneously renders `@inkjs/ui`'s `TextInput`, which has its own internal `useInput`. These coexist correctly today, but if a future developer adds `key.return` handling to the `SearchBar` handler, it will fire simultaneously with `TextInput`'s `onSubmit`. A comment noting this constraint would help.
+**Status: FIXED** — Added a JSDoc comment above SearchBar's `useInput` call documenting the constraint: TextInput has its own internal `useInput` that handles Enter and printable characters, so those keys must not be duplicated in SearchBar's handler.
 
 ---
 
@@ -97,7 +61,7 @@ The `SET_TERMINAL_SIZE` case always sets `maxWidth = action.width, maxHeight = a
 |---|---|---|---|---|---|
 | C1 | 95 | Critical | Three independent `useSearch()` call sites with siloed abort/client | `useSearch.ts`, `useResultsKeyboard.ts`, `useFilterKeyboard.ts`, `SearchBar.tsx` | **Fixed** |
 | I1 | 90 | Important | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts` | **Fixed** |
-| I2 | 85 | Important | `useContainerHeight` stale closure on `measuredHeight` in effect | `useContainerHeight.ts` | Open |
-| M1 | 82 | Minor | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts`, `App.tsx` | Open |
+| I2 | 85 | Important | `useContainerHeight` stale closure on `measuredHeight` in effect | `useContainerHeight.ts` | **Fixed** |
+| M1 | 82 | Minor | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts`, `App.tsx` | **Fixed** |
 | M2 | 80 | Minor | `getFilterSection` O(n) linear scan 5-6x per keypress | `filterTypes.ts` | Open |
-| N1 | 60 | Informational | `SearchBar` dual `useInput` registration — fragile if extended | `SearchBar.tsx` | Open |
+| N1 | 60 | Informational | `SearchBar` dual `useInput` registration — fragile if extended | `SearchBar.tsx` | **Fixed** |

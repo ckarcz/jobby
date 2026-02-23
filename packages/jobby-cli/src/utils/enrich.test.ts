@@ -125,17 +125,6 @@ describe('fetchDetailsInBatches', () => {
     expect(result[1]!.details).toBeNull();
   });
 
-  it('should yield null details when job has no id', async () => {
-    const jobs = [makeJob({ id: undefined })];
-    const fetchFn = vi.fn();
-    const onWarn = vi.fn();
-
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
-
-    expect(result[0]!.details).toBeNull();
-    expect(fetchFn).not.toHaveBeenCalled();
-  });
-
   it('should use job id when fetching details', async () => {
     const jobs = [makeJob({ id: '42', url: 'https://linkedin.com/jobs/view/42' })];
     const fetchFn = vi.fn().mockResolvedValue(mockDetails);
@@ -143,28 +132,6 @@ describe('fetchDetailsInBatches', () => {
     await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0 });
 
     expect(fetchFn).toHaveBeenCalledWith('42');
-  });
-
-  it('should yield null details when id is missing regardless of url', async () => {
-    const jobs = [makeJob({ id: undefined, url: 'https://linkedin.com/jobs/view/99' })];
-    const fetchFn = vi.fn();
-    const onWarn = vi.fn();
-
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
-
-    expect(result[0]!.details).toBeNull();
-    expect(fetchFn).not.toHaveBeenCalled();
-  });
-
-  it('should yield null details when id is empty string', async () => {
-    const jobs = [makeJob({ id: '' })];
-    const fetchFn = vi.fn();
-    const onWarn = vi.fn();
-
-    const result = await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
-
-    expect(result[0]!.details).toBeNull();
-    expect(fetchFn).not.toHaveBeenCalled();
   });
 
   it('should process multiple batches correctly', async () => {
@@ -230,17 +197,6 @@ describe('fetchDetailsInBatches', () => {
     expect(onWarn).toHaveBeenCalledTimes(1);
     expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('job 2'));
     expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('rate limited'));
-  });
-
-  it('should call onWarn when job has no id', async () => {
-    const jobs = [makeJob({ id: undefined })];
-    const fetchFn = vi.fn();
-    const onWarn = vi.fn();
-
-    await fetchDetailsInBatches(jobs, fetchFn, { delayMs: 0, onWarn });
-
-    expect(onWarn).toHaveBeenCalledTimes(1);
-    expect(onWarn).toHaveBeenCalledWith(expect.stringContaining('(no id)'));
   });
 
   it('should call onWarn for every failed fetch in a batch', async () => {

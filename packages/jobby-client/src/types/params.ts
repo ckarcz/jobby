@@ -8,7 +8,7 @@ export function getApiValue<T extends ParamMap>(config: T, key: keyof T): string
 }
 
 /** Gets all valid keys for a parameter map. */
-export function getKeys<T extends ParamMap>(config: T): (keyof T & string)[] {
+export function getKeys<T extends ParamMap>(config: T): readonly (keyof T & string)[] {
   return Object.keys(config) as (keyof T & string)[];
 }
 
@@ -27,7 +27,7 @@ export const JOB_TYPE_MAPPING = {
 export type JobType = keyof typeof JOB_TYPE_MAPPING;
 
 /** All valid job type choices. */
-export const JOB_TYPE_CHOICES: JobType[] = getKeys(JOB_TYPE_MAPPING);
+export const JOB_TYPE_CHOICES: readonly JobType[] = getKeys(JOB_TYPE_MAPPING);
 
 /** Mapping of experience level keys to LinkedIn API values. */
 export const EXPERIENCE_LEVEL_MAPPING = {
@@ -43,7 +43,7 @@ export const EXPERIENCE_LEVEL_MAPPING = {
 export type ExperienceLevel = keyof typeof EXPERIENCE_LEVEL_MAPPING;
 
 /** All valid experience level choices. */
-export const EXPERIENCE_LEVEL_CHOICES: ExperienceLevel[] = getKeys(EXPERIENCE_LEVEL_MAPPING);
+export const EXPERIENCE_LEVEL_CHOICES: readonly ExperienceLevel[] = getKeys(EXPERIENCE_LEVEL_MAPPING);
 
 /** Mapping of minimum salary keys to LinkedIn API values. */
 export const MINIMUM_SALARY_MAPPING = {
@@ -62,7 +62,7 @@ export const MINIMUM_SALARY_MAPPING = {
 export type MinimumSalary = keyof typeof MINIMUM_SALARY_MAPPING;
 
 /** All valid minimum salary choices. */
-export const MINIMUM_SALARY_CHOICES: MinimumSalary[] = getKeys(MINIMUM_SALARY_MAPPING);
+export const MINIMUM_SALARY_CHOICES: readonly MinimumSalary[] = getKeys(MINIMUM_SALARY_MAPPING);
 
 /** Mapping of workplace type keys to LinkedIn API values. */
 export const WORKPLACE_TYPE_MAPPING = {
@@ -75,7 +75,7 @@ export const WORKPLACE_TYPE_MAPPING = {
 export type WorkplaceType = keyof typeof WORKPLACE_TYPE_MAPPING;
 
 /** All valid workplace type choices. */
-export const WORKPLACE_TYPE_CHOICES: WorkplaceType[] = getKeys(WORKPLACE_TYPE_MAPPING);
+export const WORKPLACE_TYPE_CHOICES: readonly WorkplaceType[] = getKeys(WORKPLACE_TYPE_MAPPING);
 
 /** Mapping of listing age keys to LinkedIn API values. */
 export const LISTING_AGE_MAPPING = {
@@ -88,7 +88,7 @@ export const LISTING_AGE_MAPPING = {
 export type ListingAge = keyof typeof LISTING_AGE_MAPPING;
 
 /** All valid listing age choices. */
-export const LISTING_AGE_CHOICES: ListingAge[] = getKeys(LISTING_AGE_MAPPING);
+export const LISTING_AGE_CHOICES: readonly ListingAge[] = getKeys(LISTING_AGE_MAPPING);
 
 /** Pagination parameters for controlling result windowing. */
 export interface PaginationParams {

@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { glyphs, colors } from '../theme.js';
 
 interface FilterCheckboxInputProps {
-  options: string[];
+  options: readonly string[];
   selected: string[];
   focused: boolean;
   cursorIndex: number;

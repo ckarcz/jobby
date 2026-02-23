@@ -49,12 +49,7 @@ export async function fetchDetailsInBatches(
 
     const batch = jobs.slice(i, i + batchSize);
     const settled = await Promise.allSettled(
-      batch.map((job) => {
-        if (!job.id) {
-          return Promise.reject(new Error('Job has no id'));
-        }
-        return fetchFn(job.id);
-      }),
+      batch.map((job) => fetchFn(job.id)),
     );
 
     for (const [j, job] of batch.entries()) {
@@ -63,7 +58,7 @@ export async function fetchDetailsInBatches(
         results.push({ ...job, details: result.value.details });
       } else {
         const reason = result?.status === 'rejected' ? String(result.reason) : 'unknown error';
-        onWarn(`Warning: failed to fetch details for job ${job.id ?? '(no id)'}: ${reason}`);
+        onWarn(`Warning: failed to fetch details for job ${job.id}: ${reason}`);
         results.push({ ...job, details: null });
       }
     }

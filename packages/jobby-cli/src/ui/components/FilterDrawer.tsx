@@ -58,7 +58,7 @@ export function FilterDrawer(): React.ReactElement {
     <Box key="jobType" flexDirection="column" marginBottom={1}>
       <FilterSection title="Job Type" focused={focused && activeSection === 'jobType'}>
         <FilterCheckboxInput
-          options={JOB_TYPE_CHOICES as string[]}
+          options={JOB_TYPE_CHOICES}
           selected={getSelected(selections, 'jobType')}
           focused={focused && activeSection === 'jobType'}
           cursorIndex={cursors.jobType}
@@ -68,7 +68,7 @@ export function FilterDrawer(): React.ReactElement {
     <Box key="experienceLevel" flexDirection="column" marginBottom={1}>
       <FilterSection title="Experience Level" focused={focused && activeSection === 'experienceLevel'}>
         <FilterCheckboxInput
-          options={EXPERIENCE_LEVEL_CHOICES as string[]}
+          options={EXPERIENCE_LEVEL_CHOICES}
           selected={getSelected(selections, 'experienceLevel')}
           focused={focused && activeSection === 'experienceLevel'}
           cursorIndex={cursors.experienceLevel}
@@ -78,7 +78,7 @@ export function FilterDrawer(): React.ReactElement {
     <Box key="workplaceType" flexDirection="column" marginBottom={1}>
       <FilterSection title="Workplace Type" focused={focused && activeSection === 'workplaceType'}>
         <FilterCheckboxInput
-          options={WORKPLACE_TYPE_CHOICES as string[]}
+          options={WORKPLACE_TYPE_CHOICES}
           selected={getSelected(selections, 'workplaceType')}
           focused={focused && activeSection === 'workplaceType'}
           cursorIndex={cursors.workplaceType}
@@ -88,7 +88,7 @@ export function FilterDrawer(): React.ReactElement {
     <Box key="minimumSalary" flexDirection="column" marginBottom={1}>
       <FilterSection title="Minimum Salary" focused={focused && activeSection === 'minimumSalary'}>
         <FilterRadioInput
-          options={MINIMUM_SALARY_CHOICES as string[]}
+          options={MINIMUM_SALARY_CHOICES}
           selected={getSelected(selections, 'minimumSalary')}
           focused={focused && activeSection === 'minimumSalary'}
           cursorIndex={cursors.minimumSalary}
@@ -98,7 +98,7 @@ export function FilterDrawer(): React.ReactElement {
     <Box key="listingAge" flexDirection="column" marginBottom={1}>
       <FilterSection title="Listing Age" focused={focused && activeSection === 'listingAge'}>
         <FilterRadioInput
-          options={LISTING_AGE_CHOICES as string[]}
+          options={LISTING_AGE_CHOICES}
           selected={getSelected(selections, 'listingAge')}
           focused={focused && activeSection === 'listingAge'}
           cursorIndex={cursors.listingAge}
