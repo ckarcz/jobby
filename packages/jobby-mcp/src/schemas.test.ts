@@ -191,9 +191,14 @@ describe('SearchInputSchema - search tool input validation', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should accept zero values for pagination', () => {
-      const result = SearchInputSchema.safeParse({ start: 0, skip: 0, take: 0 });
+    it('should accept zero values for start and skip', () => {
+      const result = SearchInputSchema.safeParse({ start: 0, skip: 0 });
       expect(result.success).toBe(true);
+    });
+
+    it('should reject zero for take (must be positive)', () => {
+      const result = SearchInputSchema.safeParse({ take: 0 });
+      expect(result.success).toBe(false);
     });
   });
 

@@ -109,5 +109,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, jobDetailsStatus: 'error', jobDetailsError: action.error };
     case 'CLEAR_JOB_DETAILS':
       return { ...state, jobDetails: null, jobDetailsStatus: 'idle', jobDetailsError: undefined };
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
+    }
   }
 }

@@ -16,7 +16,14 @@ const packageJson = require('../package.json') as { version: string };
  * ready-to-connect server instance.
  */
 export function createServer(client?: JobbyClient): McpServer {
-  const resolvedClient = client ?? new JobbyClient({ timeout: 30_000 });
+  const resolvedClient = client ?? new JobbyClient({
+    timeout: 30_000,
+    retry: {
+      maxRetries: 2,
+      initialDelayMs: 1_000,
+      maxDelayMs: 10_000,
+    },
+  });
 
   const server = new McpServer(
     {

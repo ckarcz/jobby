@@ -38,7 +38,7 @@ export const SearchInputSchema = z.object({
   companyId: z.string().optional().describe('LinkedIn company ID (e.g. 1441 for Google, 1035 for Microsoft)'),
   start: z.number().int().nonnegative().optional().describe('Starting offset for the query.'),
   skip: z.number().int().nonnegative().optional().describe('Number of results to skip from the query response.'),
-  take: z.number().int().nonnegative().optional().describe('Number of results to take from the query response (after skip).'),
+  take: z.number().int().positive().optional().describe('Number of results to take from the query response (after skip). Must be >= 1.'),
 });
 
 /**

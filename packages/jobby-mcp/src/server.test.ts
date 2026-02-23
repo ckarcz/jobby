@@ -62,7 +62,7 @@ import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { JobbyClient } from 'jobby-client';
-import { JobbyError } from 'jobby-client';
+import { JobbyError, ErrorType } from 'jobby-client';
 import { createServer, main } from './server.js';
 
 const require = createRequire(import.meta.url);
@@ -277,7 +277,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
   describe('search_jobs error handling', () => {
     it('should handle JobbyError', async () => {
-      const error = new JobbyError('Rate limited', 'E_RATE_LIMIT');
+      const error = new JobbyError(ErrorType.RateLimit, 'Rate limited');
       mockSearch.mockRejectedValueOnce(error);
 
       const result = await searchJobsHandler({
@@ -285,7 +285,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       }, {});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('E_RATE_LIMIT');
+      expect(result.content[0].text).toContain('[RateLimit]');
       expect(result.content[0].text).toContain('Rate limited');
     });
 
@@ -314,7 +314,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
 
   describe('get_job_details error handling', () => {
     it('should handle JobbyError in get_job_details', async () => {
-      const error = new JobbyError('Rate limited', 'E_RATE_LIMIT');
+      const error = new JobbyError(ErrorType.RateLimit, 'Rate limited');
       mockGetDetailsByUrl.mockRejectedValueOnce(error);
 
       const result = await getJobDetailsHandler({
@@ -322,7 +322,7 @@ describe('Jobby MCP Server - tool registration and call handling', () => {
       }, {});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('E_RATE_LIMIT');
+      expect(result.content[0].text).toContain('[RateLimit]');
       expect(result.content[0].text).toContain('Rate limited');
     });
 

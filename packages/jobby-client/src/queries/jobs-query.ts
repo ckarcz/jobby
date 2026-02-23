@@ -170,8 +170,8 @@ function validatePagination(paginationParams: PaginationParams): void {
   }
 
   if (paginationParams.take !== undefined) {
-    if (Number.isNaN(paginationParams.take) || paginationParams.take < 0) {
-      throw new ValidationError('Take must be a non-negative number');
+    if (Number.isNaN(paginationParams.take) || paginationParams.take < 1) {
+      throw new ValidationError('Take must be a positive number');
     }
   }
 }
@@ -183,8 +183,9 @@ function validatePagination(paginationParams: PaginationParams): void {
  * @param searchParams - The job search parameters containing the keyword
  */
 function appendKeyword(params: URLSearchParams, searchParams: JobSearchParams): void {
-  if (searchParams.keyword) {
-    params.append('keywords', searchParams.keyword);
+  const trimmed = searchParams.keyword?.trim();
+  if (trimmed) {
+    params.append('keywords', trimmed);
   }
 }
 
@@ -195,8 +196,9 @@ function appendKeyword(params: URLSearchParams, searchParams: JobSearchParams): 
  * @param searchParams - The job search parameters containing the location
  */
 function appendLocation(params: URLSearchParams, searchParams: JobSearchParams): void {
-  if (searchParams.location) {
-    params.append('location', searchParams.location);
+  const trimmed = searchParams.location?.trim();
+  if (trimmed) {
+    params.append('location', trimmed);
   }
 }
 
@@ -248,8 +250,9 @@ function appendSingleParam<T extends ParamMap>(
  * @param value - The string value, or undefined to skip
  */
 function appendStringParam(params: URLSearchParams, key: string, value: string | undefined): void {
-  if (value !== undefined) {
-    params.append(key, value);
+  const trimmed = value?.trim();
+  if (trimmed) {
+    params.append(key, trimmed);
   }
 }
 
@@ -287,7 +290,7 @@ function buildQueryUrl(baseUrl: string, searchParams: JobSearchParams, start: nu
 function parseJobs(jobData: string, config: ResolvedClientConfig): Job[] {
   try {
     const $ = cheerio.load(jobData);
-    const jobs = $('li');
+    const jobs = $('li.base-card');
 
     config.logger.verbose(`Parsing ${jobs.length} job element(s).`);
 

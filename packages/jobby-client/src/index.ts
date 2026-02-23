@@ -17,7 +17,7 @@ export {
 
 // Types - Errors
 export {
-  ErrorCode,
+  ErrorType,
   JobbyError,
   RateLimitError,
   NetworkError,

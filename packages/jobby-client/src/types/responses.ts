@@ -57,17 +57,8 @@ export interface Job {
 export interface JobDetailsInfo {
   /** The full job description, converted to markdown. */
   description: string | undefined;
-  /** Structured salary information, if available. */
-  salary: {
-    /** The minimum salary value. */
-    min: number | undefined;
-    /** The maximum salary value. */
-    max: number | undefined;
-    /** The salary currency code (e.g., "USD"). */
-    currency: string | undefined;
-    /** The salary period (e.g., "YEAR", "MONTH"). */
-    period: string | undefined;
-  } | undefined;
+  /** Salary information as a display string from the listing (e.g. "$115,000.00/yr - $145,000.00/yr"). */
+  salary: string | undefined;
   /** The job location (city, state, country, etc.). */
   location: string | undefined;
   /** The workplace type (e.g., "On-site", "Remote", "Hybrid"). */

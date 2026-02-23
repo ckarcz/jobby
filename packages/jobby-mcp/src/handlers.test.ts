@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { JobbyClient } from 'jobby-client';
-import { JobbyError, ErrorCode, NetworkError, ValidationError, ParsingError } from 'jobby-client';
+import { JobbyError, ErrorType, NetworkError, ValidationError, ParsingError } from 'jobby-client';
 import { handleError, handleSearchJobs, handleGetJobDetails } from './handlers.js';
 
 const { mockSearch, mockGetDetailsByUrl, mockGetDetailsById } = vi.hoisted(() => ({
@@ -26,23 +26,23 @@ function createMockClient() {
 
 describe('handleError - error message formatting', () => {
   it('should format JobbyError with code prefix', () => {
-    const error = new JobbyError(ErrorCode.RATE_LIMIT, 'Too many requests');
-    expect(handleError(error)).toBe('[E_RATE_LIMIT] Too many requests');
+    const error = new JobbyError(ErrorType.RateLimit, 'Too many requests');
+    expect(handleError(error)).toBe('[RateLimit] Too many requests');
   });
 
   it('should format NetworkError with code prefix', () => {
     const error = new NetworkError('Connection refused');
-    expect(handleError(error)).toBe('[E_NETWORK] Connection refused');
+    expect(handleError(error)).toBe('[Network] Connection refused');
   });
 
   it('should format ValidationError with code prefix', () => {
     const error = new ValidationError('Invalid parameter');
-    expect(handleError(error)).toBe('[E_VALIDATION] Invalid parameter');
+    expect(handleError(error)).toBe('[Validation] Invalid parameter');
   });
 
   it('should format ParsingError with code prefix', () => {
     const error = new ParsingError('Failed to parse');
-    expect(handleError(error)).toBe('[E_PARSE] Failed to parse');
+    expect(handleError(error)).toBe('[Parse] Failed to parse');
   });
 
   it('should use message property for standard Error', () => {
@@ -324,10 +324,10 @@ describe('handleGetJobDetails - job detail resolution', () => {
   });
 
   it('should handle JobbyError thrown from queryForJobDetailsByUrl', async () => {
-    mockGetDetailsByUrl.mockRejectedValueOnce(new JobbyError(ErrorCode.NETWORK, 'Network failure'));
+    mockGetDetailsByUrl.mockRejectedValueOnce(new JobbyError(ErrorType.Network, 'Network failure'));
     const result = await handleGetJobDetails({ jobUrl: 'https://linkedin.com/jobs/view/1' }, createMockClient());
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('E_NETWORK');
+    expect(result.content[0].text).toContain('Network');
     expect(result.content[0].text).toContain('Network failure');
   });
 

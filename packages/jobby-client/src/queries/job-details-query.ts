@@ -3,7 +3,6 @@ import axios, { type AxiosRequestConfig } from 'axios';
 import { type ResolvedClientConfig } from '../config.js';
 import {
   type JobDetails,
-  type JobDetailsInfo,
   ParsingError,
   ValidationError,
 } from '../types/index.js';
@@ -154,7 +153,7 @@ interface ParsedJobDetailsData {
   companyPage: string | undefined;
   companyLogo: string | undefined;
   companySlug: string | undefined;
-  salary: JobDetailsInfo['salary'];
+  salary: string | undefined;
   postedDate: string | undefined;
   postedTimeAgo: string | undefined;
   expirationDate: string | undefined;
@@ -173,29 +172,6 @@ interface ParsedJobDetailsData {
   sharingImageUrl: string | undefined;
   benefitsInfo: string | undefined;
   incentiveInfo: string | undefined;
-}
-
-/** Formats structured salary data into a human-readable display string. */
-function formatSalaryDisplay(salary: JobDetailsInfo['salary']): string | undefined {
-  if (!salary) {
-    return undefined;
-  }
-
-  const currencySymbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
-  const symbol = salary.currency ? (currencySymbols[salary.currency] ?? salary.currency + ' ') : '';
-
-  const formatNum = (n: number | undefined): string =>
-    n !== undefined ? n.toLocaleString('en-US') : '?';
-
-  const periodLabels: Record<string, string> = { YEAR: '/yr', MONTH: '/mo', HOUR: '/hr' };
-  const periodSuffix = salary.period ? (periodLabels[salary.period] ?? '') : '';
-
-  if (salary.min !== undefined && salary.max !== undefined && salary.min !== salary.max) {
-    return `${symbol}${formatNum(salary.min)} - ${symbol}${formatNum(salary.max)}${periodSuffix}`;
-  }
-
-  const value = salary.min ?? salary.max;
-  return `${symbol}${formatNum(value)}${periodSuffix}`;
 }
 
 /**
@@ -244,7 +220,7 @@ function parseJobDetails(html: string, jobUrl: string, config: ResolvedClientCon
           pageUrl: merged.companyPage,
           logoUrl: merged.companyLogo,
         },
-        salary: formatSalaryDisplay(merged.salary),
+        salary: merged.salary,
         highlight: undefined,
         isNew: undefined,
         easyApply: undefined,
@@ -430,37 +406,12 @@ function scrapeDescription($: ReturnType<typeof cheerio.load>): string | undefin
   return htmlToMarkdown(html) || undefined;
 }
 
-/** Scrapes salary information from the top card or salary section. */
-function scrapeSalary($: ReturnType<typeof cheerio.load>): JobDetailsInfo['salary'] {
+/** Scrapes the raw salary text from the top card or salary section. */
+function scrapeSalary($: ReturnType<typeof cheerio.load>): string | undefined {
   const salaryText = $('.salary-main-rail__compensation-value').text().trim()
     || $('.compensation__salary').text().trim()
     || '';
-  if (!salaryText) {
-    return undefined;
-  }
-  return parseSalaryText(salaryText);
-}
-
-/** Parses a salary text string like "$115,000.00 - $145,000.00" into structured data. */
-function parseSalaryText(text: string): JobDetailsInfo['salary'] {
-  const currencyMatch = /([£€$])/.exec(text);
-  const currencyMap: Record<string, string> = { '$': 'USD', '€': 'EUR', '£': 'GBP' };
-  const currencySymbol = currencyMatch?.[1];
-  const currency: string | undefined = currencySymbol ? (currencyMap[currencySymbol] ?? currencySymbol) : undefined;
-  const numbers = [...text.matchAll(/[\d,]+(?:\.\d+)?/g)].map(m => parseFloat(m[0].replace(/,/g, '')));
-  if (numbers.length === 0) {
-    return undefined;
-  }
-  const periodMatch = (/\/(yr|hr|mo)/i.exec(text)) ?? (/per\s+(year|hour|month)/i.exec(text));
-  const periodMap: Record<string, string> = { yr: 'YEAR', year: 'YEAR', hr: 'HOUR', hour: 'HOUR', mo: 'MONTH', month: 'MONTH' };
-  const periodKey = periodMatch?.[1]?.toLowerCase();
-  const period: string | undefined = periodKey ? (periodMap[periodKey] ?? undefined) : undefined;
-  return {
-    min: numbers[0],
-    max: numbers.length > 1 ? numbers[1] : numbers[0],
-    currency,
-    period,
-  };
+  return salaryText.replace(/\s+/g, ' ') || undefined;
 }
 
 /** Scrapes the posted date from time elements or meta tags. */
@@ -496,20 +447,12 @@ function scrapeApplyText($: ReturnType<typeof cheerio.load>): string | undefined
 
 /** Scrapes the short description from the og:description meta tag. */
 function scrapeShortDescription($: ReturnType<typeof cheerio.load>): string | undefined {
-  const content = $('meta[property="og:description"]').attr('content')?.trim();
-  if (!content) {
-    return undefined;
-  }
-  return content;
+  return $('meta[property="og:description"]').attr('content')?.trim() ?? undefined;
 }
 
 /** Scrapes the sharing image URL from the og:image meta tag. */
 function scrapeSharingImageUrl($: ReturnType<typeof cheerio.load>): string | undefined {
-  const content = $('meta[property="og:image"]').attr('content')?.trim();
-  if (!content) {
-    return undefined;
-  }
-  return content;
+  return $('meta[property="og:image"]').attr('content')?.trim() ?? undefined;
 }
 
 /**
@@ -570,19 +513,26 @@ function formatExperienceRequirement(months: number | undefined): string | undef
   return `${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
-/** Extracts salary information from JSON-LD. */
-function extractSalary(jsonLd: JsonLdJobPosting | undefined): JobDetailsInfo['salary'] {
+/** Extracts salary information from JSON-LD as a display string. */
+function extractSalary(jsonLd: JsonLdJobPosting | undefined): string | undefined {
   const baseSalary = jsonLd?.baseSalary;
   const value = baseSalary?.value;
-  if (value && (value.minValue !== undefined || value.maxValue !== undefined)) {
-    return {
-      min: value.minValue,
-      max: value.maxValue,
-      currency: baseSalary.currency,
-      period: value.unitText,
-    };
+  if (!value || (value.minValue === undefined && value.maxValue === undefined)) {
+    return undefined;
   }
-  return undefined;
+
+  const currencySymbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
+  const symbol = baseSalary.currency ? (currencySymbols[baseSalary.currency] ?? baseSalary.currency + ' ') : '';
+  const formatNum = (n: number): string => n.toLocaleString('en-US');
+  const periodLabels: Record<string, string> = { YEAR: '/yr', MONTH: '/mo', HOUR: '/hr' };
+  const periodSuffix = value.unitText ? (periodLabels[value.unitText] ?? '') : '';
+
+  if (value.minValue !== undefined && value.maxValue !== undefined && value.minValue !== value.maxValue) {
+    return `${symbol}${formatNum(value.minValue)} - ${symbol}${formatNum(value.maxValue)}${periodSuffix}`;
+  }
+
+  const single = value.minValue ?? value.maxValue;
+  return single !== undefined ? `${symbol}${formatNum(single)}${periodSuffix}` : undefined;
 }
 
 /** Extracts a criteria value from the job details page. */

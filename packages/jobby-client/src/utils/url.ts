@@ -25,7 +25,7 @@ export function urlWithNoQueryParams(urlString: string | null | undefined): stri
 
 /**
  * Extracts the numeric job ID from a LinkedIn job URL.
- * The ID is the last numeric segment of the URL path.
+ * The URL must contain `/view/` followed by an optional slug and a numeric ID.
  * Example: "https://www.linkedin.com/jobs/view/software-engineer-at-company-4368607271" → "4368607271"
  * @param jobUrl - The LinkedIn job URL to extract the ID from.
  * @returns The numeric job ID string, or undefined if the input is nullish or no ID is found.
@@ -34,7 +34,7 @@ export function extractJobIdFromUrl(jobUrl: string | null | undefined): string |
   if (!jobUrl) {
     return undefined;
   }
-  const match = /[-/](\d+)\/?$/.exec(jobUrl);
+  const match = /\/view\/.*?(\d+)\/?$/.exec(jobUrl);
   return match?.[1] ?? undefined;
 }
 

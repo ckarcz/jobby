@@ -89,10 +89,7 @@ function buildDetailsMetadataLines(details: JobDetails): ContentLine[] {
   }
 
   if (d.salary) {
-    const parts = [d.salary.currency, d.salary.min, '–', d.salary.max, d.salary.period ? `/ ${d.salary.period.toLowerCase()}` : ''].filter(Boolean);
-    if (parts.length > 0) {
-      lines.push({ key: 'detailSalary', element: <Text color="green" wrap="truncate">{icons.money} {parts.join(' ')}</Text> });
-    }
+    lines.push({ key: 'detailSalary', element: <Text color="green" wrap="truncate">{icons.money} {d.salary}</Text> });
   }
 
   if (d.benefitsInfo) {

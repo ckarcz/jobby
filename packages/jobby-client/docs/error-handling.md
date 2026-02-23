@@ -12,15 +12,15 @@ JobbyError
 └── ValidationError     (Invalid parameters)
 ```
 
-## Error Codes
+## Error Types
 
 ```typescript
-import { ErrorCode } from 'jobby-client';
+import { ErrorType } from 'jobby-client';
 
-ErrorCode.RATE_LIMIT   // 'RATE_LIMIT'
-ErrorCode.NETWORK      // 'NETWORK'
-ErrorCode.PARSE        // 'PARSE'
-ErrorCode.VALIDATION   // 'VALIDATION'
+ErrorType.RateLimit    // 'RateLimit'
+ErrorType.Network      // 'Network'
+ErrorType.Parse        // 'Parse'
+ErrorType.Validation   // 'Validation'
 ```
 
 ## Error Properties
@@ -29,7 +29,7 @@ All `JobbyError` instances have:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `code` | `ErrorCode` | Error category |
+| `code` | `ErrorType` | Error category |
 | `message` | `string` | Human-readable error message |
 | `isOperational` | `boolean` | `true` if the error is expected/recoverable |
 | `retryable` | `boolean` | `true` if retrying might succeed |

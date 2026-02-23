@@ -143,17 +143,12 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     expect(result.summary.company.slug).toBe('test-company');
   });
 
-  it('should extract salary information', async () => {
+  it('should extract salary information as display string', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
     const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-    expect(result.details.salary).toEqual({
-      min: 150000,
-      max: 200000,
-      currency: 'USD',
-      period: 'YEAR',
-    });
+    expect(result.details.salary).toBe('$150,000 - $200,000/yr');
     expect(result.summary.salary).toBe('$150,000 - $200,000/yr');
   });
 
@@ -496,8 +491,8 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     });
   });
 
-  describe('salary text parsing from DOM', () => {
-    it('should parse salary range with USD from DOM', async () => {
+  describe('salary text from DOM (raw string)', () => {
+    it('should return raw salary text from DOM', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">$115,000.00 - $145,000.00/yr</div>
@@ -507,15 +502,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 115000,
-        max: 145000,
-        currency: 'USD',
-        period: 'YEAR',
-      });
+      expect(result.details.salary).toBe('$115,000.00 - $145,000.00/yr');
     });
 
-    it('should parse hourly salary with EUR from DOM', async () => {
+    it('should return raw salary text from compensation__salary fallback', async () => {
       const html = `
         <html><body>
           <div class="compensation__salary">€25.00 - €35.00/hr</div>
@@ -525,15 +515,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 25,
-        max: 35,
-        currency: 'EUR',
-        period: 'HOUR',
-      });
+      expect(result.details.salary).toBe('€25.00 - €35.00/hr');
     });
 
-    it('should parse salary with GBP from DOM', async () => {
+    it('should return raw salary text with GBP from DOM', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">£60,000 per year</div>
@@ -543,12 +528,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 60000,
-        max: 60000,
-        currency: 'GBP',
-        period: 'YEAR',
-      });
+      expect(result.details.salary).toBe('£60,000 per year');
     });
 
     it('should return undefined salary when no salary text in DOM', async () => {
@@ -560,7 +540,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       expect(result.details.salary).toBeUndefined();
     });
 
-    it('should return undefined salary when salary text contains no numbers', async () => {
+    it('should return raw text even when non-numeric', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">Competitive salary</div>
@@ -570,10 +550,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toBeUndefined();
+      expect(result.details.salary).toBe('Competitive salary');
     });
 
-    it('should parse single salary value (no range)', async () => {
+    it('should return raw single salary value', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">$100,000/yr</div>
@@ -583,15 +563,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 100000,
-        max: 100000,
-        currency: 'USD',
-        period: 'YEAR',
-      });
+      expect(result.details.salary).toBe('$100,000/yr');
     });
 
-    it('should parse monthly salary', async () => {
+    it('should return raw monthly salary text', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">$5,000 - $8,000/mo</div>
@@ -601,15 +576,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 5000,
-        max: 8000,
-        currency: 'USD',
-        period: 'MONTH',
-      });
+      expect(result.details.salary).toBe('$5,000 - $8,000/mo');
     });
 
-    it('should parse salary with "per hour" text', async () => {
+    it('should return raw hourly salary text', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">$25.00 per hour</div>
@@ -619,15 +589,10 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 25,
-        max: 25,
-        currency: 'USD',
-        period: 'HOUR',
-      });
+      expect(result.details.salary).toBe('$25.00 per hour');
     });
 
-    it('should parse salary with "per month" text', async () => {
+    it('should return raw EUR monthly salary text', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">€3,000 - €4,500 per month</div>
@@ -637,12 +602,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
 
-      expect(result.details.salary).toEqual({
-        min: 3000,
-        max: 4500,
-        currency: 'EUR',
-        period: 'MONTH',
-      });
+      expect(result.details.salary).toBe('€3,000 - €4,500 per month');
     });
   });
 
@@ -1164,8 +1124,8 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
     });
   });
 
-  describe('salary text parsing edge cases', () => {
-    it('should parse salary without currency symbol', async () => {
+  describe('salary text edge cases', () => {
+    it('should return raw salary text without currency symbol', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">100,000 - 150,000/yr</div>
@@ -1173,14 +1133,10 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
-      expect(result.details.salary).toBeDefined();
-      expect(result.details.salary?.min).toBe(100000);
-      expect(result.details.salary?.max).toBe(150000);
-      expect(result.details.salary?.currency).toBeUndefined();
-      expect(result.details.salary?.period).toBe('YEAR');
+      expect(result.details.salary).toBe('100,000 - 150,000/yr');
     });
 
-    it('should parse salary without period', async () => {
+    it('should return raw salary text without period', async () => {
       const html = `
         <html><body>
           <div class="salary-main-rail__compensation-value">$80,000 - $120,000</div>
@@ -1188,7 +1144,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
-      expect(result.details.salary?.period).toBeUndefined();
+      expect(result.details.salary).toBe('$80,000 - $120,000');
     });
 
     it('should use compensation__salary as fallback when salary-main-rail is missing', async () => {
@@ -1199,7 +1155,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
-      expect(result.details.salary?.min).toBe(90000);
+      expect(result.details.salary).toBe('$90,000/yr');
     });
   });
 
@@ -1230,8 +1186,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
-      expect(result.details.salary?.min).toBe(75000);
-      expect(result.details.salary?.max).toBeUndefined();
+      expect(result.details.salary).toBe('$75,000/yr');
     });
   });
 

@@ -78,23 +78,23 @@ describe('formatErrorMessage - error message formatting with actionable hints', 
   describe('error code in brackets', () => {
     it('should include the error code in square brackets', async () => {
       const { JobbyError } = await import('jobby-client');
-      const error = new (JobbyError as any)('E_TEST_CODE', 'test message');
+      const error = new (JobbyError as any)('TestCode', 'test message');
       const message = formatErrorMessage(error);
-      expect(message).toContain('[E_TEST_CODE]');
+      expect(message).toContain('[TestCode]');
     });
 
     it('should include the error code for RateLimitError', async () => {
       const { RateLimitError } = await import('jobby-client');
       const error = new (RateLimitError as any)('Rate limited', 60);
       const message = formatErrorMessage(error);
-      expect(message).toContain('[E_RATE_LIMIT]');
+      expect(message).toContain('[RateLimit]');
     });
 
     it('should include the error code for NetworkError', async () => {
       const { NetworkError } = await import('jobby-client');
       const error = new (NetworkError as any)('Network down');
       const message = formatErrorMessage(error);
-      expect(message).toContain('[E_NETWORK]');
+      expect(message).toContain('[Network]');
     });
   });
 

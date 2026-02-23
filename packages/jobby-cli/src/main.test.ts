@@ -56,7 +56,7 @@ describe('main - CLI entrypoint error handling', () => {
       process.argv = ['node', 'main', 'search', '--keyword', 'test'];
 
       const { JobbyError } = await import('jobby-client');
-      const error = new (JobbyError as any)('E_RATE_LIMIT', 'Rate limit reached');
+      const error = new (JobbyError as any)('RateLimit', 'Rate limit reached');
       createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();
@@ -133,7 +133,7 @@ describe('main - CLI entrypoint error handling', () => {
 
       const { JobbyError } = await import('jobby-client');
       const origErr = new Error('underlying cause');
-      const error = new (JobbyError as any)('E_NETWORK', 'Wrapper error', { originalError: origErr });
+      const error = new (JobbyError as any)('Network', 'Wrapper error', { originalError: origErr });
       createMockClient({ queryForJobs: vi.fn().mockRejectedValue(error) });
 
       await main();

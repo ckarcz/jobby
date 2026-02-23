@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ErrorCode,
+  ErrorType,
   JobbyError,
   RateLimitError,
   NetworkError,
@@ -16,8 +16,8 @@ import {
 describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   describe('JobbyError', () => {
     it('should create error with code and message', () => {
-      const error = new JobbyError(ErrorCode.NETWORK, 'Network failure');
-      expect(error.code).toBe(ErrorCode.NETWORK);
+      const error = new JobbyError(ErrorType.Network, 'Network failure');
+      expect(error.code).toBe(ErrorType.Network);
       expect(error.message).toBe('Network failure');
       expect(error.name).toBe('JobbyError');
       expect(error.isOperational).toBe(true);
@@ -26,17 +26,17 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
 
     it('should store original error', () => {
       const original = new Error('Original');
-      const error = new JobbyError(ErrorCode.NETWORK, 'Wrapped', { originalError: original });
+      const error = new JobbyError(ErrorType.Network, 'Wrapped', { originalError: original });
       expect(error.originalError).toBe(original);
     });
 
     it('should allow setting isOperational', () => {
-      const error = new JobbyError(ErrorCode.NETWORK, 'Error', { isOperational: false });
+      const error = new JobbyError(ErrorType.Network, 'Error', { isOperational: false });
       expect(error.isOperational).toBe(false);
     });
 
     it('should allow setting retryable', () => {
-      const error = new JobbyError(ErrorCode.NETWORK, 'Error', { retryable: true });
+      const error = new JobbyError(ErrorType.Network, 'Error', { retryable: true });
       expect(error.retryable).toBe(true);
     });
 
@@ -81,7 +81,7 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   describe('RateLimitError', () => {
     it('should create with default message', () => {
       const error = new RateLimitError();
-      expect(error.code).toBe(ErrorCode.RATE_LIMIT);
+      expect(error.code).toBe(ErrorType.RateLimit);
       expect(error.message).toBe('Rate limit reached');
       expect(error.name).toBe('RateLimitError');
       expect(error.retryable).toBe(true);
@@ -107,7 +107,7 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   describe('NetworkError', () => {
     it('should create with message', () => {
       const error = new NetworkError('Connection failed');
-      expect(error.code).toBe(ErrorCode.NETWORK);
+      expect(error.code).toBe(ErrorType.Network);
       expect(error.message).toBe('Connection failed');
       expect(error.name).toBe('NetworkError');
       expect(error.retryable).toBe(true);
@@ -148,7 +148,7 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   describe('ParsingError', () => {
     it('should create with message', () => {
       const error = new ParsingError('Failed to parse HTML');
-      expect(error.code).toBe(ErrorCode.PARSE);
+      expect(error.code).toBe(ErrorType.Parse);
       expect(error.message).toBe('Failed to parse HTML');
       expect(error.name).toBe('ParsingError');
       expect(error.retryable).toBe(false);
@@ -164,7 +164,7 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
   describe('ValidationError', () => {
     it('should create with message', () => {
       const error = new ValidationError('Invalid parameter');
-      expect(error.code).toBe(ErrorCode.VALIDATION);
+      expect(error.code).toBe(ErrorType.Validation);
       expect(error.message).toBe('Invalid parameter');
       expect(error.name).toBe('ValidationError');
       expect(error.retryable).toBe(false);
@@ -177,12 +177,12 @@ describe('LinkedIn Jobs error types - custom error classes and codes', () => {
     });
   });
 
-  describe('ErrorCode enum', () => {
+  describe('ErrorType values', () => {
     it('should have expected values', () => {
-      expect(ErrorCode.RATE_LIMIT).toBe('E_RATE_LIMIT');
-      expect(ErrorCode.NETWORK).toBe('E_NETWORK');
-      expect(ErrorCode.PARSE).toBe('E_PARSE');
-      expect(ErrorCode.VALIDATION).toBe('E_VALIDATION');
+      expect(ErrorType.RateLimit).toBe('RateLimit');
+      expect(ErrorType.Network).toBe('Network');
+      expect(ErrorType.Parse).toBe('Parse');
+      expect(ErrorType.Validation).toBe('Validation');
     });
   });
 

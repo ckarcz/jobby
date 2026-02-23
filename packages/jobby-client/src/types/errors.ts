@@ -1,20 +1,23 @@
-/** Error codes for programmatic error handling. */
-export enum ErrorCode {
-  RATE_LIMIT = 'E_RATE_LIMIT',
-  NETWORK = 'E_NETWORK',
-  PARSE = 'E_PARSE',
-  VALIDATION = 'E_VALIDATION',
-}
+/** Error type identifiers for programmatic error handling. */
+export const ErrorType = {
+  RateLimit: 'RateLimit',
+  Network: 'Network',
+  Parse: 'Parse',
+  Validation: 'Validation',
+} as const;
+
+/** Union type of all error type identifiers. */
+export type ErrorType = typeof ErrorType[keyof typeof ErrorType];
 
 /** An application error. Base type used by all application errors. */
 export class JobbyError extends Error {
-  public readonly code: ErrorCode;
+  public readonly code: ErrorType;
   public readonly isOperational: boolean;
   public readonly originalError: unknown;
   public readonly retryable: boolean;
 
   constructor(
-    code: ErrorCode,
+    code: ErrorType,
     message: string,
     options: {
       originalError?: unknown;
@@ -39,7 +42,7 @@ export class JobbyError extends Error {
       return error;
     }
     const message = error instanceof Error ? error.message : String(error);
-    return new JobbyError(ErrorCode.NETWORK, message, {
+    return new JobbyError(ErrorType.Network, message, {
       originalError: error,
       isOperational: false,
       retryable: false,
@@ -52,7 +55,7 @@ export class RateLimitError extends JobbyError {
   public readonly retryAfter: number | undefined;
 
   constructor(message = 'Rate limit reached', retryAfter?: number, originalError?: unknown) {
-    super(ErrorCode.RATE_LIMIT, message, {
+    super(ErrorType.RateLimit, message, {
       originalError,
       retryable: true,
     });
@@ -64,7 +67,7 @@ export class RateLimitError extends JobbyError {
 /** A network error. Thrown when an HTTP error aside from HTTP 429 occurs. */
 export class NetworkError extends JobbyError {
   constructor(message: string, originalError?: unknown, status?: number) {
-    super(ErrorCode.NETWORK, message, {
+    super(ErrorType.Network, message, {
       originalError,
       retryable: status === undefined || status >= 500,
     });
@@ -75,7 +78,7 @@ export class NetworkError extends JobbyError {
 /** A parsing error. Thrown when an error occurs while parsing job query result data. */
 export class ParsingError extends JobbyError {
   constructor(message: string, originalError?: unknown) {
-    super(ErrorCode.PARSE, message, {
+    super(ErrorType.Parse, message, {
       originalError,
       retryable: false,
     });
@@ -86,7 +89,7 @@ export class ParsingError extends JobbyError {
 /** A validation error. Thrown when a validation error occurs when validating job query options or config values. */
 export class ValidationError extends JobbyError {
   constructor(message: string, originalError?: unknown) {
-    super(ErrorCode.VALIDATION, message, {
+    super(ErrorType.Validation, message, {
       originalError,
       retryable: false,
     });

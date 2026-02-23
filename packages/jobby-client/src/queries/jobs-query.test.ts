@@ -38,7 +38,7 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
   });
 
   const mockJobHtml = `
-    <li>
+    <li class="base-card">
       <div class="base-search-card__subtitle">
         <a href="https://linkedin.com/company/test-company">Test Company</a>
       </div>
@@ -187,15 +187,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
     it('should apply skip to results', async () => {
       const multiJobHtml = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
         </li>
@@ -210,15 +210,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
     it('should apply take to results', async () => {
       const multiJobHtml = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
         </li>
@@ -234,15 +234,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
     it('should apply both skip and take', async () => {
       const multiJobHtml = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 1</div>
           <div class="base-search-card__title">Job 1</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 2</div>
           <div class="base-search-card__title">Job 2</div>
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company 3</div>
           <div class="base-search-card__title">Job 3</div>
         </li>
@@ -314,15 +314,15 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
   describe('job parsing resilience', () => {
     it('should skip jobs that fail to parse individually', async () => {
       const htmlWithBadJob = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Good Company</div>
           <div class="base-search-card__title">Good Job</div>
           <a class="base-card__full-link" href="https://linkedin.com/jobs/view/100"></a>
         </li>
-        <li>
+        <li class="base-card">
           <!-- Empty li with no position or company -->
         </li>
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Another Company</div>
           <div class="base-search-card__title">Another Job</div>
           <a class="base-card__full-link" href="https://linkedin.com/jobs/view/200"></a>
@@ -339,8 +339,8 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
 
     it('should return empty results when no valid jobs are found', async () => {
       const htmlWithNoValidJobs = `
-        <li><!-- empty --></li>
-        <li><!-- also empty --></li>
+        <li class="base-card"><!-- empty --></li>
+        <li class="base-card"><!-- also empty --></li>
       `;
       mockedGet.mockResolvedValueOnce({ data: htmlWithNoValidJobs });
 
@@ -406,7 +406,7 @@ describe('executeJobsQueryRawHtml - raw HTML response', () => {
   });
 
   it('should return raw HTML string without parsing', async () => {
-    const rawHtml = '<html><body><li>Job 1</li></body></html>';
+    const rawHtml = '<html><body><li class="base-card">Job 1</li></body></html>';
     mockedGet.mockResolvedValueOnce({ data: rawHtml });
 
     const result = await executeJobsQueryRawHtml({ keyword: 'TypeScript' }, undefined, defaultConfig);
@@ -497,25 +497,22 @@ describe('executeJobsQuery - additional edge cases', () => {
       expect(result.results).toHaveLength(0);
     });
 
-    it('should accept zero for take', async () => {
-      const html = `<li><div class="base-search-card__subtitle">Co</div><div class="base-search-card__title">Job</div></li>`;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobsQuery({}, { take: 0 }, defaultConfig);
-      expect(result.results).toHaveLength(0);
-      expect(result.pagination.responseCount).toBe(1);
+    it('should throw ValidationError for zero take', async () => {
+      await expect(executeJobsQuery({}, { take: 0 }, defaultConfig))
+        .rejects.toThrow(ValidationError);
     });
   });
 
   describe('parsing edge cases', () => {
     it('should skip job with empty company name (only whitespace)', async () => {
-      const html = `<li><div class="base-search-card__subtitle">   </div><div class="base-search-card__title">Developer</div></li>`;
+      const html = `<li class="base-card"><div class="base-search-card__subtitle">   </div><div class="base-search-card__title">Developer</div></li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
     });
 
     it('should skip job with empty position name (only whitespace)', async () => {
-      const html = `<li><div class="base-search-card__subtitle">Company</div><div class="base-search-card__title">   </div></li>`;
+      const html = `<li class="base-card"><div class="base-search-card__subtitle">Company</div><div class="base-search-card__title">   </div></li>`;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobsQuery({}, undefined, defaultConfig);
       expect(result.results).toHaveLength(0);
@@ -523,7 +520,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should parse job with missing optional fields (logo, date, agoTime, salary)', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company X</div>
           <div class="base-search-card__title">Job Title</div>
           <a class="base-card__full-link" href="https://linkedin.com/jobs/view/999"></a>
@@ -545,7 +542,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should normalize salary whitespace', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Co</div>
           <div class="base-search-card__title">Dev</div>
           <div class="job-search-card__salary-info">  $100k  -  $150k  </div>
@@ -558,9 +555,9 @@ describe('executeJobsQuery - additional edge cases', () => {
 
   describe('skip/take edge cases', () => {
     const threeJobsHtml = `
-      <li><div class="base-search-card__subtitle">C1</div><div class="base-search-card__title">J1</div></li>
-      <li><div class="base-search-card__subtitle">C2</div><div class="base-search-card__title">J2</div></li>
-      <li><div class="base-search-card__subtitle">C3</div><div class="base-search-card__title">J3</div></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C1</div><div class="base-search-card__title">J1</div></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C2</div><div class="base-search-card__title">J2</div></li>
+      <li class="base-card"><div class="base-search-card__subtitle">C3</div><div class="base-search-card__title">J3</div></li>
     `;
 
     it('should return empty when skip exceeds total results', async () => {
@@ -644,7 +641,7 @@ describe('executeJobsQuery - additional edge cases', () => {
   describe('new field extraction', () => {
     it('should return isNew as undefined when time has only job-search-card__listdate class', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate" datetime="2024-01-15">2 weeks ago</time>
@@ -656,7 +653,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should return easyApply as undefined when no easy-apply-label element exists', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
@@ -667,7 +664,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should return highlight as undefined when no job-posting-benefits__text element', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
@@ -678,7 +675,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should return company.slug as undefined when subtitle has no link', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
@@ -689,7 +686,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should extract agoTime with --new class variant', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <time class="job-search-card__listdate--new" datetime="2024-01-15">1 day ago</time>
@@ -701,7 +698,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should return location as undefined when missing', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
         </li>`;
@@ -712,7 +709,7 @@ describe('executeJobsQuery - additional edge cases', () => {
 
     it('should normalize highlight whitespace', async () => {
       const html = `
-        <li>
+        <li class="base-card">
           <div class="base-search-card__subtitle">Company</div>
           <div class="base-search-card__title">Job</div>
           <div class="job-posting-benefits"><span class="job-posting-benefits__text">  Actively   Hiring   </span></div>

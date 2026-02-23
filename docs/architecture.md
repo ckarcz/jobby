@@ -34,7 +34,7 @@ The core package that handles all LinkedIn job querying. It is structured into l
 
 - **Parameter maps** translate user-friendly values (e.g., `'full-time'`) to LinkedIn API values (e.g., `'F'`). Zod validates the user-facing keys.
 - **Dual extraction** from JSON-LD structured data (priority) and HTML DOM scraping (fallback) for job details. Search results use DOM scraping only.
-- **Error hierarchy** with `JobbyError` base class. Errors carry an `ErrorCode`, `isOperational` flag, and `retryable` indicator.
+- **Error hierarchy** with `JobbyError` base class. Errors carry an `ErrorType`, `isOperational` flag, and `retryable` indicator.
 - **User-agent rotation** via `random-useragent` to avoid blocking.
 
 ## CLI (`jobby-cli`)
