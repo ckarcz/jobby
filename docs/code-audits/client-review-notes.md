@@ -93,10 +93,11 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 
 ## Minor Issues
 
-### 10. `zodEnumFromMap` has no guard against empty maps
+### 10. `zodEnumFromMap` has no guard against empty maps — **FIXED**
 
 **Confidence: 80**
 **File:** `packages/jobby-client/src/types/params-schemas.ts`, lines 16-19
+**Status: FIXED** — Added a guard that throws a descriptive error if the map has zero keys. Added unit tests in `params-schemas.test.ts`.
 
 ### 11. `validatePagination` accepts `take: 0` — wastes a network request
 
@@ -113,12 +114,12 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 | 2 | Important | `utils/url.ts:37` | `extractJobIdFromUrl` regex fragile — no path anchor | 85 | Open |
 | 3 | Important | `queries/jobs-query.ts:56` | `resolveConfig` called per-query, re-reads env vars each time | 82 | Open |
 | 4 | Important | `queries/job-details-query.ts:453` | `parseSalaryText` silently ignores 3rd+ numbers | 83 | Open |
-| 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 | Open |
-| 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 | Open |
-| 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 | Open |
+| 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 | **Fixed** (JSDoc) |
+| 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 | **Fixed** (prior round) |
+| 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 | **Fixed** (prior round) |
 | 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 | Open |
 | 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 | **Fixed** |
-| 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | Open |
+| 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | **Fixed** |
 | 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | Open |
 
 ---
@@ -142,12 +143,9 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 
 - **Status: FIXED** — Removed the `config: resolvedConfig` destructuring alias in both query files. Functions now use the `config` parameter directly since the returned config is the same object.
 
-#### 4. `jobs-query.test.ts` misleading test name (078d85b)
+#### 4. `jobs-query.test.ts` misleading test name (078d85b) — **FIXED**
 
-- Test "should not drop geoId when value is '0'" — the string `"0"` is truthy in JS, so this already worked before the fix
-- The actual fix was changing `if (value)` to `if (value !== undefined)` to stop dropping empty strings `""`
-- The empty-string edge case is not tested
-- **Recommendation:** Add a test for `geoId: ""` (the actual bug) and rename the `"0"` test to reflect what it actually verifies
+- **Status: FIXED** — Renamed `"0"` test to `'should include geoId "0" as a valid string param'`. Added edge-case tests for empty string and whitespace-only geoId values (both correctly dropped by `appendStringParam` since it trims before checking).
 
 ### Changes That Were Good
 

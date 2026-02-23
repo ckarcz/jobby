@@ -178,6 +178,12 @@ interface ParsedJobDetailsData {
  * Merges two parsed detail records, preferring the primary source for each field.
  * Adding a new field to {@link ParsedJobDetailsData} automatically gets merged
  * here — no manual `primary.x ?? fallback.x` line required.
+ *
+ * @remarks
+ * Only `undefined` values fall through to the fallback. A `null` primary value
+ * **will** overwrite a non-null fallback — this is intentional (`null` means
+ * "explicitly absent", `undefined` means "not present in this source").
+ *
  * @internal Exported for testing only
  */
 export function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: ParsedJobDetailsData): ParsedJobDetailsData {

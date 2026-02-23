@@ -15,6 +15,9 @@ import {
  */
 export function zodEnumFromMap<T extends ParamMap>(map: T): z.ZodEnum<{ [K in keyof T & string]: K }> {
   const keys = Object.keys(map) as (keyof T & string)[];
+  if (keys.length === 0) {
+    throw new Error('zodEnumFromMap requires a map with at least one key');
+  }
   return z.enum(keys);
 }
 

@@ -42,8 +42,8 @@ Not every audit finding carries equal weight in practice. The table below classi
 | `writeFileSync` to async | Nice-to-have | For a CLI writing one file, sync is fine in practice |
 | Unexport `swapScreenBuffer` / `restoreScreenBuffer` | Nice-to-have | **FIXED** — `export` removed |
 | Remove `helpConfig` from `index.ts` exports | Nice-to-have | **FIXED** — export line removed |
-| Deduplicate `parse.test.ts` tests | Nice-to-have | Harmless duplication |
-| `[url]` assertion false positive | Nice-to-have | Weak assertion, not wrong |
+| Deduplicate `parse.test.ts` tests | Nice-to-have | **FIXED** — Deduplicated |
+| `[url]` assertion false positive | Nice-to-have | **FIXED** — Updated to `[id-or-url]` |
 | `details.test.ts` empty `rawHtml` assertion | Nice-to-have | Strengthen when in the file |
 | `--file` path error tests | Over-engineered | Testing OS-level errors is fragile and platform-dependent |
 | `fetchDetailsInBatches` with `delayMs > 0` | Over-engineered | Testing `setTimeout` is testing Node.js, not the app |
@@ -139,7 +139,7 @@ Node 22 supports JSON import assertions natively. `createRequire` is a workaroun
 ## 4. Code Quality Issues
 
 - ~~**`search.test.ts` uses invalid `'mid-senior'` ExperienceLevel value** (`src/commands/search.test.ts:97,103`).~~ **FIXED** — Changed invalid `'mid-senior'` to `'director'` in search.test.ts.
-- **Redundant duplicate test cases in `parse.test.ts`** — identical assertions across describe blocks for zero parsing, negative numbers, and empty strings.
+- ~~**Redundant duplicate test cases in `parse.test.ts`** — identical assertions across describe blocks for zero parsing, negative numbers, and empty strings.~~ **FIXED** — Removed duplicate describe blocks, merged unique tests into original blocks.
 - ~~**`formatter.test.ts` mutates shared default registry** without guaranteed cleanup via `afterEach`.~~ **FIXED** — Added `afterEach(() => { registerDefaultFormatters(); })` for guaranteed cleanup.
 - ~~**`details.ts` `isUrl` helper is overly permissive** — accepts `ftp://`, `data:`, etc. Should narrow to `http:` and `https:`.~~ **FIXED** — Added protocol check: `url.protocol === 'http:' || url.protocol === 'https:'`.
 - ~~**`helpConfig` is exported from `index.ts`** without documented reason for external consumers to use it.~~ **FIXED** — Export removed from `index.ts`.
@@ -153,7 +153,7 @@ Node 22 supports JSON import assertions natively. `createRequire` is a workaroun
 | Test | File | Issue | Status |
 |------|------|-------|--------|
 | `--easy-apply-only` / `--under-10-applicants` assertions | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Options not implemented in CLI | **Fixed** |
-| `[url]` argument assertion | `cli-help.test.ts:135` | Passes incidentally (`[url]` is substring of `[id-or-url]`) | Open |
+| `[url]` argument assertion | `cli-help.test.ts:135` | Passes incidentally (`[url]` is substring of `[id-or-url]`) | **Fixed** |
 | Signal handler spies on `process.on` | `main.test.ts:237,260` | Code uses `process.once`, spy should target `.once` | **Fixed** |
 | `details.test.ts` empty rawHtml assertion | `details.test.ts:224-228` | Only checks `consoleSpy` was called, not what with | **Fixed** |
 
@@ -186,7 +186,7 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 
 1. ~~**Fix `--no-color` flag** not suppressing data output highlighting~~ **DONE**
 2. ~~**Remove or implement** `--easy-apply-only` and `--under-10-applicants` (update tests and docs)~~ **DONE** — Removed assertions from integration tests. Updated `docs/commands.md`.
-3. **Fix `[url]` vs `[id-or-url]`** integration test assertion
+3. ~~**Fix `[url]` vs `[id-or-url]`** integration test assertion~~ **DONE** — Updated test name and assertion to match `[id-or-url]`.
 
 ### Priority 2 — Address Before Next Release
 
@@ -202,7 +202,7 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 10. ~~Remove `export` from `swapScreenBuffer`/`restoreScreenBuffer`~~ **DONE**
 11. ~~Remove `helpConfig` from `index.ts` exports~~ **DONE**
 12. ~~Fix invalid `'mid-senior'` value in `search.test.ts`~~ **DONE**
-13. Deduplicate redundant test cases in `parse.test.ts`
+13. ~~Deduplicate redundant test cases in `parse.test.ts`~~ **DONE** — Removed duplicate describe blocks, merged unique tests.
 14. ~~Improve `formatter.test.ts` test isolation~~ **DONE**
 
 ### Priority 4 — Documentation

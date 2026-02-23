@@ -124,9 +124,9 @@ describe('CLI help output - details command', () => {
       expect(stdout).toContain('get detailed information');
     });
 
-    it('should show the [url] argument', async () => {
+    it('should show the [id-or-url] argument', async () => {
       const { stdout } = await runCli(['details', '--help']);
-      expect(stdout).toContain('[url]');
+      expect(stdout).toContain('[id-or-url]');
     });
 
     it('should list output and logging options', async () => {

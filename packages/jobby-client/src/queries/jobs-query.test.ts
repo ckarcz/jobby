@@ -156,13 +156,31 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
     expect(url).toContain('geoId=103644278');
   });
 
-  it('should not drop geoId when value is "0"', async () => {
+  it('should include geoId "0" as a valid string param', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
     await executeJobsQuery({ geoId: '0' }, undefined, defaultConfig);
 
     const url = mockedGet.mock.calls[0][0] as string;
     expect(url).toContain('geoId=0');
+  });
+
+  it('should drop geoId when value is empty string', async () => {
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobsQuery({ geoId: '' }, undefined, defaultConfig);
+
+    const url = mockedGet.mock.calls[0][0] as string;
+    expect(url).not.toContain('geoId');
+  });
+
+  it('should drop geoId when value is whitespace only', async () => {
+    mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
+
+    await executeJobsQuery({ geoId: '  ' }, undefined, defaultConfig);
+
+    const url = mockedGet.mock.calls[0][0] as string;
+    expect(url).not.toContain('geoId');
   });
 
   it('should include companyId in URL', async () => {
