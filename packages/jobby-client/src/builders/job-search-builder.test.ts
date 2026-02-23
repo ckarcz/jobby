@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JobSearchBuilder } from './job-search-builder.js';
+import { createLogger } from '../logging.js';
 import type { RetryConfig } from '../utils/retry.js';
 
 // Mock the jobs query module
@@ -233,6 +234,7 @@ describe('JobSearchBuilder - fluent search query construction API', () => {
       const customRetry: RetryConfig = { maxRetries: 3, initialDelayMs: 500, maxDelayMs: 5000 };
       const retryBuilder = JobSearchBuilder._fromResolved(
         (await import('../config.js')).resolveConfig(),
+        createLogger(),
         customRetry,
       );
 

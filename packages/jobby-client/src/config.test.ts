@@ -24,7 +24,6 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       expect(typeof resolved.userAgent).toBe('string');
       expect(resolved.userAgent.length).toBeGreaterThan(0);
       expect(resolved.signal).toBeUndefined();
-      expect(resolved.logger).toBeDefined();
     });
 
     it('should return defaults when empty config provided', () => {
@@ -60,20 +59,10 @@ describe('LinkedIn Jobs client configuration - defaults and resolution', () => {
       expect(resolved.signal).toBe(controller.signal);
     });
 
-    it('should create logger with default level when no logging config', () => {
+    it('should not include logger or retry in resolved config', () => {
       const resolved = resolveConfig();
-      expect(resolved.logger).toBeDefined();
-      expect(resolved.logger.level).toBe('warn');
-    });
-
-    it('should create logger with custom level from logging config', () => {
-      const resolved = resolveConfig({ logging: { level: 'verbose' } });
-      expect(resolved.logger.level).toBe('verbose');
-    });
-
-    it('should create silent logger when level is silent', () => {
-      const resolved = resolveConfig({ logging: { level: 'silent' } });
-      expect(resolved.logger.silent).toBe(true);
+      expect(resolved).not.toHaveProperty('logger');
+      expect(resolved).not.toHaveProperty('retry');
     });
 
     describe('environment variable fallbacks', () => {

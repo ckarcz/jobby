@@ -4,6 +4,7 @@ export { JobbyClient, JobsResource } from './client.js';
 // Configuration
 export {
   type ClientConfig,
+  type HttpConfig,
   DEFAULT_CLIENT_CONFIG,
 } from './config.js';
 

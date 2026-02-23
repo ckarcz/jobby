@@ -1,4 +1,5 @@
-import { type ClientConfig, type ResolvedClientConfig, resolveConfig } from '../config.js';
+import { type ClientConfig, type HttpConfig, resolveConfig } from '../config.js';
+import { type Logger, createLogger } from '../logging.js';
 import type {
   JobSearchParams,
   PaginationParams,
@@ -33,20 +34,23 @@ import { type RetryConfig, DEFAULT_RETRY_CONFIG, withRetry } from '../utils/retr
  * ```
  */
 export class JobSearchBuilder {
-  private resolvedConfig: ResolvedClientConfig;
+  private httpConfig: HttpConfig;
+  private logger: Logger;
   private retryConfig: RetryConfig;
   private params: JobSearchParams = {};
   private pagination: PaginationParams = {};
 
   constructor(config?: ClientConfig) {
-    this.resolvedConfig = resolveConfig(config);
+    this.httpConfig = resolveConfig(config);
+    this.logger = createLogger(config?.logging);
     this.retryConfig = DEFAULT_RETRY_CONFIG;
   }
 
   /** @internal Creates a builder from pre-resolved configuration. Used by JobbyClient. */
-  static _fromResolved(config: ResolvedClientConfig, retryConfig: RetryConfig): JobSearchBuilder {
+  static _fromResolved(config: HttpConfig, logger: Logger, retryConfig: RetryConfig): JobSearchBuilder {
     const builder = new JobSearchBuilder();
-    builder.resolvedConfig = config;
+    builder.httpConfig = config;
+    builder.logger = logger;
     builder.retryConfig = retryConfig;
     return builder;
   }
@@ -165,6 +169,6 @@ export class JobSearchBuilder {
    * Execute the search query and return results.
    */
   async execute(): Promise<SearchResponse<Job>> {
-    return withRetry(() => executeJobsQuery(this.params, this.pagination, this.resolvedConfig), this.retryConfig);
+    return withRetry(() => executeJobsQuery(this.params, this.pagination, this.httpConfig, this.logger), this.retryConfig);
   }
 }

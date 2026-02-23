@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById, mergeJobDetailsData } from './job-details-query.js';
 import { resolveConfig } from '../config.js';
+import type { Logger } from '../logging.js';
 import { ValidationError, RateLimitError, NetworkError } from '../types/errors.js';
+import { createNoopLogger } from '../test-utils.js';
 
 // Mock axios
 const { mockedGet } = vi.hoisted(() => ({ mockedGet: vi.fn() }));
@@ -31,6 +33,7 @@ vi.mock('../logging.js', async () => {
  */
 
 const defaultConfig = resolveConfig();
+const defaultLogger = createNoopLogger() as unknown as Logger;
 
 describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', () => {
   beforeEach(() => {
@@ -128,7 +131,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     it('should fetch and parse job details', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.summary.position).toBe('Senior Software Engineer');
     expect(result.summary.company.name).toBe('Test Company');
@@ -146,7 +149,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
   it('should extract salary information as display string', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.details.salary).toBe('$150,000 - $200,000/yr');
     expect(result.summary.salary).toBe('$150,000 - $200,000/yr');
@@ -155,7 +158,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
   it('should extract experience and education requirements', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.details.experienceRequired).toBe('5 years');
     expect(result.details.educationRequired).toBe('bachelor degree');
@@ -164,7 +167,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
   it('should extract job criteria from DOM', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.details.seniorityLevel).toBe('Mid-Senior level');
     expect(result.details.jobFunction).toBe('Engineering');
@@ -173,7 +176,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
   it('should remove query params from company URL', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.summary.company.pageUrl).toBe('https://linkedin.com/company/test-company');
   });
@@ -181,7 +184,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
   it('should convert HTML description to markdown', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result.details.description).not.toContain('<strong>');
     expect(result.details.description).toContain('**talented**');
@@ -190,29 +193,29 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
   describe('validation', () => {
     it('should throw ValidationError for empty URL', async () => {
-      await expect(executeJobDetailsQueryByUrl('', defaultConfig)).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for whitespace-only URL', async () => {
-      await expect(executeJobDetailsQueryByUrl('   ', defaultConfig)).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('   ', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for non-URL string', async () => {
-      await expect(executeJobDetailsQueryByUrl('not-a-url', defaultConfig)).rejects.toThrow(ValidationError);
-      await expect(executeJobDetailsQueryByUrl('not-a-url', defaultConfig)).rejects.toThrow('Job URL must be a valid URL');
+      await expect(executeJobDetailsQueryByUrl('not-a-url', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('not-a-url', defaultConfig, defaultLogger)).rejects.toThrow('Job URL must be a valid URL');
     });
 
     it('should throw ValidationError for plain text', async () => {
-      await expect(executeJobDetailsQueryByUrl('just some text', defaultConfig)).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('just some text', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError for a numeric ID', async () => {
-      await expect(executeJobDetailsQueryByUrl('123456', defaultConfig)).rejects.toThrow(ValidationError);
+      await expect(executeJobDetailsQueryByUrl('123456', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
     });
 
     it('should accept a valid HTTP URL', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
-      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig)).resolves.toBeDefined();
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger)).resolves.toBeDefined();
     });
   });
 
@@ -228,7 +231,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       };
       mockedGet.mockRejectedValueOnce(axiosError);
 
-      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig))
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger))
         .rejects.toThrow(RateLimitError);
     });
 
@@ -240,14 +243,14 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       };
       mockedGet.mockRejectedValueOnce(axiosError);
 
-      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig))
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger))
         .rejects.toThrow(NetworkError);
     });
 
     it('should throw NetworkError on unknown errors', async () => {
       mockedGet.mockRejectedValueOnce(new Error('Network failure'));
 
-      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig))
+      await expect(executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger))
         .rejects.toThrow(NetworkError);
     });
   });
@@ -293,7 +296,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: htmlWithoutJsonLd });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/456', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/456', defaultConfig, defaultLogger);
 
       expect(result.id).toBe('456');
       expect(result.url).toBe('https://www.linkedin.com/jobs/view/456');
@@ -325,7 +328,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: htmlWithInvalidJsonLd });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.summary.position).toBe('DOM Title');
     });
@@ -333,7 +336,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     it('should use provided URL as fallback when page has no canonical link', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/789?trk=tracking', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/789?trk=tracking', defaultConfig, defaultLogger);
 
       expect(result.id).toBe('789');
       expect(result.url).toBe('https://linkedin.com/jobs/view/789');
@@ -349,7 +352,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.workplaceType).toBe('Remote');
     });
@@ -362,7 +365,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.workplaceType).toBe('Hybrid');
     });
@@ -375,7 +378,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.workplaceType).toBe('On-site');
     });
@@ -394,7 +397,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/company-logo.png');
     });
@@ -402,7 +405,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     it('should return undefined when no logo image is present', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.summary.company.logoUrl).toBeUndefined();
     });
@@ -418,7 +421,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.id).toBe('555');
       expect(result.url).toBe('https://www.linkedin.com/jobs/view/555');
@@ -432,7 +435,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.id).toBe('777');
       expect(result.url).toBe('https://www.linkedin.com/jobs/view/777');
@@ -460,7 +463,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.summary.location).toBe('London, England, GB');
     });
@@ -485,7 +488,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.summary.location).toBe('Austin, TX');
     });
@@ -500,7 +503,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('$115,000.00 - $145,000.00/yr');
     });
@@ -513,7 +516,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('€25.00 - €35.00/hr');
     });
@@ -526,7 +529,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('£60,000 per year');
     });
@@ -535,7 +538,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       const html = '<html><body></body></html>';
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBeUndefined();
     });
@@ -548,7 +551,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('Competitive salary');
     });
@@ -561,7 +564,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('$100,000/yr');
     });
@@ -574,7 +577,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('$5,000 - $8,000/mo');
     });
@@ -587,7 +590,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('$25.00 per hour');
     });
@@ -600,7 +603,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
 
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
       expect(result.details.salary).toBe('€3,000 - €4,500 per month');
     });
@@ -630,7 +633,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
         `;
         mockedGet.mockResolvedValueOnce({ data: html });
 
-        const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+        const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
         expect(result.details.employmentType).toBe(expected);
       });
@@ -641,7 +644,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     it('should use custom timeout from config', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ timeout: 30000 }));
+      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ timeout: 30000 }), defaultLogger);
 
       expect(mockedGet).toHaveBeenCalledWith(
         expect.any(String),
@@ -653,7 +656,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
       mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
       const controller = new AbortController();
 
-      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ signal: controller.signal }));
+      await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ signal: controller.signal }), defaultLogger);
 
       expect(mockedGet).toHaveBeenCalledWith(
         expect.any(String),
@@ -677,7 +680,7 @@ describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
     const rawHtml = '<html><body><h1>Job Title</h1></body></html>';
     mockedGet.mockResolvedValueOnce({ data: rawHtml });
 
-    const result = await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+    const result = await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
     expect(result).toBe(rawHtml);
   });
@@ -685,7 +688,7 @@ describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
   it('should fetch the provided URL', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/456', defaultConfig);
+    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/456', defaultConfig, defaultLogger);
 
     expect(mockedGet).toHaveBeenCalledWith(
       'https://linkedin.com/jobs/view/456',
@@ -694,12 +697,12 @@ describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
   });
 
   it('should throw ValidationError for empty URL', async () => {
-    await expect(executeJobDetailsQueryRawHtmlByUrl('', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlByUrl('', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 
   it('should throw ValidationError for non-URL string', async () => {
-    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url', defaultConfig)).rejects.toThrow(ValidationError);
-    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url', defaultConfig)).rejects.toThrow('Job URL must be a valid URL');
+    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlByUrl('not-a-url', defaultConfig, defaultLogger)).rejects.toThrow('Job URL must be a valid URL');
   });
 
   it('should throw RateLimitError on 429 response', async () => {
@@ -713,7 +716,7 @@ describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
     };
     mockedGet.mockRejectedValueOnce(axiosError);
 
-    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig))
+    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger))
       .rejects.toThrow(RateLimitError);
   });
 
@@ -725,14 +728,14 @@ describe('executeJobDetailsQueryRawHtmlByUrl - raw HTML response', () => {
     };
     mockedGet.mockRejectedValueOnce(axiosError);
 
-    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig))
+    await expect(executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger))
       .rejects.toThrow(NetworkError);
   });
 
   it('should use custom timeout from config', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ timeout: 30000 }));
+    await executeJobDetailsQueryRawHtmlByUrl('https://linkedin.com/jobs/view/123', resolveConfig({ timeout: 30000 }), defaultLogger);
 
     expect(mockedGet).toHaveBeenCalledWith(
       expect.any(String),
@@ -754,7 +757,7 @@ describe('executeJobDetailsQueryById - ID-based job detail fetching', () => {
   it('should build URL from job ID and fetch details', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
 
-    await executeJobDetailsQueryById('123456', defaultConfig);
+    await executeJobDetailsQueryById('123456', defaultConfig, defaultLogger);
 
     expect(mockedGet).toHaveBeenCalledWith(
       'https://www.linkedin.com/jobs/view/123456',
@@ -765,7 +768,7 @@ describe('executeJobDetailsQueryById - ID-based job detail fetching', () => {
   it('should use custom baseUrl from config', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
 
-    await executeJobDetailsQueryById('789', resolveConfig({ baseUrl: 'custom.linkedin.com' }));
+    await executeJobDetailsQueryById('789', resolveConfig({ baseUrl: 'custom.linkedin.com' }), defaultLogger);
 
     expect(mockedGet).toHaveBeenCalledWith(
       'https://custom.linkedin.com/jobs/view/789',
@@ -774,7 +777,7 @@ describe('executeJobDetailsQueryById - ID-based job detail fetching', () => {
   });
 
   it('should throw ValidationError for empty ID (empty URL)', async () => {
-    await expect(executeJobDetailsQueryById('', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryById('', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 });
 
@@ -792,7 +795,7 @@ describe('executeJobDetailsQueryRawHtmlById - ID-based raw HTML fetching', () =>
     const rawHtml = '<html><body><h1>Job</h1></body></html>';
     mockedGet.mockResolvedValueOnce({ data: rawHtml });
 
-    const result = await executeJobDetailsQueryRawHtmlById('123456', defaultConfig);
+    const result = await executeJobDetailsQueryRawHtmlById('123456', defaultConfig, defaultLogger);
 
     expect(result).toBe(rawHtml);
     expect(mockedGet).toHaveBeenCalledWith(
@@ -804,7 +807,7 @@ describe('executeJobDetailsQueryRawHtmlById - ID-based raw HTML fetching', () =>
   it('should use custom baseUrl from config', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html></html>' });
 
-    await executeJobDetailsQueryRawHtmlById('789', resolveConfig({ baseUrl: 'custom.linkedin.com' }));
+    await executeJobDetailsQueryRawHtmlById('789', resolveConfig({ baseUrl: 'custom.linkedin.com' }), defaultLogger);
 
     expect(mockedGet).toHaveBeenCalledWith(
       'https://custom.linkedin.com/jobs/view/789',
@@ -813,11 +816,11 @@ describe('executeJobDetailsQueryRawHtmlById - ID-based raw HTML fetching', () =>
   });
 
   it('should throw ValidationError for empty ID', async () => {
-    await expect(executeJobDetailsQueryRawHtmlById('', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlById('', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 
   it('should throw ValidationError for whitespace-only ID', async () => {
-    await expect(executeJobDetailsQueryRawHtmlById('   ', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlById('   ', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 });
 
@@ -836,7 +839,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.employmentType).toBe('FREELANCE');
     });
   });
@@ -854,7 +857,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.salary).toBe('$100,000/yr');
     });
 
@@ -870,7 +873,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.salary).toBe('CAD 80,000 - CAD 120,000/yr');
     });
 
@@ -886,7 +889,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.salary).toBe('$50,000 - $70,000');
     });
 
@@ -902,7 +905,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.salary).toBe('50,000 - 70,000/yr');
     });
 
@@ -918,7 +921,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.salary).toBeUndefined();
       expect(result.details.salary).toBeUndefined();
     });
@@ -934,7 +937,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.experienceRequired).toBe('0 years');
     });
 
@@ -947,7 +950,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.experienceRequired).toBe('1 year');
     });
 
@@ -960,7 +963,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.experienceRequired).toBe('1 year');
     });
 
@@ -973,7 +976,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.experienceRequired).toBe('2 years');
     });
 
@@ -986,7 +989,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.experienceRequired).toBe('10 years');
     });
   });
@@ -1003,7 +1006,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.position).toBe('DOM Title');
     });
 
@@ -1019,7 +1022,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.position).toBe('Second Title');
     });
 
@@ -1033,7 +1036,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.position).toBe('Valid Title');
     });
   });
@@ -1048,7 +1051,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.location).toBeUndefined();
     });
 
@@ -1061,7 +1064,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.location).toBe('DE');
     });
 
@@ -1074,7 +1077,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.location).toBeUndefined();
     });
   });
@@ -1091,7 +1094,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/fallback.png');
     });
 
@@ -1106,7 +1109,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.logoUrl).toBe('https://media.licdn.com/primary.png');
     });
   });
@@ -1119,7 +1122,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.id).toBe('888');
     });
   });
@@ -1132,7 +1135,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBe('100,000 - 150,000/yr');
     });
 
@@ -1143,7 +1146,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBe('$80,000 - $120,000');
     });
 
@@ -1154,7 +1157,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBe('$90,000/yr');
     });
   });
@@ -1169,7 +1172,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBeUndefined();
     });
 
@@ -1185,7 +1188,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBe('$75,000/yr');
     });
   });
@@ -1198,7 +1201,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.description).toBeUndefined();
     });
   });
@@ -1210,12 +1213,12 @@ describe('executeJobDetailsQueryById - additional edge cases', () => {
   });
 
   it('should throw ValidationError for whitespace-only ID', async () => {
-    await expect(executeJobDetailsQueryById('   ', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryById('   ', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 
   it('should trim whitespace from job ID before building URL', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-    await executeJobDetailsQueryById('  123456  ', defaultConfig);
+    await executeJobDetailsQueryById('  123456  ', defaultConfig, defaultLogger);
     expect(mockedGet).toHaveBeenCalledWith(
       'https://www.linkedin.com/jobs/view/123456',
       expect.any(Object)
@@ -1229,19 +1232,19 @@ describe('executeJobDetailsQueryRawHtmlById - additional edge cases', () => {
   });
 
   it('should throw ValidationError for whitespace-only ID', async () => {
-    await expect(executeJobDetailsQueryRawHtmlById('   ', defaultConfig)).rejects.toThrow(ValidationError);
+    await expect(executeJobDetailsQueryRawHtmlById('   ', defaultConfig, defaultLogger)).rejects.toThrow(ValidationError);
   });
 
   it('should return raw HTML for valid ID', async () => {
     const rawHtml = '<html><body><h1>Details</h1></body></html>';
     mockedGet.mockResolvedValueOnce({ data: rawHtml });
-    const result = await executeJobDetailsQueryRawHtmlById('999', defaultConfig);
+    const result = await executeJobDetailsQueryRawHtmlById('999', defaultConfig, defaultLogger);
     expect(result).toBe(rawHtml);
   });
 
   it('should trim whitespace from job ID before building URL', async () => {
     mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-    await executeJobDetailsQueryRawHtmlById('  789  ', defaultConfig);
+    await executeJobDetailsQueryRawHtmlById('  789  ', defaultConfig, defaultLogger);
     expect(mockedGet).toHaveBeenCalledWith(
       'https://www.linkedin.com/jobs/view/789',
       expect.any(Object)
@@ -1274,7 +1277,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.logoUrl).toBe('https://jsonld-logo.png');
     });
 
@@ -1293,7 +1296,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.logoUrl).toBe('https://dom-logo.png');
     });
   });
@@ -1311,7 +1314,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.slug).toBe('my-company');
     });
 
@@ -1322,13 +1325,13 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.slug).toBe('dom-company');
     });
 
     it('should return undefined slug when no company URL available', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.slug).toBeUndefined();
     });
   });
@@ -1341,14 +1344,14 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.applyUrl).toBe('https://linkedin.com/jobs/view/123/apply');
       expect(result.details.applyText).toBe('Easy Apply');
     });
 
     it('should return undefined apply fields when no button present', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.applyUrl).toBeUndefined();
       expect(result.details.applyText).toBeUndefined();
     });
@@ -1362,7 +1365,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.shortDescription).toBe('A great job opportunity at Test Corp.');
     });
 
@@ -1373,13 +1376,13 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </head><body></body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.sharingImageUrl).toBe('https://media.licdn.com/sharing.jpg');
     });
 
     it('should return undefined for og fields when meta tags absent', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.shortDescription).toBeUndefined();
       expect(result.details.sharingImageUrl).toBeUndefined();
     });
@@ -1393,13 +1396,13 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.benefitsInfo).toBe('Benefits Eligible: Yes');
     });
 
     it('should return undefined when no elements present', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.benefitsInfo).toBeUndefined();
     });
 
@@ -1411,7 +1414,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.benefitsInfo).toBe('Benefits Eligible: Yes');
     });
   });
@@ -1424,13 +1427,13 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.incentiveInfo).toBe('Bonus Eligible: Yes');
     });
 
     it('should return undefined when no elements present', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.incentiveInfo).toBeUndefined();
     });
 
@@ -1442,7 +1445,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
         </body></html>
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.incentiveInfo).toBe('Bonus Eligible: Yes');
     });
   });
@@ -1450,7 +1453,7 @@ describe('executeJobDetailsQueryByUrl - new extractable fields', () => {
   describe('all new fields return undefined when absent', () => {
     it('should have all new fields as undefined for minimal HTML', async () => {
       mockedGet.mockResolvedValueOnce({ data: '<html><body></body></html>' });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig);
+      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.summary.company.slug).toBeUndefined();
       expect(result.details.applyUrl).toBeUndefined();
       expect(result.details.applyText).toBeUndefined();

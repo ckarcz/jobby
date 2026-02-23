@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import axios, { type AxiosRequestConfig } from 'axios';
-import { type ResolvedClientConfig } from '../config.js';
+import { type HttpConfig } from '../config.js';
+import type { Logger } from '../logging.js';
 import {
   type JobDetails,
   ParsingError,
@@ -17,7 +18,8 @@ import { htmlToMarkdown } from '../utils/html.js';
  */
 interface JobDetailsQueryContext {
   html: string;
-  config: ResolvedClientConfig;
+  config: HttpConfig;
+  logger: Logger;
   startTime: number;
 }
 
@@ -32,9 +34,9 @@ interface JobDetailsQueryContext {
  */
 async function fetchJobDetailsHtml(
   jobUrl: string,
-  config: ResolvedClientConfig,
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<JobDetailsQueryContext> {
-  const { logger } = config;
   const startTime = Date.now();
 
   logger.verbose('Processing query...');
@@ -69,7 +71,7 @@ async function fetchJobDetailsHtml(
 
     const response = await axios.get<string>(normalizedUrl, axiosConfig);
 
-    return { html: response.data, config, startTime };
+    return { html: response.data, config, logger, startTime };
   } catch (error: unknown) {
     return handleHttpError(error, logger);
   }
@@ -78,15 +80,16 @@ async function fetchJobDetailsHtml(
 /** Fetches detailed information for a specific job posting by URL. */
 export async function executeJobDetailsQueryByUrl(
   jobUrl: string,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<JobDetails> {
-  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config, logger);
 
-  config.logger.verbose('Processing query response...');
+  logger.verbose('Processing query response...');
 
-  const details = parseJobDetails(html, jobUrl, config);
+  const details = parseJobDetails(html, jobUrl, logger);
 
-  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
+  logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -94,11 +97,12 @@ export async function executeJobDetailsQueryByUrl(
 /** Fetches the raw HTML response for a specific job posting by URL. */
 export async function executeJobDetailsQueryRawHtmlByUrl(
   jobUrl: string,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<string> {
-  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config, logger);
 
-  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
+  logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -106,20 +110,21 @@ export async function executeJobDetailsQueryRawHtmlByUrl(
 /** Fetches detailed information for a specific job posting by job ID. */
 export async function executeJobDetailsQueryById(
   jobId: string,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<JobDetails> {
   const trimmedId = jobId.trim();
   if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config, logger);
 
-  config.logger.verbose('Processing query response...');
+  logger.verbose('Processing query response...');
 
-  const details = parseJobDetails(html, jobUrl, config);
+  const details = parseJobDetails(html, jobUrl, logger);
 
-  config.logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
+  logger.info('Job details query completed.', { durationMs: Date.now() - startTime });
 
   return details;
 }
@@ -127,16 +132,17 @@ export async function executeJobDetailsQueryById(
 /** Fetches the raw HTML response for a specific job posting by job ID. */
 export async function executeJobDetailsQueryRawHtmlById(
   jobId: string,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<string> {
   const trimmedId = jobId.trim();
   if (!trimmedId) {
     throw new ValidationError('Job ID is required');
   }
   const jobUrl = `https://${config.baseUrl}/jobs/view/${trimmedId}`;
-  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config);
+  const { html, startTime } = await fetchJobDetailsHtml(jobUrl, config, logger);
 
-  config.logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
+  logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -202,11 +208,11 @@ export function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: Par
  * Parses job details from the HTML response by combining JSON-LD structured data
  * (priority) with HTML DOM scraping (fallback and supplementary data).
  */
-function parseJobDetails(html: string, jobUrl: string, config: ResolvedClientConfig): JobDetails {
+function parseJobDetails(html: string, jobUrl: string, logger: Logger): JobDetails {
   try {
     const $ = cheerio.load(html);
 
-    const jsonLdDetails = parseJsonLdToJobDetailsData($, config);
+    const jsonLdDetails = parseJsonLdToJobDetailsData($, logger);
     const scrapedDetails = scrapeJobDetailsDataFromDom($);
     const merged = mergeJobDetailsData(jsonLdDetails, scrapedDetails);
 
@@ -266,8 +272,8 @@ function parseJobDetails(html: string, jobUrl: string, config: ResolvedClientCon
 }
 
 /** Parses JSON-LD structured data into flat parsed details data. */
-function parseJsonLdToJobDetailsData($: ReturnType<typeof cheerio.load>, config: ResolvedClientConfig): ParsedJobDetailsData {
-  const jsonLd = extractJsonLd($, config);
+function parseJsonLdToJobDetailsData($: ReturnType<typeof cheerio.load>, logger: Logger): ParsedJobDetailsData {
+  const jsonLd = extractJsonLd($, logger);
 
   const locationParts: string[] = [];
   if (jsonLd?.jobLocation?.address) {
@@ -496,7 +502,7 @@ function scrapeIncentiveInfo($: ReturnType<typeof cheerio.load>): string | undef
 }
 
 /** Extracts JSON-LD job posting data from the page using Zod schema validation. */
-function extractJsonLd($: ReturnType<typeof cheerio.load>, config: ResolvedClientConfig): JsonLdJobPosting | undefined {
+function extractJsonLd($: ReturnType<typeof cheerio.load>, logger: Logger): JsonLdJobPosting | undefined {
   let jsonLd: JsonLdJobPosting | undefined;
   $('script[type="application/ld+json"]').each((_index, element) => {
     try {
@@ -508,7 +514,7 @@ function extractJsonLd($: ReturnType<typeof cheerio.load>, config: ResolvedClien
         }
       }
     } catch (error: unknown) {
-      config.logger.warn('Failed to parse JSON-LD content.', { error: error instanceof Error ? error.message : String(error) });
+      logger.warn('Failed to parse JSON-LD content.', { error: error instanceof Error ? error.message : String(error) });
     }
   });
   return jsonLd;

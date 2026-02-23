@@ -1,6 +1,6 @@
-import { type LoggingConfig, type Logger, createLogger } from './logging.js';
+import type { LoggingConfig } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
-import { type RetryConfig, type RetryConfigInput, resolveRetryConfig } from './utils/retry.js';
+import type { RetryConfigInput } from './utils/retry.js';
 
 /** Configuration options for the LinkedIn Jobs client. */
 export interface ClientConfig {
@@ -40,15 +40,13 @@ export interface ClientConfig {
   retry?: RetryConfigInput | undefined;
 }
 
-/** Resolved configuration with all required values defined. */
-export interface ResolvedClientConfig {
+/** Resolved HTTP settings with all required values defined. */
+export interface HttpConfig {
   baseUrl: string;
   timeout: number;
   /** Always a resolved string — factory functions are evaluated in {@link resolveConfig}. */
   userAgent: string;
   signal: AbortSignal | undefined;
-  logger: Logger;
-  retry: RetryConfig;
 }
 
 /** Default configuration values. */
@@ -65,7 +63,7 @@ export const DEFAULT_CLIENT_CONFIG = {
  * - `LINKEDIN_JOBS_BASE_URL` – overrides the default base URL
  * - `LINKEDIN_JOBS_TIMEOUT` – overrides the default timeout (in milliseconds)
  */
-export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
+export function resolveConfig(config?: ClientConfig): HttpConfig {
   const envTimeout = process.env['LINKEDIN_JOBS_TIMEOUT'];
   const envBaseUrl = process.env['LINKEDIN_JOBS_BASE_URL'];
 
@@ -81,7 +79,5 @@ export function resolveConfig(config?: ClientConfig): ResolvedClientConfig {
     timeout,
     userAgent: resolveUserAgent(config?.userAgent),
     signal: config?.signal,
-    logger: createLogger(config?.logging),
-    retry: resolveRetryConfig(config?.retry),
   };
 }

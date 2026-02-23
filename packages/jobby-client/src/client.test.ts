@@ -49,15 +49,16 @@ describe('JobbyClient - public API and query delegation', () => {
   });
 
   describe('getConfig', () => {
-    it('should return resolved config with defaults when no config provided', () => {
+    it('should return resolved HTTP config with defaults when no config provided', () => {
       const client = new JobbyClient();
       const config = client.getConfig();
       expect(config.baseUrl).toBe('www.linkedin.com');
       expect(config.timeout).toBe(10_000);
-      expect(config.retry).toBeDefined();
+      expect(config).not.toHaveProperty('logger');
+      expect(config).not.toHaveProperty('retry');
     });
 
-    it('should return resolved config with overrides when provided', () => {
+    it('should return resolved HTTP config with overrides when provided', () => {
       const client = new JobbyClient({ timeout: 5000 });
       const config = client.getConfig();
       expect(config.timeout).toBe(5000);
@@ -76,7 +77,8 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'TypeScript' },
           undefined,
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result.results).toHaveLength(1);
       });
@@ -93,7 +95,8 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'React' },
           { start: 25, take: 10 },
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
       });
 
@@ -106,7 +109,8 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQuery).toHaveBeenCalledWith(
           { keyword: 'Python' },
           undefined,
-          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
       });
     });
@@ -120,7 +124,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/123',
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result.summary.position).toBe('Senior Developer');
       });
@@ -133,7 +138,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/456',
-          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
       });
     });
@@ -147,7 +153,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryById).toHaveBeenCalledWith(
           '123',
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result.summary.position).toBe('Senior Developer');
       });
@@ -160,7 +167,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryById).toHaveBeenCalledWith(
           '456',
-          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' })
+          expect.objectContaining({ timeout: 15000, baseUrl: 'www.linkedin.com' }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
       });
     });
@@ -175,7 +183,8 @@ describe('JobbyClient - public API and query delegation', () => {
         expect(executeJobsQueryRawHtml).toHaveBeenCalledWith(
           { keyword: 'TypeScript' },
           undefined,
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result).toBe('<html><li>Job 1</li></html>');
       });
@@ -190,7 +199,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryRawHtmlByUrl).toHaveBeenCalledWith(
           'https://linkedin.com/jobs/view/123',
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result).toBe('<html><h1>Job Details</h1></html>');
       });
@@ -205,7 +215,8 @@ describe('JobbyClient - public API and query delegation', () => {
 
         expect(executeJobDetailsQueryRawHtmlById).toHaveBeenCalledWith(
           '123',
-          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 })
+          expect.objectContaining({ baseUrl: 'www.linkedin.com', timeout: 10_000 }),
+          expect.objectContaining({ level: expect.any(String) }),
         );
         expect(result).toBe('<html><h1>Job Details</h1></html>');
       });

@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import axios, { type AxiosRequestConfig } from 'axios';
-import { type ResolvedClientConfig } from '../config.js';
+import { type HttpConfig } from '../config.js';
+import type { Logger } from '../logging.js';
 import {
   type JobSearchParams,
   type PaginationParams,
@@ -32,7 +33,8 @@ import {
 interface JobsQueryContext {
   html: string;
   queryUrl: string;
-  config: ResolvedClientConfig;
+  config: HttpConfig;
+  logger: Logger;
   normalizedJobSearchParams: JobSearchParams;
   normalizedPaginationParams: PaginationParams;
   start: number;
@@ -51,9 +53,9 @@ interface JobsQueryContext {
 async function fetchJobsHtml(
   jobSearchParams: JobSearchParams | undefined,
   paginationParams: PaginationParams | undefined,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<JobsQueryContext> {
-  const { logger } = config;
   const startTime = Date.now();
 
   logger.verbose('Processing query...');
@@ -89,7 +91,7 @@ async function fetchJobsHtml(
 
     const response = await axios.get<string>(queryUrl, axiosConfig);
 
-    return { html: response.data, queryUrl, config, normalizedJobSearchParams, normalizedPaginationParams, start, startTime };
+    return { html: response.data, queryUrl, config, logger, normalizedJobSearchParams, normalizedPaginationParams, start, startTime };
   } catch (error: unknown) {
     return handleHttpError(error, logger);
   }
@@ -102,14 +104,15 @@ async function fetchJobsHtml(
 export async function executeJobsQuery(
   jobSearchParams: JobSearchParams | undefined,
   paginationParams: PaginationParams | undefined,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<SearchResponse<Job>> {
   const { html, normalizedJobSearchParams, normalizedPaginationParams, start, startTime, queryUrl } =
-    await fetchJobsHtml(jobSearchParams, paginationParams, config);
+    await fetchJobsHtml(jobSearchParams, paginationParams, config, logger);
 
-  config.logger.verbose('Processing query response...');
+  logger.verbose('Processing query response...');
 
-  let fetchedJobs = parseJobs(html, config);
+  let fetchedJobs = parseJobs(html, logger);
 
   const fetchedJobsCount = fetchedJobs.length;
 
@@ -122,7 +125,7 @@ export async function executeJobsQuery(
   }
 
   const durationMs = Date.now() - startTime;
-  config.logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
+  logger.info('Job search query completed.', { durationMs, fetched: fetchedJobsCount, returned: fetchedJobs.length });
 
   return {
     results: fetchedJobs,
@@ -146,11 +149,12 @@ export async function executeJobsQuery(
 export async function executeJobsQueryRawHtml(
   jobSearchParams: JobSearchParams | undefined,
   paginationParams: PaginationParams | undefined,
-  config: ResolvedClientConfig
+  config: HttpConfig,
+  logger: Logger,
 ): Promise<string> {
-  const { html, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, config);
+  const { html, startTime } = await fetchJobsHtml(jobSearchParams, paginationParams, config, logger);
 
-  config.logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
+  logger.info('Raw job search query completed.', { durationMs: Date.now() - startTime });
 
   return html;
 }
@@ -287,12 +291,12 @@ function buildQueryUrl(baseUrl: string, searchParams: JobSearchParams, start: nu
 }
 
 /** Parses job data from the LinkedIn response HTML. */
-function parseJobs(jobData: string, config: ResolvedClientConfig): Job[] {
+function parseJobs(jobData: string, logger: Logger): Job[] {
   try {
     const $ = cheerio.load(jobData);
     const jobs = $('li.base-card');
 
-    config.logger.verbose(`Parsing ${jobs.length} job element(s).`);
+    logger.verbose(`Parsing ${jobs.length} job element(s).`);
 
     // cheerio's .map() + .get() types don't reflect nullable callback returns,
     // but the callback can return null for incomplete or unparseable elements.

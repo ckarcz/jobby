@@ -1,18 +1,20 @@
-import { type ClientConfig, type ResolvedClientConfig, resolveConfig } from './config.js';
+import { type ClientConfig, type HttpConfig, resolveConfig } from './config.js';
+import { type Logger, createLogger } from './logging.js';
 import type { JobSearchParams, PaginationParams, Job, JobDetails, SearchResponse } from './types/index.js';
 import { executeJobsQuery, executeJobsQueryRawHtml  } from './queries/jobs-query.js';
 import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById  } from './queries/job-details-query.js';
 import { JobSearchBuilder } from './builders/job-search-builder.js';
-import { withRetry } from './utils/retry.js';
-import type { RetryConfig } from './utils/retry.js';
+import { type RetryConfig, resolveRetryConfig, withRetry } from './utils/retry.js';
 
 /** Jobs resource providing search and details methods. */
 export class JobsResource {
-  private readonly config: ResolvedClientConfig;
+  private readonly config: HttpConfig;
+  private readonly logger: Logger;
   private readonly retryConfig: RetryConfig;
 
-  constructor(config: ResolvedClientConfig, retryConfig: RetryConfig) {
+  constructor(config: HttpConfig, logger: Logger, retryConfig: RetryConfig) {
     this.config = config;
+    this.logger = logger;
     this.retryConfig = retryConfig;
   }
 
@@ -30,7 +32,7 @@ export class JobsResource {
    * ```
    */
   async queryForJobs(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<SearchResponse<Job>> {
-    return withRetry(() => executeJobsQuery(searchParams, paginationParams, this.config), this.retryConfig);
+    return withRetry(() => executeJobsQuery(searchParams, paginationParams, this.config, this.logger), this.retryConfig);
   }
 
   /**
@@ -43,7 +45,7 @@ export class JobsResource {
    * ```
    */
   async queryForJobDetailsByUrl(jobUrl: string): Promise<JobDetails> {
-    return withRetry(() => executeJobDetailsQueryByUrl(jobUrl, this.config), this.retryConfig);
+    return withRetry(() => executeJobDetailsQueryByUrl(jobUrl, this.config, this.logger), this.retryConfig);
   }
 
   /**
@@ -56,28 +58,28 @@ export class JobsResource {
    * ```
    */
   async queryForJobDetailsById(jobId: string): Promise<JobDetails> {
-    return withRetry(() => executeJobDetailsQueryById(jobId, this.config), this.retryConfig);
+    return withRetry(() => executeJobDetailsQueryById(jobId, this.config, this.logger), this.retryConfig);
   }
 
   /**
    * Search for jobs and return the raw HTML response.
    */
   async queryForJobsRawHtml(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<string> {
-    return withRetry(() => executeJobsQueryRawHtml(searchParams, paginationParams, this.config), this.retryConfig);
+    return withRetry(() => executeJobsQueryRawHtml(searchParams, paginationParams, this.config, this.logger), this.retryConfig);
   }
 
   /**
    * Get the raw HTML response for a specific job posting by URL.
    */
   async queryForJobDetailsRawHtmlByUrl(jobUrl: string): Promise<string> {
-    return withRetry(() => executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config), this.retryConfig);
+    return withRetry(() => executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config, this.logger), this.retryConfig);
   }
 
   /**
    * Get the raw HTML response for a specific job posting by job ID.
    */
   async queryForJobDetailsRawHtmlById(jobId: string): Promise<string> {
-    return withRetry(() => executeJobDetailsQueryRawHtmlById(jobId, this.config), this.retryConfig);
+    return withRetry(() => executeJobDetailsQueryRawHtmlById(jobId, this.config, this.logger), this.retryConfig);
   }
 
   /**
@@ -97,7 +99,7 @@ export class JobsResource {
    * ```
    */
   createSearch(): JobSearchBuilder {
-    return JobSearchBuilder._fromResolved(this.config, this.retryConfig);
+    return JobSearchBuilder._fromResolved(this.config, this.logger, this.retryConfig);
   }
 }
 
@@ -138,7 +140,7 @@ export class JobbyClient {
    */
   public readonly jobs: JobsResource;
 
-  private readonly resolvedConfig: ResolvedClientConfig;
+  private readonly httpConfig: HttpConfig;
 
   /**
    * Creates a new LinkedIn Jobs client.
@@ -146,14 +148,16 @@ export class JobbyClient {
    * @param config - Optional configuration options
    */
   constructor(config?: ClientConfig) {
-    this.resolvedConfig = resolveConfig(config);
-    this.jobs = new JobsResource(this.resolvedConfig, this.resolvedConfig.retry);
+    this.httpConfig = resolveConfig(config);
+    const logger = createLogger(config?.logging);
+    const retryConfig = resolveRetryConfig(config?.retry);
+    this.jobs = new JobsResource(this.httpConfig, logger, retryConfig);
   }
 
   /**
-   * Get the resolved configuration with all defaults applied.
+   * Get the resolved HTTP configuration with all defaults applied.
    */
-  getConfig(): ResolvedClientConfig {
-    return this.resolvedConfig;
+  getConfig(): HttpConfig {
+    return this.httpConfig;
   }
 }
