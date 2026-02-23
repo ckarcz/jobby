@@ -11,8 +11,6 @@ export interface RetryConfig {
   maxDelayMs: number;
 }
 
-export type RetryConfigInput = Partial<RetryConfig>;
-
 export const DEFAULT_RETRY_CONFIG = {
   maxRetries: 0,
   initialDelayMs: 1000,
@@ -20,7 +18,7 @@ export const DEFAULT_RETRY_CONFIG = {
 } as const satisfies RetryConfig;
 
 /** Resolves retry config with defaults. */
-export function resolveRetryConfig(config?: RetryConfigInput): RetryConfig {
+export function resolveRetryConfig(config?: Partial<RetryConfig>): RetryConfig {
   return {
     maxRetries: config?.maxRetries ?? DEFAULT_RETRY_CONFIG.maxRetries,
     initialDelayMs: config?.initialDelayMs ?? DEFAULT_RETRY_CONFIG.initialDelayMs,

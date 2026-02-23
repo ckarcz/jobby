@@ -1,6 +1,6 @@
 import type { LoggingConfig } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
-import type { RetryConfigInput } from './utils/retry.js';
+import type { RetryConfig } from './utils/retry.js';
 
 /** Configuration options for the LinkedIn Jobs client. */
 export interface ClientConfig {
@@ -37,7 +37,7 @@ export interface ClientConfig {
    * Retry configuration for retryable errors (network failures, rate limits).
    * @default { maxRetries: 0 } (no retries)
    */
-  retry?: RetryConfigInput | undefined;
+  retry?: Partial<RetryConfig> | undefined;
 }
 
 /** Resolved HTTP settings with all required values defined. */
