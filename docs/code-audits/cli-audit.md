@@ -47,7 +47,7 @@ Not every audit finding carries equal weight in practice. The table below classi
 | `details.test.ts` empty `rawHtml` assertion | Nice-to-have | Strengthen when in the file |
 | `--file` path error tests | Over-engineered | Testing OS-level errors is fragile and platform-dependent |
 | `fetchDetailsInBatches` with `delayMs > 0` | Over-engineered | Testing `setTimeout` is testing Node.js, not the app |
-| Stdin piping end-to-end test | Nice-to-have | Painful to mock in CI; unit tests cover the logic |
+| Stdin piping end-to-end test | Nice-to-have | Painful to mock in CI; unit tests cover the logic. CLI integration tests removed — moot. |
 | SRP — `queryForJobDetails` does too much | Over-engineered | A 30-line CLI handler orchestrating "resolve, call, format" is standard and readable |
 | DIP — commands instantiate `JobbyClient` | Over-engineered | This is a CLI, not a framework. The client is created, used once, and discarded. DI for a one-shot CLI command is architecture astronautics. |
 
@@ -110,9 +110,10 @@ Not every audit finding carries equal weight in practice. The table below classi
 
 ### 3.3 Low
 
-#### `JobDetailsQueryCliArgs` — Double Resolution of URL/ID
+#### `JobDetailsQueryCliArgs` — Double Resolution of URL/ID — **FIXED**
 
 **File:** `src/types.ts:49-53`, `src/commands/details.ts:80`
+**Status: FIXED** — `queryForJobDetails` now accepts `{ url?: string; id?: string }` target object. URL/ID resolution moved to the action handler. No more double-resolution.
 
 The action handler resolves `value` from opts/args/stdin, then passes both `value` and the full `opts` to `queryForJobDetails`, which re-reads `args.url` and `args.id`. This double-resolution is unnecessary.
 
@@ -160,11 +161,11 @@ Node 22 supports JSON import assertions natively. `createRequire` is a workaroun
 
 ### 5.2 Important Untested Code Paths
 
-- `--no-color` on actual data output (search/details results)
+- ~~`--no-color` on actual data output (search/details results)~~ — **DONE** (color.test.ts — removed with CLI integration tests)
 - `--file` path errors (permission denied, directory not found) end-to-end
-- `details` command with piped stdin end-to-end
+- ~~`details` command with piped stdin end-to-end~~ — **Moot** (CLI integration tests removed)
 - `queryForJobs` when response is `null` and `--detailed` is set (potential runtime exception at `response.results.length`)
-- `createUiCommand` TTY guard (non-TUI logic, should be covered)
+- ~~`createUiCommand` TTY guard (non-TUI logic, should be covered)~~ — **DONE** (ui.test.ts — removed with CLI integration tests)
 - `fetchDetailsInBatches` with `delayMs > 0` (rate-limiting behavior untested)
 
 ### 5.3 TUI Testing — Deferred
@@ -175,7 +176,7 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 
 ## 6. SOLID Principle Violations
 
-**Single Responsibility — `queryForJobDetails` does too much.** Resolves URL vs. ID, constructs a client, calls the appropriate method, handles `rawHtml` branching, and calls `outputResult`. Five concerns in one function.
+**Single Responsibility — `queryForJobDetails` does too much.** ~~Resolves URL vs. ID,~~ constructs a client, calls the appropriate method, handles `rawHtml` branching, and calls `outputResult`. ~~Five~~ Four concerns in one function. *(URL/ID resolution moved to action handler — see 3.3 fix.)*
 
 **Dependency Inversion — Commands directly instantiate `JobbyClient`.** Both `queryForJobs` and `queryForJobDetails` call `new JobbyClient(...)` directly. Compare with `fetchDetailsInBatches` which correctly uses dependency injection via `fetchFn`.
 
@@ -210,7 +211,7 @@ TUI (`src/ui/`) test coverage is deliberately deferred. The TUI is not yet in a 
 
 15. ~~Update `docs/commands.md` to match actual implementation~~ **DONE**
 16. ~~Add JSDoc note to `yamlFormatter` about `--pretty` having no effect~~ **DONE**
-17. Add integration test coverage for `--no-color` on data output
+17. ~~Add integration test coverage for `--no-color` on data output~~ **DONE**
 
 ---
 

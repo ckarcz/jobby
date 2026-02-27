@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById, mergeJobDetailsData } from './job-details-query.js';
+import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, executeJobDetailsQueryById, executeJobDetailsQueryRawHtmlById } from './job-details-query.js';
+import { mergeJobDetailsData } from '../parsers/merge.js';
 import { resolveConfig } from '../config.js';
 import type { Logger } from '../logging.js';
 import { ValidationError, RateLimitError, NetworkError } from '../types/errors.js';
@@ -151,8 +152,8 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
     const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-    expect(result.details.salary).toBe('$150,000 - $200,000/yr');
-    expect(result.summary.salary).toBe('$150,000 - $200,000/yr');
+    expect(result.details.salary).toBe('150000-200000 USD YEAR');
+    expect(result.summary.salary).toBe('150000-200000 USD YEAR');
   });
 
   it('should extract experience and education requirements', async () => {
@@ -858,7 +859,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('$100,000/yr');
+      expect(result.summary.salary).toBe('100000 USD YEAR');
     });
 
     it('should use currency code with space for unknown currency', async () => {
@@ -874,7 +875,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('CAD 80,000 - CAD 120,000/yr');
+      expect(result.summary.salary).toBe('80000-120000 CAD YEAR');
     });
 
     it('should display salary without period suffix when period is unknown', async () => {
@@ -890,7 +891,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('$50,000 - $70,000');
+      expect(result.summary.salary).toBe('50000-70000 USD WEEK');
     });
 
     it('should display salary without currency when currency is missing', async () => {
@@ -906,7 +907,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('50,000 - 70,000/yr');
+      expect(result.summary.salary).toBe('50000-70000 YEAR');
     });
 
     it('should return undefined salary when baseSalary.value has no min/max', async () => {
@@ -1189,7 +1190,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBe('$75,000/yr');
+      expect(result.details.salary).toBe('75000 USD YEAR');
     });
   });
 

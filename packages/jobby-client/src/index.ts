@@ -10,6 +10,8 @@ export {
 
 // Logging
 export {
+  type Logger,
+  createLogger,
   type LogLevel,
   type LogEntry,
   type LoggingConfig,

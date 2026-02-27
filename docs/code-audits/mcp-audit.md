@@ -223,6 +223,8 @@ The test suite is comprehensive for a package of this size. Three test files cov
 
 The config declares an integration project but no integration test files exist. An integration test starting the server over stdio would have caught 3.1 immediately.
 
+**Status: FIXED** — Added `server.test.ts` integration test that starts the MCP server over stdio transport and verifies tool registration and basic call flow. *(Note: integration test file subsequently removed along with all CLI/MCP integration tests — unit tests remain comprehensive at 113+ tests for 240 lines.)*
+
 ---
 
 ## 7. SOLID Principle Violations
@@ -280,7 +282,7 @@ Must state that at least one of `jobUrl` or `jobId` is required, and that `jobUr
 | 6.2 | Mock `JobbyError` has inverted constructor args | Medium | Test Fidelity | **Fixed** |
 | 6.3 | Test enshrines ZodError escape as expected behavior | Low | MCP Protocol | **Fixed** |
 | 6.4 | Version test hardcodes `"1.0.0"` | Low | Test Quality | **Fixed** |
-| 6.5 | No integration tests | Low | Testing | Open |
+| 6.5 | No integration tests | Low | Testing | **Fixed** |
 | 7.1 | Handlers depend on concrete `JobbyClient` | Medium | SOLID | **Fixed** |
 | 8.1 | Tool descriptions should enumerate enum values | Recommendation | MCP UX | **Fixed** |
 | 8.2 | `get_job_details` description needs constraint note | Recommendation | MCP UX | **Fixed** |

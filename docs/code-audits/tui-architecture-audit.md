@@ -131,6 +131,8 @@ The `cursors` dependency is an object from the filter draft reducer. On every ar
 2. **Split the `cursors` object into per-section refs** so each section's memo only depends on its own cursor value
 3. **Use a stable cursor reference** by serializing cursors or using `useRef` to avoid object identity changes
 
+**Partially Fixed** — Destructured `cursors` object in FilterDrawer dependency array to individual cursor values (`cursors.jobType`, `cursors.experienceLevel`, etc.), reducing unnecessary memo invalidation.
+
 ---
 
 ## 5. Low Issues
@@ -260,7 +262,7 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 | 3.2 | Medium | `useContainerHeight` called in `SearchResults` with return value discarded | `SearchResults.tsx:24` | **Fixed** |
 | 4.1 | Low-Medium | `JobbyClient` via `useMemo` instead of `useRef` | `useSearch.ts:17` | **Fixed** |
 | 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | **Fixed** |
-| 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Open |
+| 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Partially Fixed |
 | 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | **Fixed** |
 | 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | **Fixed** |
 

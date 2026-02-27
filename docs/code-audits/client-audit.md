@@ -163,6 +163,7 @@ None. No correctness bugs, security vulnerabilities, or data corruption paths we
 **File:** `src/queries/job-details-query.ts`
 
 Combines HTTP transport, JSON-LD extraction, 25 DOM scraping functions, salary parsing, and response assembly. Natural split boundaries exist:
+**Status: FIXED** — Parsers extracted to `src/parsers/` directory: `job-details-jsonld.ts`, `job-details-scraper.ts`, `types.ts`.
 
 ```
 src/queries/job-details-query.ts     (HTTP, validation, orchestration)
@@ -177,11 +178,12 @@ The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. 
 
 **Status: FIXED** — Removed `export` keyword from `createTurndownService`. No external consumers referenced it.
 
-#### 3.3.5 Winston Logger Properties Leaked Through `Logger` Interface — **PLANNED**
+#### 3.3.5 Winston Logger Properties Leaked Through `Logger` Interface — **FIXED**
 
 `level: string` and `silent: boolean` are Winston-specific properties in the `Logger` interface.
 
 **Planned:** Logger will be moved out of `ResolvedClientConfig` entirely. It is a cross-cutting concern, not a config property. `ResolvedClientConfig` will be eliminated in favor of `Partial<ClientConfig>` + defaults pattern (matching the `RetryConfig` approach).
+**Status: FIXED** — Logger removed from config. `Logger` interface slimmed to 5 log methods only (no `level`/`silent` properties).
 
 #### 3.3.6 `extractCriteriaValue` Does Not Short-Circuit on Match — **FIXED**
 
@@ -200,9 +202,10 @@ The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. 
 
 ## 4. Code Quality Issues
 
-### 4.1 `mergeJobDetailsData` Uses `any` Cast
+### 4.1 `mergeJobDetailsData` Uses `any` Cast — **FIXED**
 
-**File:** `src/queries/job-details-query.ts:215`
+**File:** ~~`src/queries/job-details-query.ts:215`~~ → `src/parsers/merge.ts`
+**Status: FIXED** — Function moved to dedicated `parsers/merge.ts` module. Cast narrowed to `Record<keyof ParsedJobDetailsData, string | undefined>`.
 
 Well-documented with eslint-disable comment. A narrower `as never` cast is possible but not critical.
 
@@ -255,7 +258,7 @@ None found.
 3. ~~**Timing-dependent test** in `logging.test.ts` uses fixed 200ms `setTimeout` — flake risk~~ **FIXED** — Replaced `setTimeout(resolve, 200)` with `vi.waitFor()` for reliable async assertions
 4. **`validatePagination`** not tested with all three fields invalid simultaneously (trivial gap)
 5. ~~**`logging.test.ts:52-55`** tests assert `logger.http`/`logger.silly` — methods not in the `Logger` interface (tests Winston internals)~~ **FIXED** — Removed assertions on Winston-internal `logger.http` and `logger.silly` methods
-6. **Integration search tests** bypass the client, only validate fixture server (per code review agent)
+6. ~~**Integration search tests** bypass the client, only validate fixture server (per code review agent)~~ **DONE** — Added `describe('job search — client method integration')` that fetches fixture HTML and verifies parsed results match `SearchResponse` shape
 
 ---
 
@@ -298,7 +301,7 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 
 1. ~~Fix `extractCriteriaValue` early-exit and `toLowerCase()` caching~~ **DONE** (early-exit added; `toLowerCase()` caching not addressed)
 2. ~~Fix `appendStringParam` truthy check~~ **DONE**
-3. Simplify `scrapeShortDescription` / `scrapeSharingImageUrl` verbose guards
+3. ~~Simplify `scrapeShortDescription` / `scrapeSharingImageUrl` verbose guards~~ **DONE** (see 4.2 — now single-line optional chaining)
 4. ~~Delete `queries/index.ts` dead barrel~~ **DONE**
 5. ~~Fix timing-dependent test in `logging.test.ts` (use `vi.waitFor`)~~ **DONE**
 6. ~~Add direct unit test for `mergeJobDetailsData` merge contract~~ **DONE**
@@ -309,11 +312,11 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 8. ~~Fix double `resolveConfig` on `byId` variants~~ **DONE**
 9. ~~Replace `random-useragent` with inline curated User-Agent list~~ **Won't fix** — accepted risk (no CVEs, trivially simple)
 10. ~~Introduce shared `AxiosInstance` in query functions~~ **DONE**
-11. Slim `Logger` interface to remove Winston-specific properties
+11. ~~Slim `Logger` interface to remove Winston-specific properties~~ **DONE**
 
 ### Phase 3 — Refactoring (internal)
 
-12. Split `job-details-query.ts` into parser modules
+12. ~~Split `job-details-query.ts` into parser modules~~ **DONE**
 13. ~~Make `createTurndownService` injectable into `htmlToMarkdown`~~ **DONE** — Removed export; factory is now private module-internal only
 14. ~~Resolve config once at construction, pass `ResolvedClientConfig` to query functions~~ **DONE**
 

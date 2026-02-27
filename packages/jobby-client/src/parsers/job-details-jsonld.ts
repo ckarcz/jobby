@@ -91,7 +91,7 @@ function formatExperienceRequirement(months: number | undefined): string | undef
   return `${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
-/** Extracts salary information from JSON-LD as a display string. */
+/** Extracts salary information from JSON-LD as a raw display string (no locale formatting). */
 function extractSalary(jsonLd: JsonLdJobPosting | undefined): string | undefined {
   const baseSalary = jsonLd?.baseSalary;
   const value = baseSalary?.value;
@@ -99,16 +99,23 @@ function extractSalary(jsonLd: JsonLdJobPosting | undefined): string | undefined
     return undefined;
   }
 
-  const currencySymbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
-  const symbol = baseSalary.currency ? (currencySymbols[baseSalary.currency] ?? baseSalary.currency + ' ') : '';
-  const formatNum = (n: number): string => n.toLocaleString('en-US');
-  const periodLabels: Record<string, string> = { YEAR: '/yr', MONTH: '/mo', HOUR: '/hr' };
-  const periodSuffix = value.unitText ? (periodLabels[value.unitText] ?? '') : '';
+  const parts: string[] = [];
 
   if (value.minValue !== undefined && value.maxValue !== undefined && value.minValue !== value.maxValue) {
-    return `${symbol}${formatNum(value.minValue)} - ${symbol}${formatNum(value.maxValue)}${periodSuffix}`;
+    parts.push(`${value.minValue}-${value.maxValue}`);
+  } else {
+    const single = value.minValue ?? value.maxValue;
+    if (single !== undefined) {
+      parts.push(String(single));
+    }
   }
 
-  const single = value.minValue ?? value.maxValue;
-  return single !== undefined ? `${symbol}${formatNum(single)}${periodSuffix}` : undefined;
+  if (baseSalary.currency) {
+    parts.push(baseSalary.currency);
+  }
+  if (value.unitText) {
+    parts.push(value.unitText);
+  }
+
+  return parts.join(' ') || undefined;
 }

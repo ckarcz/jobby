@@ -103,7 +103,7 @@ export function resolveRetryConfig(config?: RetryConfigInput): RetryConfig {
 - Adding a new field requires changing only the interface and the default — the input type updates automatically
 - This is the standard pattern used by most TS config libraries
 
-#### For complex cases (ClientConfig): — **PLANNED**
+#### For complex cases (ClientConfig): — **FIXED**
 
 The original assessment was that `ResolvedClientConfig` was justified due to structural differences (`logger`, `userAgent` factory resolution, `retry`). However, these differences can be eliminated:
 
@@ -112,6 +112,8 @@ The original assessment was that `ResolvedClientConfig` was justified due to str
 3. **Use `RetryConfig` directly** — Already resolved via `Partial<RetryConfig>` pattern.
 
 With these changes, `ResolvedClientConfig` can be eliminated entirely. `ClientConfig` becomes the full/required type, `Partial<ClientConfig>` is the input type, matching the `RetryConfig` pattern.
+
+**Status: FIXED** — `ResolvedClientConfig` eliminated. Config uses `HttpConfig` internally. Logger removed from config entirely.
 
 ### 2.4 Generic Config Merge Utility — **Nice-to-have**
 

@@ -18,38 +18,38 @@ function isUrl(value: string): boolean {
   }
 }
 
-/** Fetches and outputs job details for a given ID or URL. */
-export async function queryForJobDetails(idOrUrl: string, args: JobDetailsQueryCliArgs): Promise<void> {
+/** Fetches and outputs job details for a resolved target (URL or ID). */
+export async function queryForJobDetails(
+  target: { url?: string; id?: string },
+  args: JobDetailsQueryCliArgs,
+): Promise<void> {
   const logLevel = (args.debug ? 'debug' : args.logLevel) ?? 'silent';
   const client = new JobbyClient({
     logging: { level: logLevel },
   });
 
-  const url = args.url ?? ((!args.id && isUrl(idOrUrl)) ? idOrUrl : undefined);
-  const id = args.id ?? ((!args.url && !isUrl(idOrUrl)) ? idOrUrl : undefined);
-
-  if (url) {
+  if (target.url) {
     if (args.format === 'rawHtml') {
-      const rawHtml = await client.jobs.queryForJobDetailsRawHtmlByUrl(url);
+      const rawHtml = await client.jobs.queryForJobDetailsRawHtmlByUrl(target.url);
       await outputResult(rawHtml, args);
       return;
     }
-    const response = await client.jobs.queryForJobDetailsByUrl(url);
+    const response = await client.jobs.queryForJobDetailsByUrl(target.url);
     await outputResult(response, args);
     return;
   }
 
-  if (!id) {
+  if (!target.id) {
     throw new ValidationError('Could not resolve a job ID or URL from the provided input');
   }
 
   if (args.format === 'rawHtml') {
-    const rawHtml = await client.jobs.queryForJobDetailsRawHtmlById(id);
+    const rawHtml = await client.jobs.queryForJobDetailsRawHtmlById(target.id);
     await outputResult(rawHtml, args);
     return;
   }
 
-  const response = await client.jobs.queryForJobDetailsById(id);
+  const response = await client.jobs.queryForJobDetailsById(target.id);
 
   await outputResult(response, args);
 }
@@ -78,11 +78,18 @@ export function createDetailsCommand(activeCliArgsRef: ActiveCliArgsRef = { curr
     )
     .action(async (idOrUrl: string | undefined, opts: JobDetailsQueryCliArgs) => {
       activeCliArgsRef.current = opts;
-      const value = opts.url ?? opts.id ?? idOrUrl ?? await readFromStream(process.stdin, process.stdin.isTTY);
-      if (!value) {
+      const raw = opts.url ?? opts.id ?? idOrUrl ?? await readFromStream(process.stdin, process.stdin.isTTY);
+      if (!raw) {
         throw new ValidationError('Missing required argument. Provide a job ID or URL as an argument, via --url/--id, or pipe via stdin');
       }
-      await queryForJobDetails(value, opts);
+
+      const resolvedUrl = opts.url ?? ((!opts.id && isUrl(raw)) ? raw : undefined);
+
+      if (resolvedUrl) {
+        await queryForJobDetails({ url: resolvedUrl }, opts);
+      } else {
+        await queryForJobDetails({ id: opts.id ?? raw }, opts);
+      }
     });
 
   command.on('option:no-color', () => {

@@ -73,131 +73,86 @@ describe('queryForJobDetails - details command handler', () => {
   });
 
   describe('URL-based lookups', () => {
-    it('should call queryForJobDetailsByUrl when given a URL', async () => {
-      await queryForJobDetails(testUrl, {});
+    it('should call queryForJobDetailsByUrl when target has url', async () => {
+      await queryForJobDetails({ url: testUrl }, {});
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith(testUrl);
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
     });
 
-    it('should call queryForJobDetailsByUrl when --url flag is set', async () => {
-      await queryForJobDetails(testId, { url: testUrl });
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith(testUrl);
-      expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
-    });
-
-    it('should accept any URL string', async () => {
+    it('should accept any URL string in target', async () => {
       const customUrl = 'https://www.linkedin.com/jobs/view/999999999';
-      await queryForJobDetails(customUrl, {});
+      await queryForJobDetails({ url: customUrl }, {});
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith(customUrl);
     });
   });
 
   describe('ID-based lookups', () => {
-    it('should call queryForJobDetailsById when given a non-URL value', async () => {
-      await queryForJobDetails(testId, {});
-      expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith(testId);
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
-    });
-
-    it('should call queryForJobDetailsById when --id flag is set', async () => {
-      await queryForJobDetails(testUrl, { id: testId });
+    it('should call queryForJobDetailsById when target has id', async () => {
+      await queryForJobDetails({ id: testId }, {});
       expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith(testId);
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
     });
   });
 
-  describe('auto-detection logic', () => {
-    it('should detect value with :// as a URL', async () => {
-      await queryForJobDetails('https://example.com/jobs/view/123', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalled();
-    });
-
-    it('should detect value starting with http as a URL', async () => {
-      await queryForJobDetails('http://linkedin.com/jobs/view/123', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalled();
-    });
-
-    it('should NOT detect ftp:// as a URL', async () => {
-      await queryForJobDetails('ftp://files.example.com/job/123', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
-      expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalled();
-    });
-
-    it('should detect https:// as a URL', async () => {
-      await queryForJobDetails('https://www.linkedin.com/jobs/view/456', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalled();
-    });
-
-    it('should NOT detect plain numbers as a URL', async () => {
-      await queryForJobDetails('9876543210', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalled();
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
-    });
-
-    it('should detect numeric value as an ID', async () => {
-      await queryForJobDetails('4368607271', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalled();
-    });
-
-    it('should let --url flag override positional argument', async () => {
-      await queryForJobDetails('ignored', { url: testUrl });
+  describe('target resolution precedence', () => {
+    it('should prefer url over id when both are provided', async () => {
+      await queryForJobDetails({ url: testUrl, id: testId }, {});
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith(testUrl);
+      expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
     });
 
-    it('should let --id flag override positional argument', async () => {
-      await queryForJobDetails('https://ignored.com', { id: testId });
+    it('should use id when url is undefined', async () => {
+      await queryForJobDetails({ id: testId }, {});
       expect(mockClientInstance.jobs.queryForJobDetailsById).toHaveBeenCalledWith(testId);
     });
 
-    it('should auto-detect URL from positional argument', async () => {
-      await queryForJobDetails('https://linkedin.com/jobs/view/789', {});
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith('https://linkedin.com/jobs/view/789');
-      expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
+    it('should throw ValidationError when neither url nor id is provided', async () => {
+      await expect(queryForJobDetails({}, {})).rejects.toThrow('Could not resolve a job ID or URL');
     });
   });
 
   describe('output formatting', () => {
     it('should output compact JSON by default', async () => {
-      await queryForJobDetails(testUrl, {});
+      await queryForJobDetails({ url: testUrl }, {});
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\n  ');
     });
 
     it('should output pretty-printed JSON when --pretty is set', async () => {
-      await queryForJobDetails(testUrl, { pretty: true });
+      await queryForJobDetails({ url: testUrl }, { pretty: true });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('\n');
     });
 
     it('should apply syntax highlighting by default', async () => {
-      await queryForJobDetails(testUrl, {});
+      await queryForJobDetails({ url: testUrl }, {});
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toContain('\x1b[highlighted]');
     });
 
     it('should skip syntax highlighting when --no-color is set', async () => {
-      await queryForJobDetails(testUrl, { color: false });
+      await queryForJobDetails({ url: testUrl }, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).not.toContain('\x1b[highlighted]');
     });
 
     it('should output null when response is null', async () => {
       mockClientInstance.jobs.queryForJobDetailsByUrl.mockResolvedValue(null);
-      await queryForJobDetails(testUrl, { color: false });
+      await queryForJobDetails({ url: testUrl }, { color: false });
       expect(consoleSpy).toHaveBeenCalledWith('null');
     });
   });
 
   describe('html output mode', () => {
     it('should call queryForJobDetailsRawHtmlByUrl when --format rawHtml with URL', async () => {
-      await queryForJobDetails(testUrl, { format: 'rawHtml' });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml' });
 
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl).toHaveBeenCalledWith(testUrl);
       expect(mockClientInstance.jobs.queryForJobDetailsByUrl).not.toHaveBeenCalled();
     });
 
     it('should call queryForJobDetailsRawHtmlById when --format rawHtml with ID', async () => {
-      await queryForJobDetails(testId, { format: 'rawHtml' });
+      await queryForJobDetails({ id: testId }, { format: 'rawHtml' });
 
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlById).toHaveBeenCalledWith(testId);
       expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
@@ -207,7 +162,7 @@ describe('queryForJobDetails - details command handler', () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue(
         '<div>  <p>  hello  </p>  <!-- comment -->  </div>'
       );
-      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml', color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('<div><p>hello</p></div>');
     });
@@ -216,14 +171,14 @@ describe('queryForJobDetails - details command handler', () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue(
         '<div><p>hello</p></div>'
       );
-      await queryForJobDetails(testUrl, { format: 'rawHtml', pretty: true, color: false });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml', pretty: true, color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       expect(output).toBe('<div>\n  <p>hello</p>\n</div>');
     });
 
     it('should output empty string when html response is empty', async () => {
       mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl.mockResolvedValue('');
-      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml', color: false });
       expect(consoleSpy).toHaveBeenCalledWith('');
     });
   });
@@ -241,35 +196,27 @@ describe('queryForJobDetails - details command handler', () => {
     });
 
     it('should write to file when --file is set', async () => {
-      await queryForJobDetails(testUrl, { file: 'details.json' });
+      await queryForJobDetails({ url: testUrl }, { file: 'details.json' });
       expect(writeFile).toHaveBeenCalledWith('details.json', expect.any(String), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('should write HTML to file when --file and --format rawHtml are set', async () => {
-      await queryForJobDetails(testUrl, { format: 'rawHtml', file: 'details.html' });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml', file: 'details.html' });
       expect(writeFile).toHaveBeenCalledWith('details.html', expect.stringContaining('<html>'), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
   });
 
-  describe('--url and --id precedence', () => {
-    it('should use url when both --url and --id are set', async () => {
-      await queryForJobDetails('ignored', { url: testUrl, id: testId });
-      expect(mockClientInstance.jobs.queryForJobDetailsByUrl).toHaveBeenCalledWith(testUrl);
-      expect(mockClientInstance.jobs.queryForJobDetailsById).not.toHaveBeenCalled();
-    });
-  });
-
   describe('rawHtml format with URL and ID', () => {
     it('should call queryForJobDetailsRawHtmlByUrl when --format rawHtml and URL is provided', async () => {
-      await queryForJobDetails(testUrl, { format: 'rawHtml', color: false });
+      await queryForJobDetails({ url: testUrl }, { format: 'rawHtml', color: false });
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl).toHaveBeenCalledWith(testUrl);
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlById).not.toHaveBeenCalled();
     });
 
     it('should call queryForJobDetailsRawHtmlById when --format rawHtml and ID is provided', async () => {
-      await queryForJobDetails(testId, { format: 'rawHtml', color: false });
+      await queryForJobDetails({ id: testId }, { format: 'rawHtml', color: false });
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlById).toHaveBeenCalledWith(testId);
       expect(mockClientInstance.jobs.queryForJobDetailsRawHtmlByUrl).not.toHaveBeenCalled();
     });
@@ -294,7 +241,7 @@ describe('queryForJobDetails - details command handler', () => {
         },
       });
 
-      await queryForJobDetails(testUrl, { color: false });
+      await queryForJobDetails({ url: testUrl }, { color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output);
       expect(parsed.details.benefitsInfo).toBe('Benefits Eligible: Yes');
@@ -317,7 +264,7 @@ describe('queryForJobDetails - details command handler', () => {
         },
       });
 
-      await queryForJobDetails(testUrl, { color: false, pretty: true });
+      await queryForJobDetails({ url: testUrl }, { color: false, pretty: true });
       const output = consoleSpy.mock.calls[0]![0] as string;
       const parsed = JSON.parse(output);
       // JSON.stringify omits undefined values, so these keys should not be present
@@ -328,28 +275,28 @@ describe('queryForJobDetails - details command handler', () => {
 
   describe('logging configuration', () => {
     it('should use "silent" log level by default', async () => {
-      await queryForJobDetails(testUrl, {});
+      await queryForJobDetails({ url: testUrl }, {});
       expect(MockedJobbyClient).toHaveBeenCalledWith(
         expect.objectContaining({ logging: { level: 'silent' } })
       );
     });
 
     it('should use the specified --log-level value', async () => {
-      await queryForJobDetails(testUrl, { logLevel: 'info' });
+      await queryForJobDetails({ url: testUrl }, { logLevel: 'info' });
       expect(MockedJobbyClient).toHaveBeenCalledWith(
         expect.objectContaining({ logging: { level: 'info' } })
       );
     });
 
     it('should use "debug" log level when --debug flag is set', async () => {
-      await queryForJobDetails(testUrl, { debug: true });
+      await queryForJobDetails({ url: testUrl }, { debug: true });
       expect(MockedJobbyClient).toHaveBeenCalledWith(
         expect.objectContaining({ logging: { level: 'debug' } })
       );
     });
 
     it('should let --debug override --log-level', async () => {
-      await queryForJobDetails(testUrl, { debug: true, logLevel: 'error' });
+      await queryForJobDetails({ url: testUrl }, { debug: true, logLevel: 'error' });
       expect(MockedJobbyClient).toHaveBeenCalledWith(
         expect.objectContaining({ logging: { level: 'debug' } })
       );

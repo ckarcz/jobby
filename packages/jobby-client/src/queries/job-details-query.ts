@@ -9,9 +9,9 @@ import {
 } from '../types/index.js';
 import { handleHttpError, createDetailsRequestHeaders } from '../utils/http.js';
 import { urlWithNoQueryParams, extractJobIdFromUrl, buildCanonicalJobUrl } from '../utils/url.js';
-import type { ParsedJobDetailsData } from '../parsers/types.js';
 import { parseJsonLdToJobDetailsData } from '../parsers/job-details-jsonld.js';
 import { scrapeJobDetailsDataFromDom } from '../parsers/job-details-scraper.js';
+import { mergeJobDetailsData } from '../parsers/merge.js';
 
 /**
  * Context returned by {@link fetchJobDetailsHtml} containing the raw HTML
@@ -146,30 +146,6 @@ export async function executeJobDetailsQueryRawHtmlById(
   logger.info('Raw job details query completed.', { durationMs: Date.now() - startTime });
 
   return html;
-}
-
-/**
- * Merges two parsed detail records, preferring the primary source for each field.
- * Adding a new field to {@link ParsedJobDetailsData} automatically gets merged
- * here — no manual `primary.x ?? fallback.x` line required.
- *
- * @remarks
- * Only `undefined` and `null` values fall through to the fallback.
- * Both mean "not present in this source" and will not overwrite
- * a non-nullish fallback value.
- *
- * @internal Exported for testing only
- */
-export function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: ParsedJobDetailsData): ParsedJobDetailsData {
-  const merged = { ...fallback };
-  for (const key of Object.keys(primary) as (keyof ParsedJobDetailsData)[]) {
-    const value = primary[key];
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive: runtime data may contain null despite types
-    if (value !== undefined && value !== null) {
-      (merged as Record<keyof ParsedJobDetailsData, string | undefined>)[key] = value;
-    }
-  }
-  return merged;
 }
 
 /**

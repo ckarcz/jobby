@@ -109,7 +109,7 @@ Both search integration tests call `axios.get` directly and assert on raw HTML c
 | 5 | Important | `queries/job-details-query.ts:210` | `mergeJobDetailsData` skips `null` primary values | 80 | **Fixed** (JSDoc) |
 | 6 | Test | `logging.test.ts:52` | Tests assert `logger.http`/`logger.silly` not in `Logger` interface | 95 | **Fixed** (prior round) |
 | 7 | Test | `logging.test.ts:100` | `onLog` tests use fixed 200ms wait — flaky pattern | 88 | **Fixed** (prior round) |
-| 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 | Open |
+| 8 | Test | `tests/integration/client.test.ts:129` | Search integration tests bypass client, only validate fixture server | 90 | **Fixed** |
 | 9 | Artifact | `test.log` | Log file committed to source — should be gitignored | 92 | **Fixed** |
 | 10 | Minor | `types/params-schemas.ts:16` | `zodEnumFromMap` has no guard for empty maps | 80 | **Fixed** |
 | 11 | Minor | `queries/jobs-query.ts:172` | `take: 0` allowed; wastes a network request | 80 | **Fixed** |

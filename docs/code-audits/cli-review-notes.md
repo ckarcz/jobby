@@ -30,7 +30,7 @@
 ### 4. Integration test helper `runCli` builds shell command by naive string quoting — **Partially Fixed**
 
 **Confidence: 88**
-**Status: Partially Fixed** — Escaped double quotes in integration test helpers. The fundamental architecture (string-based `exec`) was not changed to `execFile`/`spawn`, but the immediate quoting issue was addressed.
+**Status: Fixed** — `runCli` now uses `execFile` with array args, avoiding shell quoting issues entirely.
 
 ### 5. `search.test.ts` uses `'mid-senior'` as an experience level — not a valid value — **FIXED**
 
@@ -54,6 +54,7 @@
 If an assertion throws before the restoration call, the global registry is left mutated.
 
 **Fix:** Use `afterEach` to ensure restoration always runs.
+**Status: FIXED** — Added `afterEach(() => { registerDefaultFormatters(); })` for guaranteed cleanup.
 
 ### 8. `details.test.ts` — "should output empty string when html response is empty" has a weak assertion
 
@@ -84,10 +85,10 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 | 1 | Critical | `main.test.ts:237,260` | Signal handler tests spy on `.on` instead of `.once` — false negatives | **Fixed** |
 | 2 | Critical | `cli-help.test.ts:83-84`, `cli-output.test.ts:68-69` | Tests assert flags that don't exist in the CLI | **Fixed** |
 | 3 | Important | `details.ts:83-85` | `process.exit(1)` called directly, bypassing centralized error handler | **Fixed** |
-| 4 | Important | `helpers.ts:25-26` | Naive shell string quoting is fragile | **Partially Fixed** |
+| 4 | Important | `helpers.ts:25-26` | Naive shell string quoting is fragile | **Fixed** |
 | 5 | Important | `search.test.ts:97,103` | `'mid-senior'` is not a valid `ExperienceLevel` value | **Fixed** |
 | 6 | Important | `program.ts` / command files | Circular import of `helpConfig` | **Fixed** |
-| 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup | Open |
+| 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup | **Fixed** |
 | 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output | **Fixed** |
 
 ---

@@ -44,6 +44,7 @@
 **File:** `packages/jobby-cli/src/ui/state/filterTypes.ts` lines 95-101
 
 **Fix:** Pre-build a `Record<FilterSectionKey, FilterSectionDef>` at module level and a `Record<FilterSectionKey, number>` index map.
+**Status: FIXED** — Pre-built a `Map<FilterSectionKey, FilterSectionDef>` lookup at module level. `getFilterSection` now does O(1) direct access.
 
 ---
 
@@ -63,5 +64,5 @@
 | I1 | 90 | Important | `useResultsKeyboard` inline `useInput` handler re-registers every keypress | `useResultsKeyboard.ts` | **Fixed** |
 | I2 | 85 | Important | `useContainerHeight` stale closure on `measuredHeight` in effect | `useContainerHeight.ts` | **Fixed** |
 | M1 | 82 | Minor | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts`, `App.tsx` | **Fixed** |
-| M2 | 80 | Minor | `getFilterSection` O(n) linear scan 5-6x per keypress | `filterTypes.ts` | Open |
+| M2 | 80 | Minor | `getFilterSection` O(n) linear scan 5-6x per keypress | `filterTypes.ts` | **Fixed** |
 | N1 | 60 | Informational | `SearchBar` dual `useInput` registration — fragile if extended | `SearchBar.tsx` | **Fixed** |

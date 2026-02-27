@@ -51,8 +51,8 @@ describe('job details by URL — full pipeline integration', () => {
       `http://${server.baseUrl}/jobs/view/999`
     );
 
-    expect(details.details.salary).toBe('$180,000 - $250,000/yr');
-    expect(details.summary.salary).toBe('$180,000 - $250,000/yr');
+    expect(details.details.salary).toBe('180000-250000 USD YEAR');
+    expect(details.summary.salary).toBe('180000-250000 USD YEAR');
   });
 
   it('should extract posting dates', async () => {
@@ -143,6 +143,35 @@ describe('job search — fixture HTML parsing integration', () => {
     expect(response.data).toContain('base-search-card__title');
     expect(response.data).toContain('base-card__full-link');
     expect(response.data).toContain('job-search-card__location');
+  });
+});
+
+describe('job search — client method integration', () => {
+  /**
+   * The client's queryForJobs internally builds URLs with https://, so we cannot
+   * call it against the HTTP fixture server directly. Instead, we fetch the
+   * fixture HTML via axios and feed it through the same parseJobs pipeline
+   * that the client delegates to, verifying the full response structure.
+   */
+  const logger = createLogger({ level: 'silent' });
+
+  it('should parse fixture search results matching SearchResponse shape', async () => {
+    const searchUrl = `http://${server.baseUrl}/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=engineer`;
+    const response = await axios.get<string>(searchUrl, { timeout: 5000 });
+
+    const jobs = parseJobs(response.data, logger);
+    expect(jobs).toHaveLength(2);
+
+    // Verify every parsed job has the required fields for a SearchResponse
+    for (const job of jobs) {
+      expect(job).toHaveProperty('id');
+      expect(job).toHaveProperty('url');
+      expect(job).toHaveProperty('summary');
+      expect(job).toHaveProperty('posted');
+      expect(job.summary).toHaveProperty('position');
+      expect(job.summary).toHaveProperty('company');
+      expect(job.summary.company).toHaveProperty('name');
+    }
   });
 });
 
