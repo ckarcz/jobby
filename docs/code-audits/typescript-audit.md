@@ -115,27 +115,9 @@ With these changes, `ResolvedClientConfig` can be eliminated entirely. `ClientCo
 
 **Status: FIXED** — `ResolvedClientConfig` eliminated. Config uses `HttpConfig` internally. Logger removed from config entirely.
 
-### 2.4 Generic Config Merge Utility — **Nice-to-have**
+### 2.4 ~~Generic Config Merge Utility~~ — **CREATED**
 
-A reusable utility that handles `undefined` override values correctly:
-
-```typescript
-export function resolveWithDefaults<T extends Record<string, unknown>>(
-  defaults: T,
-  overrides?: Partial<T>,
-): T {
-  if (!overrides) return defaults;
-  const result = { ...defaults };
-  for (const key of Object.keys(overrides) as (keyof T)[]) {
-    if (overrides[key] !== undefined) {
-      result[key] = overrides[key] as T[keyof T];
-    }
-  }
-  return result;
-}
-```
-
-This is more correct than a simple spread `{ ...defaults, ...overrides }` because it preserves defaults when the override is `undefined` (respecting `exactOptionalPropertyTypes`). However, a plain spread works fine if callers only pass defined values — which is the case today. The utility becomes worthwhile if you have 3+ config types using this pattern.
+**Status: DONE** — `resolveWithDefaults<T>()` created at `src/utils/config.ts` with unit tests. Refactored `resolveRetryConfig()` to use it. Exported from the public barrel for consumer use. Handles `undefined` overrides correctly (preserves defaults), unlike a plain spread `{ ...defaults, ...overrides }`.
 
 ---
 

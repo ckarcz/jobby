@@ -10,6 +10,15 @@ import { useLatest } from './useLatest.js';
  * text input is active. Text input components register themselves via the
  * TextInputActiveContext ref, so this check works regardless of which panel
  * contains the text input — no need to enumerate panels by name.
+ *
+ * Escape key mapping (all handlers across the TUI):
+ *
+ * | Context          | File                        | Behaviour                                   |
+ * |------------------|-----------------------------|---------------------------------------------|
+ * | details panel    | useKeyboardNavigation.ts    | Focus → results panel                       |
+ * | filters panel    | useKeyboardNavigation.ts    | Close drawer, focus → results panel          |
+ * | results panel    | useResultsKeyboard.ts       | Clear results and blur all panels            |
+ * | search bar       | SearchBar.tsx               | Focus → results (if any), otherwise blur all |
  */
 export function useKeyboardNavigation(): void {
   const { focusedPanel, filterDrawerOpen } = useLayoutState();
@@ -50,5 +59,7 @@ export function useKeyboardNavigation(): void {
     }
   }, []);
 
-  useInput(stableHandler);
+  // isActive: explicitly enabled. Set to false to suppress global shortcuts
+  // (e.g. when a modal/dialog overlay is open).
+  useInput(stableHandler, { isActive: true });
 }

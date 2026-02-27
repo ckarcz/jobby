@@ -302,6 +302,11 @@ describe('executeJobsQuery - job listing search and HTML parsing', () => {
         .rejects.toThrow(ValidationError);
     });
 
+    it('should throw ValidationError when all three pagination fields are invalid', async () => {
+      await expect(executeJobsQuery({}, { start: -1, skip: -1, take: -1 }, defaultConfig, defaultLogger))
+        .rejects.toThrow(ValidationError);
+    });
+
     it('should throw ValidationError for invalid job type', async () => {
       await expect(executeJobsQuery({ jobType: 'invalid' as any }, undefined, defaultConfig, defaultLogger))
         .rejects.toThrow(ValidationError);

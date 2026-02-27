@@ -54,7 +54,7 @@ Not every recommendation deserves equal effort. The table below classifies every
 | 11 | Slim `Logger` interface | **Over-engineered** | YAGNI — one logging impl, not worth abstracting further. |
 | 12 | Split `job-details-query.ts` | **Nice-to-have** | 600 lines of cohesive code; split when naturally adding features. |
 | 13 | Make `createTurndownService` injectable | **Over-engineered** | One consumer, no test benefit. |
-| 15 | Export `JobsResource` / `IJobsResource` | **Nice-to-have** | Only matters if external consumers need to mock it. |
+| 15 | ~~Export `JobsResource` / `IJobsResource`~~ | **Done** | `IJobsResource` interface extracted and exported; `JobbyClient.jobs` typed as `IJobsResource`. |
 | 16 | Narrow `Job.id` / `Job.url` types | **Nice-to-have** | Correct observation, marginal practical impact. |
 
 ### SOLID observations (Section 6)
@@ -68,8 +68,8 @@ Not every recommendation deserves equal effort. The table below classifies every
 
 | # | Gap | Rating | Notes |
 |---|---|---|---|
-| 2 | `parseSalaryText` European formats | **Nice-to-have** | LinkedIn returns US-locale data; speculative unless going international. |
-| 4 | `validatePagination` all-three-invalid | **Over-engineered** | Combinatorial test completionism; individual field validation already tested. |
+| 2 | ~~`parseSalaryText` European formats~~ | **Moot** | Salary parsing removed; raw salary text returned as-is. |
+| 4 | ~~`validatePagination` all-three-invalid~~ | **Done** | Test added in `jobs-query.test.ts` — validates short-circuit on first error. |
 | 6 | Integration tests bypass client | **Nice-to-have** | Narrow gap already covered by unit tests. |
 
 ---
@@ -139,10 +139,10 @@ None. No correctness bugs, security vulnerabilities, or data corruption paths we
 **File:** `src/types/responses.ts:44-54`
 **Status: FIXED** — Narrowed `Job.id` and `Job.url` to `string`. Updated `parseJobs` to filter out records without valid `jobId` or `jobUrl`. Added `ParsingError` guard in `parseJobDetails` for the same guarantee. Removed unnecessary null checks in `enrich.ts`. Updated test fixtures with valid URLs.
 
-#### 3.2.4 `JobsResource` is Private, Non-Exported, and Duplicates Retry Wrapping — **FIXED** (export)
+#### 3.2.4 `JobsResource` is Private, Non-Exported, and Duplicates Retry Wrapping — **FIXED**
 
 **File:** `src/client.ts:10-102`
-**Status: Partially FIXED** — `JobsResource` class is now exported and added to the public barrel (`index.ts`). Consumers can type-check against `client.jobs`. Retry wrapping consolidation remains open (nice-to-have).
+**Status: FIXED** — `JobsResource` class is now exported and added to the public barrel (`index.ts`). Retry wrapping consolidated into a `private retried<T>(fn)` helper method, eliminating the repeated `withRetry(fn, this.retryConfig)` pattern across all 6 query methods.
 
 ---
 
@@ -162,14 +162,13 @@ None. No correctness bugs, security vulnerabilities, or data corruption paths we
 
 **File:** `src/queries/job-details-query.ts`
 
-Combines HTTP transport, JSON-LD extraction, 25 DOM scraping functions, salary parsing, and response assembly. Natural split boundaries exist:
-**Status: FIXED** — Parsers extracted to `src/parsers/` directory: `job-details-jsonld.ts`, `job-details-scraper.ts`, `types.ts`.
+Combines HTTP transport, JSON-LD extraction, 25 DOM scraping functions, and response assembly. Natural split boundaries exist:
+**Status: FIXED** — Parsers extracted to `src/parsers/` directory: `job-details-jsonld.ts`, `job-details-scraper.ts`, `types.ts`. Salary parsing removed; raw salary text returned as-is.
 
 ```
 src/queries/job-details-query.ts     (HTTP, validation, orchestration)
 src/parsers/job-details-jsonld.ts    (extractJsonLd, parseJsonLdToJobDetailsData)
 src/parsers/job-details-scraper.ts   (all scrape* DOM functions)
-src/parsers/salary.ts               (parseSalaryText, formatSalaryDisplay, extractSalary)
 ```
 
 #### 3.3.4 `html.ts` Exports `createTurndownService` While Using Module-Level Singleton — **FIXED**
@@ -254,9 +253,9 @@ None found.
 ### 5.3 Coverage Gaps
 
 1. ~~**`mergeJobDetailsData` merge contract not directly tested** — only implicitly covered via higher-level tests~~ **FIXED** — Exported with `@internal` JSDoc, direct unit tests added (primary wins, fallback used, both undefined)
-2. **`parseSalaryText` not tested with European numeric formats** (comma as decimal separator)
+2. ~~**`parseSalaryText` not tested with European numeric formats** (comma as decimal separator)~~ **MOOT** — Salary parsing removed; raw salary text returned as-is
 3. ~~**Timing-dependent test** in `logging.test.ts` uses fixed 200ms `setTimeout` — flake risk~~ **FIXED** — Replaced `setTimeout(resolve, 200)` with `vi.waitFor()` for reliable async assertions
-4. **`validatePagination`** not tested with all three fields invalid simultaneously (trivial gap)
+4. ~~**`validatePagination`** not tested with all three fields invalid simultaneously (trivial gap)~~ **DONE** — Test added confirming short-circuit on first invalid field
 5. ~~**`logging.test.ts:52-55`** tests assert `logger.http`/`logger.silly` — methods not in the `Logger` interface (tests Winston internals)~~ **FIXED** — Removed assertions on Winston-internal `logger.http` and `logger.silly` methods
 6. ~~**Integration search tests** bypass the client, only validate fixture server (per code review agent)~~ **DONE** — Added `describe('job search — client method integration')` that fetches fixture HTML and verifies parsed results match `SearchResponse` shape
 
@@ -266,7 +265,7 @@ None found.
 
 ### 6.1 Single Responsibility
 
-`job-details-query.ts` has five responsibilities (HTTP, validation, JSON-LD, DOM scraping, salary parsing, response assembly).
+`job-details-query.ts` has four responsibilities (HTTP, validation, JSON-LD, DOM scraping, response assembly).
 
 ### 6.2 Open/Closed
 
@@ -322,7 +321,7 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 
 ### Phase 4 — Public API Changes (semver minor or major)
 
-15. Export `JobsResource` or an `IJobsResource` interface
+15. ~~Export `JobsResource` or an `IJobsResource` interface~~ **DONE** — `IJobsResource` interface extracted, exported, and used as `JobbyClient.jobs` type
 16. Narrow `Job.id` and `Job.url` to `string` on valid parsed records
 
 ---

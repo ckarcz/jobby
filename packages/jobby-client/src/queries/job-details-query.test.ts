@@ -147,15 +147,6 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
     expect(result.summary.company.slug).toBe('test-company');
   });
 
-  it('should extract salary information as display string', async () => {
-    mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
-
-    const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-
-    expect(result.details.salary).toBe('150000-200000 USD YEAR');
-    expect(result.summary.salary).toBe('150000-200000 USD YEAR');
-  });
-
   it('should extract experience and education requirements', async () => {
     mockedGet.mockResolvedValueOnce({ data: mockJobDetailsHtml });
 
@@ -845,89 +836,6 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
     });
   });
 
-  describe('salary display formatting edge cases', () => {
-    it('should display single value when min equals max', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "currency": "USD", "value": { "minValue": 100000, "maxValue": 100000, "unitText": "YEAR" } }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('100000 USD YEAR');
-    });
-
-    it('should use currency code with space for unknown currency', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "currency": "CAD", "value": { "minValue": 80000, "maxValue": 120000, "unitText": "YEAR" } }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('80000-120000 CAD YEAR');
-    });
-
-    it('should display salary without period suffix when period is unknown', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "currency": "USD", "value": { "minValue": 50000, "maxValue": 70000, "unitText": "WEEK" } }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('50000-70000 USD WEEK');
-    });
-
-    it('should display salary without currency when currency is missing', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "value": { "minValue": 50000, "maxValue": 70000, "unitText": "YEAR" } }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBe('50000-70000 YEAR');
-    });
-
-    it('should return undefined salary when baseSalary.value has no min/max', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "currency": "USD", "value": {} }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.summary.salary).toBeUndefined();
-      expect(result.details.salary).toBeUndefined();
-    });
-  });
-
   describe('experience requirement formatting', () => {
     it('should format 0 months as 0 years', async () => {
       const html = `
@@ -1160,37 +1068,6 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
       expect(result.details.salary).toBe('$90,000/yr');
-    });
-  });
-
-  describe('extractSalary from JSON-LD edge cases', () => {
-    it('should return undefined when baseSalary has no value object', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          { "@type": "JobPosting", "baseSalary": { "currency": "USD" } }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBeUndefined();
-    });
-
-    it('should handle baseSalary.value with only minValue', async () => {
-      const html = `
-        <html><head>
-          <script type="application/ld+json">
-          {
-            "@type": "JobPosting",
-            "baseSalary": { "currency": "USD", "value": { "minValue": 75000, "unitText": "YEAR" } }
-          }
-          </script>
-        </head><body></body></html>
-      `;
-      mockedGet.mockResolvedValueOnce({ data: html });
-      const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBe('75000 USD YEAR');
     });
   });
 

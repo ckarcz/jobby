@@ -32,7 +32,7 @@ The jobby-cli TUI is a well-structured application that follows many best practi
 - ~~**1 critical issue** — `JobDetailsPanel` renders all off-screen content (no virtualization)~~ **Fixed** — proper windowing implemented
 - ~~**4 performance issues** — context structure causing unnecessary re-renders, missing memoization, measurement on every render, unmount/remount pattern~~ **All fixed** — context split into 5 (Layout, Search, Selection, JobDetails, Dispatch), `useContainerHeight` dependency array added, FilterDrawer uses `display="none"`, leaf components memoized
 - ~~**4 job-details performance issues** — Spinner in allLines driving 80ms re-renders, NavigationContext coupling, stale closure in useDetailsKeyboard, unnecessary CLEAR_JOB_DETAILS dispatches~~ **All fixed** — Spinner moved outside scrollable content, Selection/JobDetails contexts split, ref-based stable handler, conditional dispatch
-- **3 React anti-patterns** — stale ref, missing `isActive` on `useInput`, derived state opportunities
+- ~~**3 React anti-patterns** — stale ref, missing `isActive` on `useInput`, derived state opportunities~~ **Fixed** — `isActive` added to global `useInput` handler
 - **3 Ink-specific issues** — no use of `<Static>`, keyboard event propagation, custom vs @inkjs/ui filter inputs (resolved — kept custom with dedicated memoized components)
 - **2 dead code items** — `useSlideAnimation` hook, `Modal` component
 - **Several minor improvements** — responsive filter width, key prop reset pattern, composition optimizations
@@ -55,11 +55,11 @@ Not every audit finding carries equal weight. The table below classifies each re
 | 5.1 | Stale `draftRef` in `SearchBar` | **Pragmatic** | Real bug showing wrong values after external state reset; fixed. |
 | 6.1 | No use of `<Static>` | **Over-engineered** | Recommends a pattern for features that don't exist yet. |
 | 6.2 | Ink has no `stopPropagation` | **Pragmatic** | Real keyboard conflict bug with clever ref-based fix; fixed. |
-| 6.3 | `useInput` missing `isActive` on global handler | **Nice-to-have** | Correctly documented as intentionally global. |
+| 6.3 | ~~`useInput` missing `isActive` on global handler~~ | **Fixed** | `isActive: true` added explicitly with comment documenting when to disable. |
 | 7.1 | `AppState` 21 flat fields | **Pragmatic** | Correctly concluded flat + context slicing is the right call. |
 | 7.2 | Dispatch bundled with state context | **Pragmatic** | Standard React pattern; fixed. |
 | 8.1 | Keyboard shortcut conflicts | **Pragmatic** | Same root cause as 6.2; fixed. |
-| 8.2 | Escape key mapping table | **Nice-to-have** | `grep` works fine for 3 escape handlers at this scale. |
+| 8.2 | ~~Escape key mapping table~~ | **Done** | Mapping table added as JSDoc comment in `useKeyboardNavigation.ts`. |
 | 9.1-9.2 | Dead code removal | **Pragmatic** | Dead code is dead code; removed. |
 | 10.1-10.2 | Fixed width / key prop reset | **Pragmatic** | Correctly kept as-is; intentional design decisions. |
 | 10.3 | `VIRTUAL_LIST_RESERVED_LINES` undocumented | **Pragmatic** | Magic numbers need comments; documented. |
@@ -381,25 +381,12 @@ Components that register: `SearchBar` (when focused) and `FilterTextInput` (when
 - Adding a new text input anywhere just requires calling `useTextInputRegistration(focused)`
 - No panel identity enumeration needed
 
-### 6.3 `useInput` Missing `isActive` on Global Handler
+### 6.3 ~~`useInput` Missing `isActive` on Global Handler~~ — **FIXED**
 
 **File:** `src/ui/hooks/useKeyboardNavigation.ts`
-**Severity:** Low
+**Severity:** Low — **Resolved**
 
-```typescript
-useInput((input, key) => {
-  // Always active — no isActive option
-  ...
-});
-```
-
-Ink's documentation strongly recommends using the `isActive` option when multiple `useInput` hooks coexist. While this global handler intentionally needs to run always (it handles cross-panel navigation), the other keyboard hooks correctly use conditional guards:
-
-- `useResultsKeyboard`: guarded by `panelFocused`
-- `useDetailsKeyboard`: guarded by `panelFocused`
-- `useFilterKeyboard`: guarded by `{ isActive: focused }`
-
-The global handler in `useKeyboardNavigation` is the only one that runs unconditionally. This is acceptable for a global shortcut handler, but the `inTextInput` guard should be robust (see 6.2 above).
+**Status: FIXED** — `isActive: true` added explicitly with a comment documenting when to set it to `false` (e.g., modal/dialog overlay). The other keyboard hooks already use conditional guards (`panelFocused`, `{ isActive: focused }`). The global handler now explicitly declares its active state rather than relying on the implicit default.
 
 ### 6.4 Custom Filter Input Components vs `@inkjs/ui`
 
@@ -452,16 +439,18 @@ Resolved by the same `TextInputActiveContext` mechanism described in 6.2. The `\
 - On text filter sections and the search bar, shortcuts are correctly suppressed
 - New text inputs just need `useTextInputRegistration(focused)` — no global checks to update
 
-### 8.2 Escape Key Handling Across Panels
+### 8.2 ~~Escape Key Handling Across Panels~~ — **Documented**
 
-**Severity:** Informational
+**Severity:** Informational — **Resolved**
 
-`Escape` is handled in three places:
-1. `useKeyboardNavigation` — when details focused → focus results; when filters focused → close drawer + focus results
-2. `SearchBar` — when focused → navigate back or blur
-3. `useResultsKeyboard` — clears results + blurs all
+**Status: DONE** — An Escape key mapping table has been added as a JSDoc comment in `useKeyboardNavigation.ts`, documenting all handlers:
 
-This distributed handling is correct but could benefit from a single, documented key mapping table (perhaps in a comment or constants file) to prevent future conflicts.
+| Context | File | Behaviour |
+|---------|------|-----------|
+| details panel | useKeyboardNavigation.ts | Focus → results panel |
+| filters panel | useKeyboardNavigation.ts | Close drawer, focus → results panel |
+| results panel | useResultsKeyboard.ts | Clear results and blur all panels |
+| search bar | SearchBar.tsx | Focus → results (if any), otherwise blur all |
 
 ---
 

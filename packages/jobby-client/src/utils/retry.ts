@@ -1,5 +1,6 @@
 import { JobbyError, RateLimitError } from '../types/errors.js';
 import { delay } from './delay.js';
+import { resolveWithDefaults } from './config.js';
 
 /** Configuration for retry behavior. */
 export interface RetryConfig {
@@ -19,11 +20,7 @@ export const DEFAULT_RETRY_CONFIG = {
 
 /** Resolves retry config with defaults. */
 export function resolveRetryConfig(config?: Partial<RetryConfig>): RetryConfig {
-  return {
-    maxRetries: config?.maxRetries ?? DEFAULT_RETRY_CONFIG.maxRetries,
-    initialDelayMs: config?.initialDelayMs ?? DEFAULT_RETRY_CONFIG.initialDelayMs,
-    maxDelayMs: config?.maxDelayMs ?? DEFAULT_RETRY_CONFIG.maxDelayMs,
-  };
+  return resolveWithDefaults<RetryConfig>(config, DEFAULT_RETRY_CONFIG);
 }
 
 /**

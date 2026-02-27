@@ -45,7 +45,7 @@ Not every audit finding carries equal weight in practice. The table below classi
 | Deduplicate `parse.test.ts` tests | Nice-to-have | **FIXED** — Deduplicated |
 | `[url]` assertion false positive | Nice-to-have | **FIXED** — Updated to `[id-or-url]` |
 | `details.test.ts` empty `rawHtml` assertion | Nice-to-have | Strengthen when in the file |
-| `--file` path error tests | Over-engineered | Testing OS-level errors is fragile and platform-dependent |
+| ~~`--file` path error tests~~ | **Done** | ENOENT/EACCES propagation tests added to `details.test.ts` (mocked writeFile, not real FS) |
 | `fetchDetailsInBatches` with `delayMs > 0` | Over-engineered | Testing `setTimeout` is testing Node.js, not the app |
 | Stdin piping end-to-end test | Nice-to-have | Painful to mock in CI; unit tests cover the logic. CLI integration tests removed — moot. |
 | SRP — `queryForJobDetails` does too much | Over-engineered | A 30-line CLI handler orchestrating "resolve, call, format" is standard and readable |
@@ -162,7 +162,7 @@ Node 22 supports JSON import assertions natively. `createRequire` is a workaroun
 ### 5.2 Important Untested Code Paths
 
 - ~~`--no-color` on actual data output (search/details results)~~ — **DONE** (color.test.ts — removed with CLI integration tests)
-- `--file` path errors (permission denied, directory not found) end-to-end
+- ~~`--file` path errors (permission denied, directory not found) end-to-end~~ **DONE** — ENOENT/EACCES propagation tests added to `details.test.ts`
 - ~~`details` command with piped stdin end-to-end~~ — **Moot** (CLI integration tests removed)
 - `queryForJobs` when response is `null` and `--detailed` is set (potential runtime exception at `response.results.length`)
 - ~~`createUiCommand` TTY guard (non-TUI logic, should be covered)~~ — **DONE** (ui.test.ts — removed with CLI integration tests)

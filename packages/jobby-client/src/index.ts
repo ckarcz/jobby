@@ -1,5 +1,5 @@
 // Main client
-export { JobbyClient, JobsResource } from './client.js';
+export { JobbyClient, JobsResource, type IJobsResource } from './client.js';
 
 // Configuration
 export {
@@ -61,4 +61,4 @@ export {
 export { JobSearchBuilder } from './builders/index.js';
 
 // Utilities
-export { delay, type RetryConfig, DEFAULT_RETRY_CONFIG } from './utils/index.js';
+export { delay, resolveWithDefaults, type RetryConfig, DEFAULT_RETRY_CONFIG } from './utils/index.js';

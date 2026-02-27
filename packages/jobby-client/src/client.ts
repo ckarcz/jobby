@@ -6,8 +6,19 @@ import { executeJobDetailsQueryByUrl, executeJobDetailsQueryRawHtmlByUrl, execut
 import { JobSearchBuilder } from './builders/job-search-builder.js';
 import { type RetryConfig, resolveRetryConfig, withRetry } from './utils/retry.js';
 
+/** Public contract for the jobs resource, enabling test mocking without the concrete class. */
+export interface IJobsResource {
+  queryForJobs(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<SearchResponse<Job>>;
+  queryForJobDetailsByUrl(jobUrl: string): Promise<JobDetails>;
+  queryForJobDetailsById(jobId: string): Promise<JobDetails>;
+  queryForJobsRawHtml(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<string>;
+  queryForJobDetailsRawHtmlByUrl(jobUrl: string): Promise<string>;
+  queryForJobDetailsRawHtmlById(jobId: string): Promise<string>;
+  createSearch(): JobSearchBuilder;
+}
+
 /** Jobs resource providing search and details methods. */
-export class JobsResource {
+export class JobsResource implements IJobsResource {
   private readonly config: HttpConfig;
   private readonly logger: Logger;
   private readonly retryConfig: RetryConfig;
@@ -16,6 +27,11 @@ export class JobsResource {
     this.config = config;
     this.logger = logger;
     this.retryConfig = retryConfig;
+  }
+
+  /** Wraps a query function with the configured retry policy. */
+  private retried<T>(fn: () => Promise<T>): Promise<T> {
+    return withRetry(fn, this.retryConfig);
   }
 
   /**
@@ -32,7 +48,7 @@ export class JobsResource {
    * ```
    */
   async queryForJobs(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<SearchResponse<Job>> {
-    return withRetry(() => executeJobsQuery(searchParams, paginationParams, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobsQuery(searchParams, paginationParams, this.config, this.logger));
   }
 
   /**
@@ -45,7 +61,7 @@ export class JobsResource {
    * ```
    */
   async queryForJobDetailsByUrl(jobUrl: string): Promise<JobDetails> {
-    return withRetry(() => executeJobDetailsQueryByUrl(jobUrl, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobDetailsQueryByUrl(jobUrl, this.config, this.logger));
   }
 
   /**
@@ -58,28 +74,28 @@ export class JobsResource {
    * ```
    */
   async queryForJobDetailsById(jobId: string): Promise<JobDetails> {
-    return withRetry(() => executeJobDetailsQueryById(jobId, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobDetailsQueryById(jobId, this.config, this.logger));
   }
 
   /**
    * Search for jobs and return the raw HTML response.
    */
   async queryForJobsRawHtml(searchParams: JobSearchParams, paginationParams?: PaginationParams): Promise<string> {
-    return withRetry(() => executeJobsQueryRawHtml(searchParams, paginationParams, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobsQueryRawHtml(searchParams, paginationParams, this.config, this.logger));
   }
 
   /**
    * Get the raw HTML response for a specific job posting by URL.
    */
   async queryForJobDetailsRawHtmlByUrl(jobUrl: string): Promise<string> {
-    return withRetry(() => executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobDetailsQueryRawHtmlByUrl(jobUrl, this.config, this.logger));
   }
 
   /**
    * Get the raw HTML response for a specific job posting by job ID.
    */
   async queryForJobDetailsRawHtmlById(jobId: string): Promise<string> {
-    return withRetry(() => executeJobDetailsQueryRawHtmlById(jobId, this.config, this.logger), this.retryConfig);
+    return this.retried(() => executeJobDetailsQueryRawHtmlById(jobId, this.config, this.logger));
   }
 
   /**
@@ -138,7 +154,7 @@ export class JobbyClient {
   /**
    * Jobs resource for searching and retrieving job details.
    */
-  public readonly jobs: JobsResource;
+  public readonly jobs: IJobsResource;
 
   private readonly httpConfig: HttpConfig;
 

@@ -1,6 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Job, JobDetails } from 'jobby-client';
+import { delay } from 'jobby-client';
 import { fetchDetailsInBatches } from './enrich.js';
+
+vi.mock('jobby-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('jobby-client')>();
+  return { ...actual, delay: vi.fn() };
+});
 
 function makeJob(overrides: Partial<Job> = {}): Job {
   return {
@@ -71,6 +77,10 @@ const mockDetails: JobDetails = {
 };
 
 describe('fetchDetailsInBatches', () => {
+  beforeEach(() => {
+    vi.mocked(delay).mockReset();
+  });
+
   it('should return empty array for empty input', async () => {
     const fetchFn = vi.fn();
     const result = await fetchDetailsInBatches([], fetchFn);
@@ -207,6 +217,28 @@ describe('fetchDetailsInBatches', () => {
     await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 3, delayMs: 0, onWarn });
 
     expect(onWarn).toHaveBeenCalledTimes(3);
+  });
+
+  it('should delay between batches when delayMs > 0', async () => {
+    const mockedDelay = vi.mocked(delay);
+    const jobs = [makeJob({ id: '1' }), makeJob({ id: '2' }), makeJob({ id: '3' })];
+    const fetchFn = vi.fn().mockResolvedValue(mockDetails);
+
+    await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 1, delayMs: 500 });
+
+    // delay should be called between each batch (not before the first)
+    expect(mockedDelay).toHaveBeenCalledTimes(2);
+    expect(mockedDelay).toHaveBeenCalledWith(500);
+  });
+
+  it('should not delay before the first batch', async () => {
+    const mockedDelay = vi.mocked(delay);
+    const jobs = [makeJob({ id: '1' })];
+    const fetchFn = vi.fn().mockResolvedValue(mockDetails);
+
+    await fetchDetailsInBatches(jobs, fetchFn, { batchSize: 1, delayMs: 1000 });
+
+    expect(mockedDelay).not.toHaveBeenCalled();
   });
 
   it('should not call onWarn for successful fetches', async () => {

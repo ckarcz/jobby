@@ -206,6 +206,22 @@ describe('queryForJobDetails - details command handler', () => {
       expect(writeFile).toHaveBeenCalledWith('details.html', expect.stringContaining('<html>'), 'utf-8');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
+
+    it('should propagate ENOENT error when directory does not exist', async () => {
+      const error = Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' });
+      vi.mocked(writeFile).mockRejectedValueOnce(error);
+
+      await expect(queryForJobDetails({ url: testUrl }, { file: '/nonexistent/dir/out.json' }))
+        .rejects.toThrow('ENOENT');
+    });
+
+    it('should propagate EACCES error when permission is denied', async () => {
+      const error = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+      vi.mocked(writeFile).mockRejectedValueOnce(error);
+
+      await expect(queryForJobDetails({ url: testUrl }, { file: '/protected/out.json' }))
+        .rejects.toThrow('EACCES');
+    });
   });
 
   describe('rawHtml format with URL and ID', () => {

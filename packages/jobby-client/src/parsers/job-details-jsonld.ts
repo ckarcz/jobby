@@ -60,7 +60,7 @@ export function parseJsonLdToJobDetailsData($: ReturnType<typeof cheerio.load>, 
     companyPage: urlWithNoQueryParams(jsonLd?.hiringOrganization?.sameAs),
     companyLogo: jsonLd?.hiringOrganization?.logo ?? undefined,
     companySlug: extractCompanySlug(urlWithNoQueryParams(jsonLd?.hiringOrganization?.sameAs)),
-    salary: extractSalary(jsonLd),
+    salary: undefined,
     postedDate: jsonLd?.datePosted ?? undefined,
     postedTimeAgo: undefined,
     expirationDate: jsonLd?.validThrough ?? undefined,
@@ -89,33 +89,4 @@ function formatExperienceRequirement(months: number | undefined): string | undef
   }
   const years = Math.round(months / 12);
   return `${years} ${years === 1 ? 'year' : 'years'}`;
-}
-
-/** Extracts salary information from JSON-LD as a raw display string (no locale formatting). */
-function extractSalary(jsonLd: JsonLdJobPosting | undefined): string | undefined {
-  const baseSalary = jsonLd?.baseSalary;
-  const value = baseSalary?.value;
-  if (!value || (value.minValue === undefined && value.maxValue === undefined)) {
-    return undefined;
-  }
-
-  const parts: string[] = [];
-
-  if (value.minValue !== undefined && value.maxValue !== undefined && value.minValue !== value.maxValue) {
-    parts.push(`${value.minValue}-${value.maxValue}`);
-  } else {
-    const single = value.minValue ?? value.maxValue;
-    if (single !== undefined) {
-      parts.push(String(single));
-    }
-  }
-
-  if (baseSalary.currency) {
-    parts.push(baseSalary.currency);
-  }
-  if (value.unitText) {
-    parts.push(value.unitText);
-  }
-
-  return parts.join(' ') || undefined;
 }
