@@ -294,7 +294,7 @@ function buildQueryUrl(baseUrl: string, searchParams: JobSearchParams, start: nu
 function parseJobs(jobData: string, logger: Logger): Job[] {
   try {
     const $ = cheerio.load(jobData);
-    const jobs = $('li.base-card');
+    const jobs = $('.base-card');
 
     logger.verbose(`Parsing ${jobs.length} job element(s).`);
 
@@ -314,7 +314,7 @@ function parseJobs(jobData: string, logger: Logger): Job[] {
           const position = job.find('.base-search-card__title').text().trim() || undefined;
           const location = job.find('.job-search-card__location').text().trim() || undefined;
           const company = job.find('.base-search-card__subtitle').text().trim() || undefined;
-          const companyPage = urlWithNoQueryParams(job.find('.base-search-card__subtitle > a').attr('href') ?? undefined);
+          const companyPage = urlWithNoQueryParams(job.find('.base-search-card__subtitle a').attr('href') ?? undefined);
           const companySlug = extractCompanySlug(companyPage);
           const companyLogo = job.find('.artdeco-entity-image').attr('data-delayed-url') ?? undefined;
           const salary = job.find('.job-search-card__salary-info').text().trim().replace(/\s+/g, ' ') || undefined;

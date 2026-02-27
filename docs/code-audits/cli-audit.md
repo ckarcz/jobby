@@ -118,9 +118,10 @@ The action handler resolves `value` from opts/args/stdin, then passes both `valu
 
 **Fix:** Simplify `queryForJobDetails` to receive only the resolved value.
 
-#### `program.ts` Uses `createRequire` for `package.json`
+#### `program.ts` Uses `createRequire` for `package.json` — **FIXED**
 
 **File:** `src/program.ts:4,18-19`
+**Status: FIXED** — Replaced `createRequire` with `import packageJson from '../package.json' with { type: 'json' }`. Removed `node:module` import.
 
 Node 22 supports JSON import assertions natively. `createRequire` is a workaround from an older ESM era.
 

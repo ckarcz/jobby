@@ -218,8 +218,7 @@ describe('queryForJobDetails - details command handler', () => {
       );
       await queryForJobDetails(testUrl, { format: 'rawHtml', pretty: true, color: false });
       const output = consoleSpy.mock.calls[0]![0] as string;
-      expect(output).toContain('\n');
-      expect(output).toContain('  <p>');
+      expect(output).toBe('<div>\n  <p>hello</p>\n</div>');
     });
 
     it('should output empty string when html response is empty', async () => {

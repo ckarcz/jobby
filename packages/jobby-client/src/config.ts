@@ -1,6 +1,6 @@
 import type { LoggingConfig } from './logging.js';
 import { resolveUserAgent } from './utils/http.js';
-import type { RetryConfig } from './utils/retry.js';
+import { type RetryConfig, DEFAULT_RETRY_CONFIG } from './utils/retry.js';
 
 /** Configuration options for the LinkedIn Jobs client. */
 export interface ClientConfig {
@@ -53,6 +53,7 @@ export interface HttpConfig {
 export const DEFAULT_CLIENT_CONFIG = {
   baseUrl: 'www.linkedin.com',
   timeout: 10_000,
+  retry: DEFAULT_RETRY_CONFIG,
 } as const satisfies Partial<ClientConfig>;
 
 /**

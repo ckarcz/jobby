@@ -35,10 +35,11 @@
 **Confidence: 83**
 **Status: MOOT** — The `parseSalaryText` function has been removed from the codebase. Salary parsing is no longer done via this approach.
 
-### 5. `mergeJobDetailsData` uses `any` cast — fragile with nullable fields
+### 5. `mergeJobDetailsData` uses `any` cast — fragile with nullable fields — **FIXED**
 
 **Confidence: 80**
 **File:** `packages/jobby-client/src/queries/job-details-query.ts`, lines 210-219
+**Status: FIXED** — Added `value !== null` check alongside the existing `value !== undefined` check. Updated JSDoc to document that both `undefined` and `null` fall through to fallback.
 
 The `value !== undefined` check means `null` primary values will be overwritten by fallback values. Currently safe but fragile for future changes.
 

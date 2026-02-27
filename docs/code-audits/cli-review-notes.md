@@ -68,9 +68,10 @@ The assertion only verifies that `console.log` was called, not what it was calle
 
 ## Behavioral Inconsistency
 
-### `search` command silently drops empty `rawHtml` responses; `details` does not
+### `search` command silently drops empty `rawHtml` responses; `details` does not — **FIXED**
 
 **Confidence: 82**
+**Status: FIXED** — Removed the `if (rawHtml)` guard in `search.ts`. Now calls `outputResult` unconditionally, matching `details.ts` behavior.
 
 In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `outputResult` is called unconditionally. This inconsistency could confuse users piping output.
 
@@ -87,7 +88,7 @@ In `search.ts`, empty/falsy rawHtml is silently swallowed. In `details.ts`, `out
 | 5 | Important | `search.test.ts:97,103` | `'mid-senior'` is not a valid `ExperienceLevel` value | **Fixed** |
 | 6 | Important | `program.ts` / command files | Circular import of `helpConfig` | **Fixed** |
 | 7 | Quality | `formatter.test.ts:36-62` | Global registry mutated without guaranteed cleanup | Open |
-| 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output | Open |
+| 8 | Quality | `details.test.ts:224-228` | Weak assertion on empty rawHtml output | **Fixed** |
 
 ---
 

@@ -257,9 +257,11 @@ All type-only imports use `import type` consistently. The `verbatimModuleSyntax:
 
 `ResolvedClientConfig` and `ResolvedRetryConfig` are not exported from the public API. Correct.
 
-### 8.3 Barrel Export Consolidation — **Nice-to-have**
+### 8.3 Barrel Export Consolidation — **FIXED**
 
 Two separate export lines from `./utils/index.js` could be merged into one. Purely cosmetic.
+
+**Status: FIXED** — Merged into single export line: `export { delay, type RetryConfig, DEFAULT_RETRY_CONFIG } from './utils/index.js';`
 
 ---
 
@@ -303,9 +305,11 @@ All critical strict options are enabled. The redundant individual strict options
 
 Key rules like `no-explicit-any`, `explicit-function-return-type`, `consistent-type-imports`, and `switch-exhaustiveness-check` are all enabled. This is a well-tuned ruleset.
 
-### 11.3 DOM Library Inclusion — **Nice-to-have**
+### 11.3 DOM Library Inclusion — **FIXED**
 
 The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by `jobby-cli` (React/Ink). Moving it to the CLI's local tsconfig would avoid DOM types in the client and MCP packages, but the practical impact is negligible — it just means `document` and `window` types exist in scope without being used.
+
+**Status: FIXED** — Removed `"DOM"` from `tsconfig.base.json` lib. Added `"lib": ["ES2022", "DOM"]` to both the CLI and client package tsconfigs (client also uses DOM types via TurndownService).
 
 ---
 
@@ -321,8 +325,8 @@ The base `tsconfig` includes `"lib": ["ES2022", "DOM"]`. `DOM` is only needed by
 | 7.2 | Convert `ErrorCode` enum to const object | **Nice-to-have** | Low | `errors.ts` | **FIXED** |
 | 7.3 | `readonly` on CHOICES arrays | **Nice-to-have** | Trivial | `params.ts` | **FIXED** |
 | 6.3 | Type-safe Zod error narrowing in `toValidationError` | **Nice-to-have** | Trivial | `normalize.ts` | **FIXED** |
-| 11.3 | Move DOM lib to CLI-only tsconfig | **Nice-to-have** | Trivial | tsconfig files |
-| 8.3 | Consolidate duplicate barrel export lines | **Nice-to-have** | Trivial | `index.ts` |
+| 11.3 | Move DOM lib to CLI-only tsconfig | **Nice-to-have** | Trivial | tsconfig files | **FIXED** |
+| 8.3 | Consolidate duplicate barrel export lines | **Nice-to-have** | Trivial | `index.ts` | **FIXED** |
 
 ---
 

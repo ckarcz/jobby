@@ -26,7 +26,6 @@
 - Asynchronously check if installed packages are needed and being used. If not alert the user of the unncessary package and recommended removing it.
 - Asynchronously check if installed packages are outdated. If so updated them if the updates are compatible, safe, and are LTS. Alert the user if you are unsure.
 - After finishing development, always asynchronously run and check the build, unit tests, and the linter. Always run all three. In parallel.
-- Run integration tests if you feel the changes were big enough to warrant them
 - See docs\development.md on more important about development
 
 ## NPM Scripts

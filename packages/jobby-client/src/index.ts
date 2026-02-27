@@ -59,5 +59,4 @@ export {
 export { JobSearchBuilder } from './builders/index.js';
 
 // Utilities
-export { delay } from './utils/index.js';
-export { type RetryConfig } from './utils/index.js';
+export { delay, type RetryConfig, DEFAULT_RETRY_CONFIG } from './utils/index.js';

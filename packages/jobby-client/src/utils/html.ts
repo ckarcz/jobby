@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
 
 /** Creates a configured TurndownService instance with custom rules for job descriptions. */
-export function createTurndownService(): TurndownService {
+function createTurndownService(): TurndownService {
   const service = new TurndownService({
     headingStyle: 'atx',
     bulletListMarker: '-',

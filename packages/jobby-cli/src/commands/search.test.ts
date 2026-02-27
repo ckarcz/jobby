@@ -260,10 +260,10 @@ describe('queryForJobs - search command handler', () => {
       expect(output).toContain('Raw HTML');
     });
 
-    it('should not output anything when html response is empty', async () => {
+    it('should output empty string when html response is empty', async () => {
       mockClientInstance.jobs.queryForJobsRawHtml.mockResolvedValue('');
-      await queryForJobs({ format: 'rawHtml' });
-      expect(consoleSpy).not.toHaveBeenCalled();
+      await queryForJobs({ format: 'rawHtml', color: false });
+      expect(consoleSpy).toHaveBeenCalledWith('');
     });
 
     it('should pass search and pagination params to queryForJobsRawHtml', async () => {
@@ -409,10 +409,10 @@ describe('queryForJobs - search command handler', () => {
   });
 
   describe('rawHtml edge cases', () => {
-    it('should not output anything when rawHtml response is empty string', async () => {
+    it('should output empty string when rawHtml response is empty string', async () => {
       mockClientInstance.jobs.queryForJobsRawHtml.mockResolvedValue('');
-      await queryForJobs({ format: 'rawHtml' });
-      expect(consoleSpy).not.toHaveBeenCalled();
+      await queryForJobs({ format: 'rawHtml', color: false });
+      expect(consoleSpy).toHaveBeenCalledWith('');
     });
   });
 

@@ -84,8 +84,12 @@ describe('getFilterSection', () => {
     expect(section.title).toBe('Location');
   });
 
-  it('should throw for an unknown key', () => {
-    expect(() => getFilterSection('unknown' as never)).toThrow('Unknown filter section key');
+  it('should return a valid section for every key in SECTION_ORDER', () => {
+    for (const key of SECTION_ORDER) {
+      const section = getFilterSection(key);
+      expect(section).toBeDefined();
+      expect(section.key).toBe(key);
+    }
   });
 });
 

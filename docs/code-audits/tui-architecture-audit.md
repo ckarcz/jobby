@@ -141,10 +141,11 @@ The `cursors` dependency is an object from the filter draft reducer. On every ar
 **Severity:** Low
 **Status: FIXED** — Removed `maxWidth` and `maxHeight` from `AppState`, `initialState`, `SET_TERMINAL_SIZE` reducer case, and `LayoutState`. Replaced all usages in `Layout.tsx` and `FilterDrawer.tsx` with `terminalWidth`/`terminalHeight` directly.
 
-### 5.2 `getFilterSection` Uses `Array.find` — O(n) Linear Scan
+### 5.2 `getFilterSection` Uses `Array.find` — O(n) Linear Scan — **FIXED**
 
 **File:** `packages/jobby-cli/src/ui/state/filterTypes.ts`
 **Severity:** Low
+**Status: FIXED** — Pre-built a `Record<FilterSectionKey, FilterSectionDef>` lookup map at module level. `getFilterSection` now does O(1) direct property access.
 
 `getFilterSection` does a linear scan of `SECTION_ORDER` on each call, invoked 5-6 times per keypress in the filter drawer.
 
@@ -261,7 +262,7 @@ Step 3–4 could be optimized — only the active section needs its cursor prop 
 | 4.2 | Low-Medium | `useKeyboardNavigation` inline handler re-registers on layout changes | `useKeyboardNavigation.ts:17` | **Fixed** |
 | 4.3 | Low-Medium | `sectionElements` memo invalidates on every filter navigation keystroke | `FilterDrawer.tsx:57-135` | Open |
 | 5.1 | Low | `maxWidth`/`maxHeight` always equal terminal dimensions — redundant state | `types.ts`, `reducer.ts`, `context.ts` | **Fixed** |
-| 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | Open |
+| 5.2 | Low | `getFilterSection` O(n) linear scan per keypress | `filterTypes.ts` | **Fixed** |
 
 ---
 

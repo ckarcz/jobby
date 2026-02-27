@@ -91,13 +91,14 @@ export const filterSections: FilterSectionDef[] = [
   { key: 'companyId', title: 'Company ID', type: 'text', options: [] },
 ];
 
+/** Pre-built lookup map for O(1) section access by key. */
+const filterSectionMap: Record<FilterSectionKey, FilterSectionDef> = Object.fromEntries(
+  filterSections.map(s => [s.key, s]),
+) as Record<FilterSectionKey, FilterSectionDef>;
+
 /** Look up a section definition by key. */
 export function getFilterSection(key: FilterSectionKey): FilterSectionDef {
-  const section = filterSections.find(s => s.key === key);
-  if (!section) {
-    throw new Error(`Unknown filter section key: ${key}`);
-  }
-  return section;
+  return filterSectionMap[key];
 }
 
 /** Count how many filters are actively set. */

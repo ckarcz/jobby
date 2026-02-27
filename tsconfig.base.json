@@ -6,7 +6,7 @@
     "target": "ES2022",                           // JavaScript version to compile to
     "module": "NodeNext",                         // Module system (NodeNext = ESM + CJS hybrid)
     "moduleResolution": "NodeNext",               // How TypeScript resolves module imports
-    "lib": ["ES2022", "DOM"],                            // Built-in type definitions (remove DOM if not needed)
+    "lib": ["ES2022"],                                    // Built-in type definitions
 
     // ============================================
     // STRICT TYPE CHECKING

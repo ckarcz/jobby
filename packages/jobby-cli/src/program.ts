@@ -1,15 +1,12 @@
 import { Command, Option } from 'commander';
 import chalk from 'chalk';
-import { createRequire } from 'node:module';
+import packageJson from '../package.json' with { type: 'json' };
 import { createSearchCommand } from './commands/search.js';
 import { createDetailsCommand } from './commands/details.js';
 import { createUiCommand } from './commands/ui.js';
 import type { ActiveCliArgsRef } from './types.js';
 import { helpConfig } from './help-config.js';
 export { helpConfig };
-
-const require = createRequire(import.meta.url);
-const packageJson = require('../package.json') as { version: string };
 
 /** Creates the root Commander.js program with all subcommands registered. */
 export function createProgram(activeCliArgsRef: ActiveCliArgsRef = { current: {} }): Command {

@@ -186,9 +186,9 @@ interface ParsedJobDetailsData {
  * here — no manual `primary.x ?? fallback.x` line required.
  *
  * @remarks
- * Only `undefined` values fall through to the fallback. A `null` primary value
- * **will** overwrite a non-null fallback — this is intentional (`null` means
- * "explicitly absent", `undefined` means "not present in this source").
+ * Only `undefined` and `null` values fall through to the fallback.
+ * Both mean "not present in this source" and will not overwrite
+ * a non-nullish fallback value.
  *
  * @internal Exported for testing only
  */
@@ -196,7 +196,8 @@ export function mergeJobDetailsData(primary: ParsedJobDetailsData, fallback: Par
   const merged = { ...fallback };
   for (const key of Object.keys(primary) as (keyof ParsedJobDetailsData)[]) {
     const value = primary[key];
-    if (value !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- defensive: runtime data may contain null despite types
+    if (value !== undefined && value !== null) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access -- generic merge across heterogeneous field types
       (merged as any)[key] = value;
     }

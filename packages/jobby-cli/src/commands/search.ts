@@ -48,9 +48,7 @@ export async function queryForJobs(args: JobSearchQueryCliArgs): Promise<void> {
       throw new ValidationError('--detailed cannot be used with --format rawHtml');
     }
     const rawHtml = await client.jobs.queryForJobsRawHtml(searchParams, paginationParams);
-    if (rawHtml) {
-      await outputResult(rawHtml, args);
-    }
+    await outputResult(rawHtml, args);
     return;
   }
 

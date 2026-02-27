@@ -171,9 +171,11 @@ src/parsers/job-details-scraper.ts   (all scrape* DOM functions)
 src/parsers/salary.ts               (parseSalaryText, formatSalaryDisplay, extractSalary)
 ```
 
-#### 3.3.4 `html.ts` Exports `createTurndownService` While Using Module-Level Singleton
+#### 3.3.4 `html.ts` Exports `createTurndownService` While Using Module-Level Singleton — **FIXED**
 
 The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. Misleading duality.
+
+**Status: FIXED** — Removed `export` keyword from `createTurndownService`. No external consumers referenced it.
 
 #### 3.3.5 Winston Logger Properties Leaked Through `Logger` Interface — **PLANNED**
 
@@ -185,9 +187,9 @@ The export suggests a reusable factory but `htmlToMarkdown` uses the singleton. 
 
 **Status: FIXED** — Added `return false;` after match in `.each()` loop to short-circuit, plus explicit `return;` on non-match path for TypeScript compliance.
 
-#### 3.3.7 `parseJobs` Uses Overly Broad `$('li')` Selector — **FIXED**
+#### 3.3.7 `parseJobs` Selector — **FIXED**
 
-**Status: FIXED** — Changed to `$('li.base-card')` for precision. Only matches the actual job listing cards.
+**Status: FIXED** — Originally used overly broad `$('li')`, then changed to `$('li.base-card')`. Later updated to `$('.base-card')` after LinkedIn moved the `base-card` class from `<li>` elements to an inner `<div>`, breaking the element-qualified selector. The class-only selector is resilient to future element changes. Also loosened `.base-search-card__subtitle > a` to `.base-search-card__subtitle a` (descendant instead of direct child) for similar resilience.
 
 #### 3.3.8 `appendStringParam` Truthy Check Drops `'0'` — **FIXED**
 
@@ -209,9 +211,10 @@ Well-documented with eslint-disable comment. A narrower `as never` cast is possi
 **File:** `src/queries/job-details-query.ts`
 **Status: FIXED** — Both functions are now single-line implementations using optional chaining: `return $('meta[...]').attr('content')?.trim() ?? undefined;`
 
-### 4.3 `DEFAULT_CLIENT_CONFIG` Export is Incomplete
+### 4.3 `DEFAULT_CLIENT_CONFIG` Export is Incomplete — **FIXED**
 
 **File:** `src/config.ts:55-58`
+**Status: FIXED** — Added `retry: DEFAULT_RETRY_CONFIG` to `DEFAULT_CLIENT_CONFIG`. Also exported `DEFAULT_RETRY_CONFIG` from the utils barrel and public API barrel.
 
 Only covers `baseUrl` and `timeout`. Retry defaults live in `DEFAULT_RETRY_CONFIG` (not exported from public barrel). Consumers see an incomplete picture.
 
@@ -311,7 +314,7 @@ Query functions accept `ClientConfig` and resolve internally. The resolution con
 ### Phase 3 — Refactoring (internal)
 
 12. Split `job-details-query.ts` into parser modules
-13. Make `createTurndownService` injectable into `htmlToMarkdown`
+13. ~~Make `createTurndownService` injectable into `htmlToMarkdown`~~ **DONE** — Removed export; factory is now private module-internal only
 14. ~~Resolve config once at construction, pass `ResolvedClientConfig` to query functions~~ **DONE**
 
 ### Phase 4 — Public API Changes (semver minor or major)
