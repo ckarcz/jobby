@@ -58,15 +58,12 @@ vi.mock('jobby-client', async (importOriginal) => {
   };
 });
 
-import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { JobbyClient } from 'jobby-client';
 import { JobbyError, ErrorType } from 'jobby-client';
 import { createServer, main } from './server.js';
-
-const require = createRequire(import.meta.url);
-const packageJson = require('../package.json') as { version: string };
+import packageJson from '../package.json' with { type: 'json' };
 
 /**
  * Tests for the MCP server that exposes Jobby job search and detail

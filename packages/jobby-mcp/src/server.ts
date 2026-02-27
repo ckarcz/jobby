@@ -1,12 +1,9 @@
-import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { JobbyClient } from 'jobby-client';
 import { SearchInputSchema, JobDetailsBaseSchema, JobDetailsInputSchema } from './schemas.js';
 import { handleSearchJobs, handleGetJobDetails } from './handlers.js';
-
-const require = createRequire(import.meta.url);
-const packageJson = require('../package.json') as { version: string };
+import packageJson from '../package.json' with { type: 'json' };
 
 /**
  * Create and configure the Jobby MCP server.

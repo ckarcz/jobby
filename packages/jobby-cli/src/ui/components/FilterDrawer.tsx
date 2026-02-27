@@ -54,6 +54,16 @@ export function FilterDrawer(): React.ReactElement {
   const { activeSection, cursors, selections } = draft;
   const selectedIndex = SECTION_ORDER.indexOf(activeSection);
 
+  // Destructure cursor values so the memo depends on individual primitives,
+  // not the cursors object reference (which changes on every keystroke).
+  const {
+    jobType: jobTypeCursor,
+    experienceLevel: experienceLevelCursor,
+    workplaceType: workplaceTypeCursor,
+    minimumSalary: minimumSalaryCursor,
+    listingAge: listingAgeCursor,
+  } = cursors;
+
   const sectionElements = useMemo(() => [
     <Box key="jobType" flexDirection="column" marginBottom={1}>
       <FilterSection title="Job Type" focused={focused && activeSection === 'jobType'}>
@@ -61,7 +71,7 @@ export function FilterDrawer(): React.ReactElement {
           options={JOB_TYPE_CHOICES}
           selected={getSelected(selections, 'jobType')}
           focused={focused && activeSection === 'jobType'}
-          cursorIndex={cursors.jobType}
+          cursorIndex={jobTypeCursor}
         />
       </FilterSection>
     </Box>,
@@ -71,7 +81,7 @@ export function FilterDrawer(): React.ReactElement {
           options={EXPERIENCE_LEVEL_CHOICES}
           selected={getSelected(selections, 'experienceLevel')}
           focused={focused && activeSection === 'experienceLevel'}
-          cursorIndex={cursors.experienceLevel}
+          cursorIndex={experienceLevelCursor}
         />
       </FilterSection>
     </Box>,
@@ -81,7 +91,7 @@ export function FilterDrawer(): React.ReactElement {
           options={WORKPLACE_TYPE_CHOICES}
           selected={getSelected(selections, 'workplaceType')}
           focused={focused && activeSection === 'workplaceType'}
-          cursorIndex={cursors.workplaceType}
+          cursorIndex={workplaceTypeCursor}
         />
       </FilterSection>
     </Box>,
@@ -91,7 +101,7 @@ export function FilterDrawer(): React.ReactElement {
           options={MINIMUM_SALARY_CHOICES}
           selected={getSelected(selections, 'minimumSalary')}
           focused={focused && activeSection === 'minimumSalary'}
-          cursorIndex={cursors.minimumSalary}
+          cursorIndex={minimumSalaryCursor}
         />
       </FilterSection>
     </Box>,
@@ -101,7 +111,7 @@ export function FilterDrawer(): React.ReactElement {
           options={LISTING_AGE_CHOICES}
           selected={getSelected(selections, 'listingAge')}
           focused={focused && activeSection === 'listingAge'}
-          cursorIndex={cursors.listingAge}
+          cursorIndex={listingAgeCursor}
         />
       </FilterSection>
     </Box>,
@@ -132,7 +142,7 @@ export function FilterDrawer(): React.ReactElement {
         />
       </FilterSection>
     </Box>,
-  ], [activeSection, cursors, selections, focused, handleLocationChange, handleGeoIdChange, handleCompanyIdChange]);
+  ], [activeSection, jobTypeCursor, experienceLevelCursor, workplaceTypeCursor, minimumSalaryCursor, listingAgeCursor, selections, focused, handleLocationChange, handleGeoIdChange, handleCompanyIdChange]);
 
   return (
     <>

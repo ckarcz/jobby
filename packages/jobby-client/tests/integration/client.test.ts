@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import axios from 'axios';
 import { JobbyClient } from '../../src/client.js';
+import { parseJobs } from '../../src/queries/jobs-query.js';
+import { createLogger } from '../../src/logging.js';
 import { createFixtureServer } from './helpers.js';
 
 /**
@@ -49,12 +51,7 @@ describe('job details by URL — full pipeline integration', () => {
       `http://${server.baseUrl}/jobs/view/999`
     );
 
-    expect(details.details.salary).toEqual({
-      min: 180000,
-      max: 250000,
-      currency: 'USD',
-      period: 'YEAR',
-    });
+    expect(details.details.salary).toBe('$180,000 - $250,000/yr');
     expect(details.summary.salary).toBe('$180,000 - $250,000/yr');
   });
 
@@ -146,5 +143,71 @@ describe('job search — fixture HTML parsing integration', () => {
     expect(response.data).toContain('base-search-card__title');
     expect(response.data).toContain('base-card__full-link');
     expect(response.data).toContain('job-search-card__location');
+  });
+});
+
+describe('job search — full parsing pipeline integration', () => {
+  const logger = createLogger({ level: 'silent' });
+
+  it('should parse all job listings from fixture HTML', async () => {
+    const searchUrl = `http://${server.baseUrl}/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=engineer`;
+    const response = await axios.get<string>(searchUrl, { timeout: 5000 });
+
+    const jobs = parseJobs(response.data, logger);
+
+    expect(jobs).toHaveLength(2);
+
+    // First job: Senior Software Engineer at Acme Corp
+    const first = jobs[0]!;
+    expect(first.id).toBe('999');
+    expect(first.url).toBe('https://linkedin.com/jobs/view/999');
+    expect(first.summary.position).toBe('Senior Software Engineer');
+    expect(first.summary.location).toBe('New York, NY');
+    expect(first.summary.company.name).toBe('Acme Corp');
+    expect(first.summary.company.slug).toBe('acme-corp');
+    expect(first.summary.company.pageUrl).toBe('https://linkedin.com/company/acme-corp');
+    expect(first.summary.salary).toBe('$180k - $250k');
+    expect(first.summary.isNew).toBe(true);
+    expect(first.posted.date).toBe('2025-06-01');
+    expect(first.posted.ago).toBe('1 day ago');
+
+    // Second job: Backend Developer at Globex Inc
+    const second = jobs[1]!;
+    expect(second.id).toBe('888');
+    expect(second.url).toBe('https://linkedin.com/jobs/view/888');
+    expect(second.summary.position).toBe('Backend Developer');
+    expect(second.summary.location).toBe('San Francisco, CA');
+    expect(second.summary.company.name).toBe('Globex Inc');
+    expect(second.summary.company.slug).toBe('globex');
+    expect(second.summary.company.pageUrl).toBe('https://linkedin.com/company/globex');
+    expect(second.summary.salary).toBeUndefined();
+    expect(second.summary.isNew).toBeUndefined();
+    expect(second.posted.date).toBe('2025-05-28');
+    expect(second.posted.ago).toBe('4 days ago');
+  });
+
+  it('should extract canonical job URLs and IDs from parsed listings', async () => {
+    const searchUrl = `http://${server.baseUrl}/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=test`;
+    const response = await axios.get<string>(searchUrl, { timeout: 5000 });
+
+    const jobs = parseJobs(response.data, logger);
+
+    // Every parsed job must have a non-empty id and a valid URL
+    for (const job of jobs) {
+      expect(job.id).toBeTruthy();
+      expect(job.url).toMatch(/^https:\/\/linkedin\.com\/jobs\/view\/\d+$/);
+    }
+
+    // Verify specific IDs extracted from the fixture URLs
+    const ids = jobs.map(j => j.id);
+    expect(ids).toContain('999');
+    expect(ids).toContain('888');
+  });
+
+  it('should return empty array for HTML with no base-card elements', async () => {
+    const emptyHtml = '<html><body><div>No jobs here</div></body></html>';
+    const jobs = parseJobs(emptyHtml, logger);
+
+    expect(jobs).toEqual([]);
   });
 });

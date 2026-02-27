@@ -1,4 +1,4 @@
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,23 +14,22 @@ export interface CliResult {
 
 /**
  * Runs the CLI via `npx tsx src/bin.ts` so no build step is required.
- * Uses async exec to avoid blocking the event loop (which causes vitest
- * worker RPC timeouts with execSync).
+ * Uses execFile with an argument array to avoid manual shell quoting.
+ * The `shell: true` option is needed for `npx` resolution on Windows.
  */
 export function runCli(
   args: string[] = [],
   opts: { env?: Record<string, string>; timeout?: number } = {},
 ): Promise<CliResult> {
   const env = { ...process.env, ...opts.env };
-  const quotedArgs = args.map(a => `"${a.replace(/"/g, '\\"')}"`).join(' ');
-  const cmd = `npx tsx "${entrypoint}" ${quotedArgs}`;
 
   return new Promise<CliResult>((resolve) => {
-    exec(cmd, {
+    execFile('npx', ['tsx', entrypoint, ...args], {
       cwd: pkgRoot,
       env,
       encoding: 'utf-8',
       timeout: opts.timeout ?? 15_000,
+      shell: true,
     }, (_error, stdout, stderr) => {
       const exitCode = _error ? (_error as { code?: number }).code ?? 1 : 0;
       resolve({

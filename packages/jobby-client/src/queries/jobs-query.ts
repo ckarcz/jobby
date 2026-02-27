@@ -291,7 +291,7 @@ function buildQueryUrl(baseUrl: string, searchParams: JobSearchParams, start: nu
 }
 
 /** Parses job data from the LinkedIn response HTML. */
-function parseJobs(jobData: string, logger: Logger): Job[] {
+export function parseJobs(jobData: string, logger: Logger): Job[] {
   try {
     const $ = cheerio.load(jobData);
     const jobs = $('.base-card');

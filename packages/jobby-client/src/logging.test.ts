@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { Logger } from './logging.js';
 import { createLogger } from './logging.js';
+
+/** Winston-specific properties on the concrete logger, not part of the public Logger interface. */
+interface WinstonLogger extends Logger {
+  level: string;
+  silent: boolean;
+  transports: unknown[];
+}
 
 /**
  * Tests for the createLogger factory function that creates configured
@@ -10,7 +18,7 @@ import { createLogger } from './logging.js';
 describe('createLogger - Winston logger factory and configuration', () => {
   describe('default configuration', () => {
     it('should create a logger with default warn level', () => {
-      const logger = createLogger();
+      const logger = createLogger() as WinstonLogger;
       expect(logger.level).toBe('warn');
       expect(logger.silent).toBe(false);
     });
@@ -18,28 +26,28 @@ describe('createLogger - Winston logger factory and configuration', () => {
 
   describe('custom log levels', () => {
     it('should create a logger with specified level', () => {
-      const logger = createLogger({ level: 'verbose' });
+      const logger = createLogger({ level: 'verbose' }) as WinstonLogger;
       expect(logger.level).toBe('verbose');
       expect(logger.silent).toBe(false);
     });
 
     it('should create a silent logger when level is silent', () => {
-      const logger = createLogger({ level: 'silent' });
+      const logger = createLogger({ level: 'silent' }) as WinstonLogger;
       expect(logger.silent).toBe(true);
     });
 
     it('should create a logger with info level', () => {
-      const logger = createLogger({ level: 'info' });
+      const logger = createLogger({ level: 'info' }) as WinstonLogger;
       expect(logger.level).toBe('info');
     });
 
     it('should create a logger with warn level', () => {
-      const logger = createLogger({ level: 'warn' });
+      const logger = createLogger({ level: 'warn' }) as WinstonLogger;
       expect(logger.level).toBe('warn');
     });
 
     it('should create a logger with debug level', () => {
-      const logger = createLogger({ level: 'debug' });
+      const logger = createLogger({ level: 'debug' }) as WinstonLogger;
       expect(logger.level).toBe('debug');
     });
 
@@ -58,12 +66,12 @@ describe('createLogger - Winston logger factory and configuration', () => {
       const logger = createLogger({
         level: 'info',
         file: { path: 'test.log' },
-      });
+      }) as WinstonLogger;
       expect(logger.transports).toHaveLength(2);
     });
 
     it('should only have console transport by default', () => {
-      const logger = createLogger({ level: 'info' });
+      const logger = createLogger({ level: 'info' }) as WinstonLogger;
       expect(logger.transports).toHaveLength(1);
     });
 
@@ -71,7 +79,7 @@ describe('createLogger - Winston logger factory and configuration', () => {
       const logger = createLogger({
         level: 'info',
         onLog: () => {},
-      });
+      }) as WinstonLogger;
       expect(logger.transports).toHaveLength(2);
     });
 
@@ -80,7 +88,7 @@ describe('createLogger - Winston logger factory and configuration', () => {
         level: 'info',
         file: { path: 'test.log' },
         onLog: () => {},
-      });
+      }) as WinstonLogger;
       expect(logger.transports).toHaveLength(3);
     });
   });

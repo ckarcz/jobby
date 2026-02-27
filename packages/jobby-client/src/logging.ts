@@ -57,8 +57,6 @@ export interface LoggingConfig {
 
 /** Logger interface used throughout the library. Decoupled from Winston internals. */
 export interface Logger {
-  level: string;
-  silent: boolean;
   error(message: string, ...meta: unknown[]): void;
   warn(message: string, ...meta: unknown[]): void;
   info(message: string, ...meta: unknown[]): void;
