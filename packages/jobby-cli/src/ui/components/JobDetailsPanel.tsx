@@ -109,7 +109,6 @@ export function JobDetailsPanel(): React.ReactElement {
         {d.salary && <Text color="green">{icons.money} {d.salary}</Text>}
         {d.benefitsInfo && <Text>{icons.star} {d.benefitsInfo}</Text>}
         {posted.ago && <Text dimColor>{icons.clock} {posted.ago}</Text>}
-        {summary.salary && <Text color="green">{icons.money} {summary.salary}</Text>}
         {descriptionLines.length > 0 && <Text dimColor>{'─'.repeat(40)}</Text>}
       </Box>
 
