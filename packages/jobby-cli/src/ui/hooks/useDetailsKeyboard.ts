@@ -1,53 +1,45 @@
-import { useRef, useCallback } from 'react';
+import { useCallback, type RefObject } from 'react';
 import { useInput } from 'ink';
+import type { ScrollViewRef } from 'ink-scroll-view';
 import { usePanelFocus } from './usePanelFocus.js';
 
-/** Keyboard handling for scrolling the job details panel content. */
+/** Keyboard handling for scrolling the job details panel description. */
 export function useDetailsKeyboard(
-  scrollOffset: number,
-  setScrollOffset: (offset: number) => void,
-  maxOffset: number,
+  scrollRef: RefObject<ScrollViewRef | null>,
 ): void {
   const panelFocused = usePanelFocus('details');
 
-  // Use refs so the useInput callback identity stays stable across renders.
-  // This avoids re-registering the input handler on every Spinner tick / scroll change.
-  const scrollRef = useRef(scrollOffset);
-  scrollRef.current = scrollOffset;
-  const maxRef = useRef(maxOffset);
-  maxRef.current = maxOffset;
-
   const handler = useCallback((_input: string, key: { downArrow?: boolean; upArrow?: boolean; pageDown?: boolean; pageUp?: boolean; home?: boolean; end?: boolean }) => {
     if (key.downArrow) {
-      setScrollOffset(Math.min(scrollRef.current + 1, maxRef.current));
+      scrollRef.current?.scrollBy(1);
       return;
     }
 
     if (key.upArrow) {
-      setScrollOffset(Math.max(scrollRef.current - 1, 0));
+      scrollRef.current?.scrollBy(-1);
       return;
     }
 
     if (key.pageDown) {
-      setScrollOffset(Math.min(scrollRef.current + 10, maxRef.current));
+      scrollRef.current?.scrollBy(10);
       return;
     }
 
     if (key.pageUp) {
-      setScrollOffset(Math.max(scrollRef.current - 10, 0));
+      scrollRef.current?.scrollBy(-10);
       return;
     }
 
     if (key.home) {
-      setScrollOffset(0);
+      scrollRef.current?.scrollToTop();
       return;
     }
 
     if (key.end) {
-      setScrollOffset(maxRef.current);
+      scrollRef.current?.scrollToBottom();
       return;
     }
-  }, [setScrollOffset]);
+  }, [scrollRef]);
 
   useInput(handler, { isActive: panelFocused });
 }
