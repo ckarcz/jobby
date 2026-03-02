@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useMemo } from 'react';
-import { Box, Newline, Text } from 'ink';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Box, Text, measureElement, type DOMElement } from 'ink';
 import { Spinner } from '@inkjs/ui';
 import { ScrollView, type ScrollViewRef } from 'ink-scroll-view';
 import { Marked } from 'marked';
@@ -24,24 +24,44 @@ export function JobDetailsPanel(): React.ReactElement {
   const { totalResults } = useSearchState();
   const { selectedJobIndex } = useSelectionState();
   const { jobDetails, jobDetailsStatus, jobDetailsError } = useJobDetailsState();
-  const { terminalWidth, terminalHeight } = useLayoutState();
+  const { terminalWidth, terminalHeight, filterDrawerOpen } = useLayoutState();
   const scrollRef = useRef<ScrollViewRef>(null);
 
   const selectedJob = totalResults[selectedJobIndex] ?? null;
 
   useDetailsKeyboard(scrollRef);
 
+  // Measure the content zone and metadata to calculate an explicit ScrollView height.
+  // This prevents the ScrollView's internal content from overflowing the parent layout
+  // (Ink's overflow="hidden" doesn't fully constrain flex children's layout contribution).
+  const contentRef = useRef<DOMElement>(null);
+  const metadataRef = useRef<DOMElement>(null);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const scrollViewHeightRef = useRef(0);
+
+  useEffect(() => {
+    if (contentRef.current && metadataRef.current) {
+      const contentH = measureElement(contentRef.current).height;
+      const metadataH = measureElement(metadataRef.current).height;
+      const newHeight = Math.max(0, contentH - metadataH);
+      if (newHeight !== scrollViewHeightRef.current) {
+        scrollViewHeightRef.current = newHeight;
+        setScrollViewHeight(newHeight);
+      }
+    }
+  }, [terminalWidth, terminalHeight, filterDrawerOpen, jobDetails]);
+
   // Reset scroll when selected job changes
   useEffect(() => {
     scrollRef.current?.scrollToTop();
   }, [selectedJob?.id]);
 
-  // Remeasure on terminal resize
+  // Remeasure ScrollView on terminal resize
   useEffect(() => {
     scrollRef.current?.remeasure();
   }, [terminalWidth, terminalHeight]);
 
-  // Pre-render markdown description to ANSI text, then split into lines for ScrollView children
+  // Pre-render markdown description to ANSI text, then split into lines
   const descriptionLines = useMemo(() => {
     if (jobDetailsStatus !== 'loaded' || !jobDetails?.details.description) {
       return [];
@@ -86,32 +106,32 @@ export function JobDetailsPanel(): React.ReactElement {
     );
   }
   return (
-    <Box flexDirection="column" flexGrow={1} justifyContent="space-between">
-      <Box flexDirection="column" flexShrink={0}>
-        <Text bold>{jobDetails.summary.position ?? 'Unknown position'}</Text>
-        <Text>{icons.company} {jobDetails.summary.company.name ?? 'Unknown company'}</Text>
-        <Text>{icons.location} {jobDetails.summary.location}</Text>
-        {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
-        {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
-        {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
-        {jobDetails.details.applicants && <Text>{icons.person} {jobDetails.details.applicants}</Text>}
-        {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
-        {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
-        {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
-        {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
-        {jobDetails.details.salary && <Text color="green">{icons.money} {jobDetails.details.salary}</Text>}
-        {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
+    <Box flexDirection="column" flexGrow={1}>
+      <Box ref={contentRef} flexDirection="column" flexGrow={1} overflow="hidden">
+        <Box ref={metadataRef} flexDirection="column" flexShrink={0} borderStyle="single" borderColor={'gray'} borderTop={false} borderBottom={true} borderLeft={false} borderRight={false}>
+          <Text bold>{jobDetails.summary.position ?? 'Unknown position'}</Text>
+          <Text>{icons.company} {jobDetails.summary.company.name ?? 'Unknown company'}</Text>
+          <Text>{icons.location} {jobDetails.summary.location}</Text>
+          {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
+          {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
+          {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
+          {jobDetails.details.applicants && <Text>{icons.person} {jobDetails.details.applicants}</Text>}
+          {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
+          {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
+          {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
+          {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
+          {jobDetails.details.salary && <Text color="green">{icons.money} {jobDetails.details.salary}</Text>}
+          {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
+        </Box>
+        {descriptionLines.length > 0 && scrollViewHeight > 0 && (
+          <ScrollView ref={scrollRef} height={scrollViewHeight} overflow="hidden">
+            {descriptionLines.map((line, i) => (
+              <Text key={`desc-${String(i)}`}>{line || ' '}</Text>
+            ))}
+          </ScrollView>
+        )}
       </Box>
-      <Newline />
-      <Box flexDirection="column" flexGrow={1}>
-        <ScrollView ref={scrollRef}>
-          {descriptionLines.map((line, i) => (
-            <Text key={`desc-${String(i)}`}>{line || ' '}</Text>
-          ))}
-        </ScrollView>
-      </Box>
-      <Newline />
-      <Box flexDirection="column" flexShrink={0} alignItems="center">
+      <Box flexDirection="column" flexShrink={0} height={3} alignItems="center" borderStyle="single" borderColor={'gray'} borderTop={true} borderBottom={false} borderLeft={false} borderRight={false}>
         {jobDetails.posted.ago && <Text dimColor>{jobDetails.posted.ago}</Text>}
         <Text dimColor>{jobDetails.url}</Text>
       </Box>
