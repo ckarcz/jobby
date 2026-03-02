@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Newline, Text } from 'ink';
 import { Spinner } from '@inkjs/ui';
 import { ScrollView, type ScrollViewRef } from 'ink-scroll-view';
 import { Marked } from 'marked';
@@ -85,41 +85,36 @@ export function JobDetailsPanel(): React.ReactElement {
       </Box>
     );
   }
-
-  const { details: d, summary, url, posted } = jobDetails;
-  const company = summary.company.name ?? 'Unknown company';
-
   return (
-    <Box flexDirection="column" flexGrow={1} overflow="hidden">
-      {/* Fixed metadata zone */}
+    <Box flexDirection="column" flexGrow={1} justifyContent="space-between">
       <Box flexDirection="column" flexShrink={0}>
-        <Text bold>{summary.position ?? 'Unknown position'}</Text>
-        <Text>{icons.company} {company}</Text>
-        {d.location && <Text>{icons.location} {d.location}</Text>}
-        {url && <Text dimColor>{icons.link} {url}</Text>}
-        <Text dimColor>{'─'.repeat(40)}</Text>
-        {d.employmentType && <Text>{icons.briefcase} {d.employmentType}</Text>}
-        {d.workplaceType && <Text>{icons.location} {d.workplaceType}</Text>}
-        {d.seniorityLevel && <Text>{icons.star} {d.seniorityLevel}</Text>}
-        {d.applicants && <Text>{icons.person} {d.applicants}</Text>}
-        {d.industry && <Text>{icons.company} {d.industry}</Text>}
-        {d.jobFunction && <Text>{icons.wrench} {d.jobFunction}</Text>}
-        {d.experienceRequired && <Text>{icons.person} Experience: {d.experienceRequired}</Text>}
-        {d.educationRequired && <Text>{icons.page} Education: {d.educationRequired}</Text>}
-        {d.salary && <Text color="green">{icons.money} {d.salary}</Text>}
-        {d.benefitsInfo && <Text>{icons.star} {d.benefitsInfo}</Text>}
-        {posted.ago && <Text dimColor>{icons.clock} {posted.ago}</Text>}
-        {descriptionLines.length > 0 && <Text dimColor>{'─'.repeat(40)}</Text>}
+        <Text bold>{jobDetails.summary.position ?? 'Unknown position'}</Text>
+        <Text>{icons.company} {jobDetails.summary.company.name ?? 'Unknown company'}</Text>
+        <Text>{icons.location} {jobDetails.summary.location}</Text>
+        {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
+        {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
+        {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
+        {jobDetails.details.applicants && <Text>{icons.person} {jobDetails.details.applicants}</Text>}
+        {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
+        {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
+        {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
+        {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
+        {jobDetails.details.salary && <Text color="green">{icons.money} {jobDetails.details.salary}</Text>}
+        {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
       </Box>
-
-      {/* Scrollable description zone */}
-      {descriptionLines.length > 0 && (
-        <ScrollView ref={scrollRef} flexGrow={1} overflow="hidden">
+      <Newline />
+      <Box flexDirection="column" flexGrow={1}>
+        <ScrollView ref={scrollRef}>
           {descriptionLines.map((line, i) => (
             <Text key={`desc-${String(i)}`}>{line || ' '}</Text>
           ))}
         </ScrollView>
-      )}
+      </Box>
+      <Newline />
+      <Box flexDirection="column" flexShrink={0} alignItems="center">
+        {jobDetails.posted.ago && <Text dimColor>{jobDetails.posted.ago}</Text>}
+        <Text dimColor>{jobDetails.url}</Text>
+      </Box>
     </Box>
   );
 }
