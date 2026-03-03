@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useInput } from 'ink';
-import { useLayoutState, useAppDispatch, useIsTextInputActive } from '../state/context.js';
+import { useLayoutState, useSearchState, useAppDispatch, useIsTextInputActive } from '../state/context.js';
 import { useLatest } from './useLatest.js';
 
 /**
@@ -22,14 +22,17 @@ import { useLatest } from './useLatest.js';
  */
 export function useKeyboardNavigation(): void {
   const { focusedPanel, filterDrawerOpen } = useLayoutState();
+  const { searchStatus, totalResults } = useSearchState();
   const dispatch = useAppDispatch();
   const textInputActiveRef = useIsTextInputActive();
 
   const focusedPanelRef = useLatest(focusedPanel);
   const filterDrawerOpenRef = useLatest(filterDrawerOpen);
+  const searchStatusRef = useLatest(searchStatus);
+  const totalResultsLengthRef = useLatest(totalResults.length);
   const dispatchRef = useLatest(dispatch);
 
-  const stableHandler = useCallback((input: string, key: { escape: boolean }) => {
+  const stableHandler = useCallback((input: string, key: { escape: boolean; leftArrow: boolean; rightArrow: boolean }) => {
     const inTextInput = textInputActiveRef.current > 0;
 
     if (input === '\\' && !inTextInput) {
@@ -54,6 +57,33 @@ export function useKeyboardNavigation(): void {
 
     if (key.escape && focusedPanelRef.current === 'filters') {
       dispatchRef.current({ type: 'CLOSE_FILTER_DRAWER' });
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'results' });
+      return;
+    }
+
+    // Left/right arrow navigation between panels (only when not typing in a text input)
+    if (key.leftArrow && !inTextInput && focusedPanelRef.current === 'results') {
+      if (!filterDrawerOpenRef.current) {
+        dispatchRef.current({ type: 'OPEN_FILTER_DRAWER' });
+      }
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'filters' });
+      return;
+    }
+
+    if (key.rightArrow && !inTextInput && focusedPanelRef.current === 'filters') {
+      dispatchRef.current({ type: 'CLOSE_FILTER_DRAWER' });
+      dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'results' });
+      return;
+    }
+
+    if (key.rightArrow && !inTextInput && focusedPanelRef.current === 'results') {
+      if (searchStatusRef.current === 'results' && totalResultsLengthRef.current > 0) {
+        dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'details' });
+      }
+      return;
+    }
+
+    if (key.leftArrow && !inTextInput && focusedPanelRef.current === 'details') {
       dispatchRef.current({ type: 'FOCUS_PANEL', panel: 'results' });
       return;
     }

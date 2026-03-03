@@ -15,11 +15,11 @@ export const StatusBar = React.memo(function StatusBar(): React.ReactElement {
   if (focusedPanel === 'search') {
     leftHints = '[Type]:Keyword  [Enter]:Search  [Esc]:Cancel';
   } else if (focusedPanel === 'filters') {
-    leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Search  [Esc]:Cancel';
+    leftHints = '[Tab]:Next  [↑↓]:Move  [Space]:Select  [Enter]:Search  [→]:Results  [Esc]:Cancel';
   } else if (focusedPanel === 'details') {
-    leftHints = '[↑↓]:Scroll  [PgUp/PgDn]:Page  [Home/End]:Jump  [Esc]:Back';
+    leftHints = '[↑↓]:Scroll  [PgUp/PgDn]:Page  [Home/End]:Jump  [←]:Back  [Esc]:Back';
   } else if (focusedPanel === 'results') {
-    leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [↑↓]:Navigate  [Enter]:Details  [Esc]:Clear`;
+    leftHints = `[/]:Search  [\\]:Filters${filterBadge}  [↑↓]:Navigate  [←]:Filters  [→]:Details  [Enter]:Details  [Esc]:Clear`;
   } else {
     leftHints = `[/]:Search  [\\]:Filters${filterBadge}`;
   }
