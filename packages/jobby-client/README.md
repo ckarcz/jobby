@@ -100,7 +100,7 @@ const details = await client.jobs.queryForJobDetailsById('4195018826');
 console.log(details.summary.position);
 console.log(details.summary.company.name);
 console.log(details.details.description);
-console.log(details.details.salary); // { min: 150000, max: 200000, currency: 'USD', period: 'YEAR' }
+console.log(details.summary.salary); // "$150,000 - $200,000/yr"
 console.log(details.details.applyUrl); // Apply button URL, if available
 ```
 

@@ -51,7 +51,6 @@ describe('job details by URL — full pipeline integration', () => {
       `http://${server.baseUrl}/jobs/view/999`
     );
 
-    expect(details.details.salary).toBe('180000-250000 USD YEAR');
     expect(details.summary.salary).toBe('180000-250000 USD YEAR');
   });
 

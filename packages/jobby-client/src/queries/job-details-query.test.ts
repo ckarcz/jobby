@@ -497,7 +497,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('$115,000.00 - $145,000.00/yr');
+      expect(result.summary.salary).toBe('$115,000.00 - $145,000.00/yr');
     });
 
     it('should return raw salary text from compensation__salary fallback', async () => {
@@ -510,7 +510,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('€25.00 - €35.00/hr');
+      expect(result.summary.salary).toBe('€25.00 - €35.00/hr');
     });
 
     it('should return raw salary text with GBP from DOM', async () => {
@@ -523,7 +523,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('£60,000 per year');
+      expect(result.summary.salary).toBe('£60,000 per year');
     });
 
     it('should return undefined salary when no salary text in DOM', async () => {
@@ -532,7 +532,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBeUndefined();
+      expect(result.summary.salary).toBeUndefined();
     });
 
     it('should return raw text even when non-numeric', async () => {
@@ -545,7 +545,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('Competitive salary');
+      expect(result.summary.salary).toBe('Competitive salary');
     });
 
     it('should return raw single salary value', async () => {
@@ -558,7 +558,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('$100,000/yr');
+      expect(result.summary.salary).toBe('$100,000/yr');
     });
 
     it('should return raw monthly salary text', async () => {
@@ -571,7 +571,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('$5,000 - $8,000/mo');
+      expect(result.summary.salary).toBe('$5,000 - $8,000/mo');
     });
 
     it('should return raw hourly salary text', async () => {
@@ -584,7 +584,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('$25.00 per hour');
+      expect(result.summary.salary).toBe('$25.00 per hour');
     });
 
     it('should return raw EUR monthly salary text', async () => {
@@ -597,7 +597,7 @@ describe('executeJobDetailsQueryByUrl - job detail page fetching and parsing', (
 
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
 
-      expect(result.details.salary).toBe('€3,000 - €4,500 per month');
+      expect(result.summary.salary).toBe('€3,000 - €4,500 per month');
     });
   });
 
@@ -1045,7 +1045,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBe('100,000 - 150,000/yr');
+      expect(result.summary.salary).toBe('100,000 - 150,000/yr');
     });
 
     it('should return raw salary text without period', async () => {
@@ -1056,7 +1056,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBe('$80,000 - $120,000');
+      expect(result.summary.salary).toBe('$80,000 - $120,000');
     });
 
     it('should use compensation__salary as fallback when salary-main-rail is missing', async () => {
@@ -1067,7 +1067,7 @@ describe('executeJobDetailsQueryByUrl - additional edge cases', () => {
       `;
       mockedGet.mockResolvedValueOnce({ data: html });
       const result = await executeJobDetailsQueryByUrl('https://linkedin.com/jobs/view/123', defaultConfig, defaultLogger);
-      expect(result.details.salary).toBe('$90,000/yr');
+      expect(result.summary.salary).toBe('$90,000/yr');
     });
   });
 

@@ -57,10 +57,6 @@ export interface Job {
 export interface JobDetailsInfo {
   /** The full job description, converted to markdown. */
   description: string | undefined;
-  /** Salary information as a display string from the listing (e.g. "$115,000.00/yr - $145,000.00/yr"). */
-  salary: string | undefined;
-  /** The job location (city, state, country, etc.). */
-  location: string | undefined;
   /** The workplace type (e.g., "On-site", "Remote", "Hybrid"). */
   workplaceType: string | undefined;
   /** The employment type (e.g., "Full-time", "Contract"). */

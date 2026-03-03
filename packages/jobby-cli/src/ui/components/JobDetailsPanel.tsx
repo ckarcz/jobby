@@ -120,7 +120,7 @@ export function JobDetailsPanel(): React.ReactElement {
           {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
           {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
           {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
-          {jobDetails.details.salary && <Text color="green">{icons.money} {jobDetails.details.salary}</Text>}
+          {jobDetails.summary.salary && <Text color="green">{icons.money} {jobDetails.summary.salary}</Text>}
           {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
         </Box>
         {descriptionLines.length > 0 && scrollViewHeight > 0 && (

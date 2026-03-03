@@ -129,13 +129,6 @@ The detailed information nested within a `JobDetails` response.
 ```typescript
 interface JobDetailsInfo {
   description: string | undefined;
-  salary: {
-    min: number | undefined;
-    max: number | undefined;
-    currency: string | undefined;
-    period: string | undefined;
-  } | undefined;
-  location: string | undefined;
   workplaceType: string | undefined;
   employmentType: string | undefined;
   seniorityLevel: string | undefined;
@@ -156,12 +149,6 @@ interface JobDetailsInfo {
 | Field | Type | Description |
 |-------|------|-------------|
 | `description` | `string \| undefined` | Job description in Markdown format |
-| `salary` | `object \| undefined` | Structured salary information |
-| `salary.min` | `number \| undefined` | Minimum salary value |
-| `salary.max` | `number \| undefined` | Maximum salary value |
-| `salary.currency` | `string \| undefined` | Salary currency (e.g. "USD") |
-| `salary.period` | `string \| undefined` | Salary period (e.g. "YEAR", "MONTH") |
-| `location` | `string \| undefined` | Job location |
 | `workplaceType` | `string \| undefined` | On-site, Remote, or Hybrid |
 | `employmentType` | `string \| undefined` | Full-time, Part-time, Contract, etc. |
 | `seniorityLevel` | `string \| undefined` | Seniority level |

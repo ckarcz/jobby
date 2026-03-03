@@ -192,8 +192,6 @@ function parseJobDetails(html: string, jobUrl: string, logger: Logger): JobDetai
       },
       details: {
         description: merged.description,
-        salary: merged.salary,
-        location: merged.location,
         workplaceType: merged.workplaceType,
         employmentType: merged.employmentType,
         seniorityLevel: merged.seniorityLevel,

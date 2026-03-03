@@ -73,14 +73,14 @@ async function main(): Promise<void> {
 
       console.log(`\nJob Details for: ${details.summary.position}`);
       console.log(`Company: ${details.summary.company.name}`);
-      console.log(`Location: ${details.details.location}`);
+      console.log(`Location: ${details.summary.location}`);
       console.log(`Type: ${details.details.employmentType ?? 'Not specified'}`);
       console.log(`Level: ${details.details.seniorityLevel ?? 'Not specified'}`);
       if (details.details.applyUrl) {
         console.log(`Apply: ${details.details.applyText ?? 'Apply'} - ${details.details.applyUrl}`);
       }
-      if (details.details.salary) {
-        console.log(`Salary: ${details.details.salary.currency ?? 'USD'} ${details.details.salary.min?.toLocaleString()} - ${details.details.salary.max?.toLocaleString()} per ${details.details.salary.period ?? 'YEAR'}`);
+      if (details.summary.salary) {
+        console.log(`Salary: ${details.summary.salary}`);
       }
       console.log(`\nDescription (first 500 chars):\n${details.details.description?.substring(0, 500)}...`);
     }

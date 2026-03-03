@@ -53,7 +53,7 @@ for (const job of response.results) {
 // Get job details
 const details = await client.jobs.queryForJobDetailsById('4195018826');
 console.log(details.details.description);
-console.log(details.details.salary); // { min: 150000, max: 200000, currency: 'USD', period: 'YEAR' }
+console.log(details.summary.salary); // "$150,000 - $200,000/yr"
 ```
 
 See the [client library documentation](./packages/jobby-client/README.md) for the full API, fluent builder, and configuration options.
@@ -238,13 +238,6 @@ jobby details 4195018826 --format json --pretty
   },
   "details": {
     "description": "We are looking for a Senior TypeScript Developer...",
-    "salary": {
-      "min": 150000,
-      "max": 200000,
-      "currency": "USD",
-      "period": "YEAR"
-    },
-    "location": "San Francisco, CA",
     "workplaceType": "Remote",
     "employmentType": "Full-time",
     "seniorityLevel": "Mid-Senior level",
