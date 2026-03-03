@@ -109,6 +109,18 @@ describe('SearchInputSchema - search tool input validation', () => {
         expect(result.success).toBe(true);
       }
     });
+
+    it('should normalize plain numeric salary to canonical comma format', () => {
+      const result = SearchInputSchema.safeParse({ minimumSalary: '100000' });
+      expect(result.success).toBe(true);
+      expect(result.data?.minimumSalary).toBe('100,000');
+    });
+
+    it('should normalize underscore-separated salary to canonical comma format', () => {
+      const result = SearchInputSchema.safeParse({ minimumSalary: '100_000' });
+      expect(result.success).toBe(true);
+      expect(result.data?.minimumSalary).toBe('100,000');
+    });
   });
 
   describe('workplaceType enum validation', () => {

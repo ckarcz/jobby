@@ -64,6 +64,23 @@ export type MinimumSalary = keyof typeof MINIMUM_SALARY_MAPPING;
 /** All valid minimum salary choices. */
 export const MINIMUM_SALARY_CHOICES: readonly MinimumSalary[] = getKeys(MINIMUM_SALARY_MAPPING);
 
+/**
+ * Normalizes flexible minimum salary input to the canonical comma-formatted key.
+ *
+ * Accepts formats like `180000`, `180_000`, and `180,000` and returns the
+ * canonical key (e.g. `'180,000'`). Returns `undefined` for non-string input
+ * or values that don't match any known salary threshold.
+ */
+export function normalizeMinimumSalaryInput(value: unknown): MinimumSalary | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const stripped = value.replace(/[,_]/g, '');
+  return MINIMUM_SALARY_CHOICES.find(
+    (key) => key.replace(/,/g, '') === stripped,
+  );
+}
+
 /** Mapping of workplace type keys to LinkedIn API values. */
 export const WORKPLACE_TYPE_MAPPING = {
   'on-site': '1',

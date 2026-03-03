@@ -3,6 +3,7 @@ import {
   JOB_TYPE_CHOICES,
   EXPERIENCE_LEVEL_CHOICES,
   MINIMUM_SALARY_CHOICES,
+  normalizeMinimumSalaryInput,
   WORKPLACE_TYPE_CHOICES,
   LISTING_AGE_CHOICES,
 } from 'jobby-client';
@@ -28,7 +29,10 @@ export const SearchInputSchema = z.object({
     z.enum(asNonEmpty(EXPERIENCE_LEVEL_CHOICES)),
     z.array(z.enum(asNonEmpty(EXPERIENCE_LEVEL_CHOICES))),
   ]).optional().describe(`Required experience level. Valid values: ${EXPERIENCE_LEVEL_CHOICES.join(', ')}. Single value or array.`),
-  minimumSalary: z.enum(asNonEmpty(MINIMUM_SALARY_CHOICES)).optional().describe(`Minimum salary filter. Valid values: ${MINIMUM_SALARY_CHOICES.join(', ')}.`),
+  minimumSalary: z.preprocess(
+    (val) => normalizeMinimumSalaryInput(val) ?? val,
+    z.enum(asNonEmpty(MINIMUM_SALARY_CHOICES)),
+  ).optional().describe(`Minimum salary filter. Valid values: ${MINIMUM_SALARY_CHOICES.join(', ')}. Also accepts plain numbers (e.g. 180000) or underscore-separated (180_000).`),
   workplaceType: z.union([
     z.enum(asNonEmpty(WORKPLACE_TYPE_CHOICES)),
     z.array(z.enum(asNonEmpty(WORKPLACE_TYPE_CHOICES))),

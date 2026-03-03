@@ -16,6 +16,7 @@ export {
   EXPERIENCE_LEVEL_CHOICES,
   type MinimumSalary,
   MINIMUM_SALARY_CHOICES,
+  normalizeMinimumSalaryInput,
   type WorkplaceType,
   WORKPLACE_TYPE_CHOICES,
   type ListingAge,

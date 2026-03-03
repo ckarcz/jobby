@@ -1,4 +1,4 @@
-import { Command, Option } from 'commander';
+import { Command, Option, InvalidArgumentError } from 'commander';
 import chalk from 'chalk';
 import process from 'node:process';
 import {
@@ -7,6 +7,7 @@ import {
   JOB_TYPE_CHOICES,
   EXPERIENCE_LEVEL_CHOICES,
   MINIMUM_SALARY_CHOICES,
+  normalizeMinimumSalaryInput,
   WORKPLACE_TYPE_CHOICES,
   LISTING_AGE_CHOICES,
 } from 'jobby-client';
@@ -86,6 +87,13 @@ export function createSearchCommand(activeCliArgsRef: ActiveCliArgsRef = { curre
     .addOption(
       new Option('--minimum-salary <salary>', 'minimum salary threshold')
         .choices(MINIMUM_SALARY_CHOICES)
+        .argParser((val: string) => {
+          const normalized = normalizeMinimumSalaryInput(val);
+          if (!normalized) {
+            throw new InvalidArgumentError(`Allowed choices are ${MINIMUM_SALARY_CHOICES.join(', ')}.`);
+          }
+          return normalized;
+        })
     )
     .addOption(
       new Option('--workplace-type <type...>', 'work location type (repeatable)')

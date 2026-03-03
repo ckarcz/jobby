@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getApiValue,
   getKeys,
+  normalizeMinimumSalaryInput,
   JOB_TYPE_MAPPING,
   EXPERIENCE_LEVEL_MAPPING,
   MINIMUM_SALARY_MAPPING,
@@ -97,6 +98,52 @@ describe('parameter mapping utilities - API value lookup and key validation', ()
       expect(keys).toContain('past-week');
       expect(keys).toContain('past-month');
       expect(keys).toHaveLength(3);
+    });
+  });
+
+  describe('normalizeMinimumSalaryInput', () => {
+    it('should return canonical key for comma-formatted input', () => {
+      expect(normalizeMinimumSalaryInput('180,000')).toBe('180,000');
+      expect(normalizeMinimumSalaryInput('40,000')).toBe('40,000');
+      expect(normalizeMinimumSalaryInput('200,000')).toBe('200,000');
+    });
+
+    it('should return canonical key for plain numeric input', () => {
+      expect(normalizeMinimumSalaryInput('180000')).toBe('180,000');
+      expect(normalizeMinimumSalaryInput('40000')).toBe('40,000');
+      expect(normalizeMinimumSalaryInput('200000')).toBe('200,000');
+    });
+
+    it('should return canonical key for underscore-separated input', () => {
+      expect(normalizeMinimumSalaryInput('180_000')).toBe('180,000');
+      expect(normalizeMinimumSalaryInput('40_000')).toBe('40,000');
+      expect(normalizeMinimumSalaryInput('200_000')).toBe('200,000');
+    });
+
+    it('should normalize all valid salary thresholds in all formats', () => {
+      const expected = ['40,000', '60,000', '80,000', '100,000', '120,000', '140,000', '160,000', '180,000', '200,000'] as const;
+      for (const canonical of expected) {
+        const plain = canonical.replace(/,/g, '');
+        const underscored = canonical.replace(/,/g, '_');
+        expect(normalizeMinimumSalaryInput(canonical)).toBe(canonical);
+        expect(normalizeMinimumSalaryInput(plain)).toBe(canonical);
+        expect(normalizeMinimumSalaryInput(underscored)).toBe(canonical);
+      }
+    });
+
+    it('should return undefined for invalid salary values', () => {
+      expect(normalizeMinimumSalaryInput('50000')).toBeUndefined();
+      expect(normalizeMinimumSalaryInput('50,000')).toBeUndefined();
+      expect(normalizeMinimumSalaryInput('999999')).toBeUndefined();
+      expect(normalizeMinimumSalaryInput('abc')).toBeUndefined();
+      expect(normalizeMinimumSalaryInput('')).toBeUndefined();
+    });
+
+    it('should return undefined for non-string input', () => {
+      expect(normalizeMinimumSalaryInput(180000)).toBeUndefined();
+      expect(normalizeMinimumSalaryInput(null)).toBeUndefined();
+      expect(normalizeMinimumSalaryInput(undefined)).toBeUndefined();
+      expect(normalizeMinimumSalaryInput(true)).toBeUndefined();
     });
   });
 

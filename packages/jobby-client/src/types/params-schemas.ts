@@ -6,6 +6,7 @@ import {
   MINIMUM_SALARY_MAPPING,
   WORKPLACE_TYPE_MAPPING,
   LISTING_AGE_MAPPING,
+  normalizeMinimumSalaryInput,
 } from './params.js';
 
 /**
@@ -27,8 +28,11 @@ export const JobTypeSchema = zodEnumFromMap(JOB_TYPE_MAPPING);
 /** Zod schema for experience level keys. */
 export const ExperienceLevelSchema = zodEnumFromMap(EXPERIENCE_LEVEL_MAPPING);
 
-/** Zod schema for minimum salary keys. */
-export const MinimumSalarySchema = zodEnumFromMap(MINIMUM_SALARY_MAPPING);
+/** Zod schema for minimum salary keys. Accepts flexible formats (e.g. `180000`, `180_000`, `180,000`). */
+export const MinimumSalarySchema = z.preprocess(
+  (val) => normalizeMinimumSalaryInput(val) ?? val,
+  zodEnumFromMap(MINIMUM_SALARY_MAPPING),
+);
 
 /** Zod schema for workplace type keys. */
 export const WorkplaceTypeSchema = zodEnumFromMap(WORKPLACE_TYPE_MAPPING);
