@@ -115,7 +115,6 @@ export function JobDetailsPanel(): React.ReactElement {
           {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
           {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
           {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
-          {jobDetails.details.applicants && <Text>{icons.person} {jobDetails.details.applicants}</Text>}
           {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
           {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
           {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
@@ -132,7 +131,9 @@ export function JobDetailsPanel(): React.ReactElement {
         )}
       </Box>
       <Box flexDirection="column" flexShrink={0} height={3} alignItems="center" borderStyle="single" borderColor={'gray'} borderTop={true} borderBottom={false} borderLeft={false} borderRight={false}>
-        {jobDetails.posted.ago && <Text dimColor>{jobDetails.posted.ago}</Text>}
+        <Box flexDirection="row" flexShrink={0}>
+          {jobDetails.posted.ago && <Text dimColor>{jobDetails.posted.ago}</Text>}{jobDetails.posted.ago && jobDetails.details.applicants && <Text dimColor> | </Text>}{jobDetails.details.applicants && <Text dimColor>{jobDetails.details.applicants}</Text>}
+        </Box>
         <Text dimColor>{jobDetails.url}</Text>
       </Box>
     </Box>
