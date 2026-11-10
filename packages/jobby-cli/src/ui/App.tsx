@@ -1,4 +1,5 @@
 import React, { useMemo, useReducer, useRef } from 'react';
+import { InkPictureProvider } from 'ink-picture';
 import {
   LayoutContext, SearchContext, SelectionContext, JobDetailsContext, DispatchContext, TextInputActiveContext,
   type LayoutState, type SearchState, type SelectionState, type JobDetailsState,
@@ -69,7 +70,9 @@ export function App(): React.ReactElement {
           <SearchContext.Provider value={searchState}>
             <SelectionContext.Provider value={selectionState}>
               <JobDetailsContext.Provider value={jobDetailsState}>
-                <AppInner />
+                <InkPictureProvider>
+                  <AppInner />
+                </InkPictureProvider>
               </JobDetailsContext.Provider>
             </SelectionContext.Provider>
           </SearchContext.Provider>

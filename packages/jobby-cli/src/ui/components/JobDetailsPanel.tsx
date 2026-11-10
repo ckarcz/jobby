@@ -6,7 +6,9 @@ import { Marked } from 'marked';
 import { markedTerminal } from 'marked-terminal';
 import { useSearchState, useSelectionState, useJobDetailsState, useLayoutState } from '../state/context.js';
 import { useDetailsKeyboard } from '../hooks/useDetailsKeyboard.js';
+import Image from 'ink-picture';
 import { icons } from '../theme.js';
+import { COMPANY_LOGO_HEIGHT, COMPANY_LOGO_WIDTH } from '../constants.js';
 
 const md = new Marked(markedTerminal());
 
@@ -108,19 +110,26 @@ export function JobDetailsPanel(): React.ReactElement {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Box ref={contentRef} flexDirection="column" flexGrow={1} overflow="hidden">
-        <Box ref={metadataRef} flexDirection="column" flexShrink={0} borderStyle="single" borderColor={'gray'} borderTop={false} borderBottom={true} borderLeft={false} borderRight={false}>
-          <Text bold>{jobDetails.summary.position ?? 'Unknown position'}</Text>
-          <Text>{icons.company} {jobDetails.summary.company.name ?? 'Unknown company'}</Text>
-          <Text>{icons.location} {jobDetails.summary.location}</Text>
-          {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
-          {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
-          {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
-          {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
-          {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
-          {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
-          {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
-          {jobDetails.summary.salary && <Text color="green">{icons.money} {jobDetails.summary.salary}</Text>}
-          {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
+        <Box ref={metadataRef} flexDirection="row" flexShrink={0} borderStyle="single" borderColor={'gray'} borderTop={false} borderBottom={true} borderLeft={false} borderRight={false}>
+          {jobDetails.summary.company.logoUrl && (
+            <Box flexShrink={0} width={COMPANY_LOGO_WIDTH} height={COMPANY_LOGO_HEIGHT} marginRight={1}>
+              <Image key={jobDetails.summary.company.logoUrl} src={jobDetails.summary.company.logoUrl} width={COMPANY_LOGO_WIDTH} height={COMPANY_LOGO_HEIGHT} objectFit="contain" alt={jobDetails.summary.company.name ?? 'Company logo'} />
+            </Box>
+          )}
+          <Box flexDirection="column" flexGrow={1}>
+            <Text bold>{jobDetails.summary.position ?? 'Unknown position'}</Text>
+            <Text>{icons.company} {jobDetails.summary.company.name ?? 'Unknown company'}</Text>
+            <Text>{icons.location} {jobDetails.summary.location}</Text>
+            {jobDetails.details.employmentType && <Text>{icons.briefcase} {jobDetails.details.employmentType}</Text>}
+            {jobDetails.details.workplaceType && <Text>{icons.location} {jobDetails.details.workplaceType}</Text>}
+            {jobDetails.details.seniorityLevel && <Text>{icons.star} {jobDetails.details.seniorityLevel}</Text>}
+            {jobDetails.details.industry && <Text>{icons.company} {jobDetails.details.industry}</Text>}
+            {jobDetails.details.jobFunction && <Text>{icons.wrench} {jobDetails.details.jobFunction}</Text>}
+            {jobDetails.details.experienceRequired && <Text>{icons.person} Experience: {jobDetails.details.experienceRequired}</Text>}
+            {jobDetails.details.educationRequired && <Text>{icons.page} Education: {jobDetails.details.educationRequired}</Text>}
+            {jobDetails.summary.salary && <Text color="green">{icons.money} {jobDetails.summary.salary}</Text>}
+            {jobDetails.details.benefitsInfo && <Text>{icons.star} {jobDetails.details.benefitsInfo}</Text>}
+          </Box>
         </Box>
         {descriptionLines.length > 0 && scrollViewHeight > 0 && (
           <ScrollView ref={scrollRef} height={scrollViewHeight} overflow="hidden">

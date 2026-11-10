@@ -12,3 +12,9 @@ export const LOAD_DURATION_DISPLAY_MS = 2_000;
 
 /** Debounce delay (ms) before fetching job details after selection changes. */
 export const JOB_DETAILS_DEBOUNCE_MS = 300;
+
+/** Width (in columns) of the company logo in the job details panel. Twice the height so it renders square. */
+export const COMPANY_LOGO_WIDTH = 16;
+
+/** Height (in rows) of the company logo in the job details panel. */
+export const COMPANY_LOGO_HEIGHT = 8;
